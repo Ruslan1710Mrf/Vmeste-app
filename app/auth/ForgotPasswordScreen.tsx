@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { mapAuthError, sendPasswordReset } from '../../lib/authService';
-import { authStyles as styles } from './authStyles';
+import styles from './authStyles';
 
-export function ForgotPasswordScreen() {
+export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');

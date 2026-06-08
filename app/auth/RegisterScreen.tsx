@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { mapAuthError, registerWithEmail } from '../../lib/authService';
-import { authStyles as styles } from './authStyles';
+import styles from './authStyles';
 
-export function RegisterScreen() {
+export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

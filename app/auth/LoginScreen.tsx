@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { mapAuthError, signInWithEmail } from '../../lib/authService';
-import { authStyles as styles } from './authStyles';
+import styles from './authStyles';
 
-export function LoginScreen() {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -110,6 +110,12 @@ export function LoginScreen() {
                 <Text style={styles.primaryButtonText}>Войти</Text>
               )}
             </Pressable>
+
+            <Link href="/auth/phone" asChild>
+              <Pressable style={({ pressed }) => pressed && styles.pressed}>
+                <Text style={styles.phoneButton}>📱 Войти по номеру телефона</Text>
+              </Pressable>
+            </Link>
           </View>
 
           <View style={styles.footer}>

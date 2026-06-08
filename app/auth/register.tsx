@@ -1,1 +1,1 @@
-export { RegisterScreen as default } from './RegisterScreen';
+export { default } from './RegisterScreen';

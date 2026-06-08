@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-export const authStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F1F5F9',
@@ -109,6 +109,17 @@ export const authStyles = StyleSheet.create({
   linkPressed: {
     opacity: 0.6,
   },
+  pressed: {
+    opacity: 0.6,
+  },
+  phoneButton: {
+    color: '#2563EB',
+    fontSize: 15,
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+    fontWeight: '500',
+  },
   backLink: {
     alignSelf: 'flex-start',
     marginBottom: 16,
@@ -120,3 +131,5 @@ export const authStyles = StyleSheet.create({
     color: '#2563EB',
   },
 });
+
+export default styles;
