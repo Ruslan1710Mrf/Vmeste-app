@@ -7,11 +7,26 @@ import {
   type User,
 } from 'firebase/auth';
 import { auth } from './firebase';
-import { createUserProfile } from './userProfileService';
-import { profileFromNewUser, profileToFirestoreDoc } from './profileUtils';
+import {
+  createUserProfile,
+  fetchUserProfile,
+  mapProfileError,
+  type UserProfileDoc,
+} from './userProfileService';
 
 export async function signInWithEmail(email: string, password: string) {
-  return signInWithEmailAndPassword(auth, email.trim(), password);
+  const credential = await signInWithEmailAndPassword(
+    auth,
+    email.trim(),
+    password,
+  );
+  let profile: UserProfileDoc | null = null;
+  try {
+    profile = await fetchUserProfile(credential.user.uid);
+  } catch {
+    // Профиль будет загружен повторно в App.js после входа
+  }
+  return { user: credential.user, profile };
 }
 
 export async function registerWithEmail(
@@ -24,9 +39,20 @@ export async function registerWithEmail(
     email.trim(),
     password,
   );
-  await updateProfile(credential.user, { displayName: displayName.trim() });
-  const profile = profileFromNewUser(credential.user, displayName);
-  await createUserProfile(credential.user.uid, profileToFirestoreDoc(profile));
+  const name = displayName.trim() || 'Пользователь';
+  await updateProfile(credential.user, { displayName: name });
+  try {
+    await createUserProfile(credential.user.uid, {
+      uid: credential.user.uid,
+      name,
+      email: credential.user.email ?? email.trim(),
+      city: '',
+      interests: [],
+    });
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code ?? '';
+    throw new Error(mapProfileError(code));
+  }
   return credential;
 }
 

@@ -40,8 +40,14 @@ export function RegisterScreen() {
     try {
       await registerWithEmail(email, password, name);
     } catch (err: unknown) {
-      const code = (err as { code?: string }).code ?? '';
-      setError(mapAuthError(code));
+      const error = err as { code?: string; message?: string };
+      if (error.code?.startsWith('auth/')) {
+        setError(mapAuthError(error.code));
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError('Произошла ошибка. Попробуйте снова');
+      }
     } finally {
       setLoading(false);
     }
@@ -63,7 +69,7 @@ export function RegisterScreen() {
 
           <Text style={styles.title}>Регистрация</Text>
           <Text style={styles.subtitle}>
-            Присоединяйтесь к русскоязычному сообществу в США
+            После регистрации ваш профиль сохранится в базе данных
           </Text>
 
           <View style={styles.card}>

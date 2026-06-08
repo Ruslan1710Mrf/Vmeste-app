@@ -30,8 +30,14 @@ export function LoginScreen() {
     try {
       await signInWithEmail(email, password);
     } catch (err: unknown) {
-      const code = (err as { code?: string }).code ?? '';
-      setError(mapAuthError(code));
+      const error = err as { code?: string; message?: string };
+      if (error.code?.startsWith('auth/')) {
+        setError(mapAuthError(error.code));
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError('Произошла ошибка. Попробуйте снова');
+      }
     } finally {
       setLoading(false);
     }
@@ -55,7 +61,7 @@ export function LoginScreen() {
 
           <Text style={styles.title}>Вход</Text>
           <Text style={styles.subtitle}>
-            Войдите, чтобы продолжить работу с приложением
+            Войдите — мы загрузим ваш профиль из базы данных
           </Text>
 
           <View style={styles.card}>

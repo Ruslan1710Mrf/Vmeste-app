@@ -21,7 +21,8 @@ import {
   mergeProfileWithAuth,
   needsProfileSetup,
   profileFromNewUser,
-  profileToFirestoreDoc,
+  buildUserProfileDoc,
+  profileToFirestoreUpdate,
 } from './lib/profileUtils';
 import { loadAppState, saveAppState } from './lib/storage';
 import {
@@ -114,14 +115,14 @@ export default function App() {
       if (!firestoreProfile && !saved.profile && user) {
         mergedProfile = profileFromNewUser(user, user.displayName ?? '');
         try {
-          await createUserProfile(userId, profileToFirestoreDoc(mergedProfile));
+          await createUserProfile(userId, buildUserProfileDoc(userId, mergedProfile));
         } catch {
           // Firestore may be unavailable offline
         }
       } else if (!firestoreProfile && saved.profile && user) {
         mergedProfile = mergeProfileWithAuth(saved.profile, user);
         try {
-          await createUserProfile(userId, profileToFirestoreDoc(mergedProfile));
+          await createUserProfile(userId, buildUserProfileDoc(userId, mergedProfile));
         } catch {
           // keep local profile
         }
@@ -198,7 +199,7 @@ export default function App() {
       if (nextProfile.name?.trim()) {
         await updateDisplayName(nextProfile.name.trim());
       }
-      await updateUserProfile(userId, profileToFirestoreDoc(nextProfile));
+      await updateUserProfile(userId, profileToFirestoreUpdate(nextProfile));
     } catch {
       // profile saved locally even if cloud sync fails
     }
