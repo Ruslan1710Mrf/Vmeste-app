@@ -1,0 +1,12 @@
+{
+  "name": "vmeste-ai-proxy",
+  "version": "1.0.0",
+  "main": "aiProxy.js",
+  "scripts": {
+    "start": "node aiProxy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}
