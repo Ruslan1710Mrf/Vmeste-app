@@ -18,7 +18,7 @@ function NotificationRow({ item, isRead, onPress }) {
         <Text style={styles.emoji}>{item.emoji}</Text>
       </View>
       <View style={styles.content}>
-        <View style={styles.titleRow}>
+        <View style={styles.rowTitleLine}>
           <Text style={[styles.title, unread && styles.titleUnread]}>{item.title}</Text>
           {unread && <View style={styles.dot} />}
         </View>
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   iconUnread: { backgroundColor: '#FFF7ED' },
   emoji: { fontSize: 20 },
   content: { flex: 1 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  rowTitleLine: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   title: { flex: 1, fontSize: 15, fontWeight: '500', color: '#475569' },
   titleUnread: { fontWeight: '600', color: '#1E293B' },
   dot: {

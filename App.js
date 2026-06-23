@@ -2,12 +2,13 @@ import * as ExpoLinking from 'expo-linking';
 import { useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Alert, Platform, SafeAreaView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, Modal, Platform, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import TabBar from './components/TabBar';
 import OnboardingOverlay from './components/OnboardingOverlay';
 import PostOptionsMenu from './components/PostOptionsMenu';
 import ProfileSetupSheet from './components/ProfileSetupSheet';
-import { getEventById } from './data/events';
+import { EVENTS, getEventById } from './data/events';
 import { findGuideContext } from './data/immigration';
 import { getJobById } from './data/jobs';
 import { getMemberById, getMutualConnections } from './data/members';
@@ -15,6 +16,7 @@ import { getPostById, POSTS } from './data/posts';
 import { DEFAULT_PROFILE } from './data/profile';
 import { updateDisplayName } from './lib/authService';
 import { DEFAULT_SETTINGS } from './lib/chatUtils';
+import { createEvent, fetchEvents } from './lib/eventService';
 import { subscribeToConversations } from './lib/messageService';
 import { DEV_MODE_SKIP_AUTH } from './lib/devMode';
 import { auth } from './lib/firebase';
@@ -46,6 +48,7 @@ import {
 import {
   createUserProfile,
   fetchUserProfile,
+  profileDocToMember,
   updateUserProfile,
 } from './lib/userProfileService';
 import ChatScreen from './screens/ChatScreen';
@@ -53,6 +56,7 @@ import ChecklistScreen from './screens/ChecklistScreen';
 import ConnectionsScreen from './screens/ConnectionsScreen';
 import EditProfileScreen from './screens/EditProfileScreen';
 import EventDetailScreen from './screens/EventDetailScreen';
+import CreateEventScreen from './screens/CreateEventScreen';
 import CreatePostScreen from './screens/CreatePostScreen';
 import FeedScreen from './screens/FeedScreen';
 import GlobalSearchScreen from './screens/GlobalSearchScreen';
@@ -71,15 +75,17 @@ import NetworkingScreen from './screens/NetworkingScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import PostDetailScreen from './screens/PostDetailScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import ResourcesScreen from './screens/ResourcesScreen';
 import SavedJobsScreen from './screens/SavedJobsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import { CHECKLIST_ITEMS } from './data/checklist';
 import { NOTIFICATIONS } from './data/notifications';
-import { getCategoryForInterest } from './lib/interestUtils';
+import { uploadPostImage, uploadProfilePhoto, uploadProfileCover } from './lib/postImageService';
 
 const TAB_BACK_LABELS = {
   home: 'Главная',
   jobs: 'Работа',
+  resources: 'Наша база',
   immigration: 'Иммиграция',
   ai: 'AI',
   networking: 'Нетворкинг',
@@ -121,6 +127,7 @@ function AppContent() {
   const [selectedGuide, setSelectedGuide] = useState(null);
   const [showFeed, setShowFeed] = useState(false);
   const [showCreatePost, setShowCreatePost] = useState(false);
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [menuPost, setMenuPost] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -141,10 +148,12 @@ function AppContent() {
   const [userId, setUserId] = useState(null);
   const [profile, setProfile] = useState(DEFAULT_PROFILE);
   const [posts, setPosts] = useState(POSTS);
+  const [events, setEvents] = useState(EVENTS);
   const [conversations, setConversations] = useState([]);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [firestoreMember, setFirestoreMember] = useState(null);
+  const [chatMemberProfile, setChatMemberProfile] = useState(null);
   const postsRef = useRef(posts);
   const hydratedUserIdRef = useRef(null);
 
@@ -184,7 +193,8 @@ function AppContent() {
       loadAppState(userId),
       userId ? fetchUserProfile(userId).catch(() => null) : Promise.resolve(null),
       fetchPosts().catch(() => null),
-    ]).then(async ([saved, firestoreProfile, firestorePosts]) => {
+      fetchEvents().catch(() => null),
+    ]).then(async ([saved, firestoreProfile, firestorePosts, firestoreEvents]) => {
       if (cancelled) return;
 
       const user = auth.currentUser;
@@ -218,6 +228,7 @@ function AppContent() {
       setCheckedChecklistIds(saved.checkedChecklistIds ?? []);
       setLikedPostIds(saved.likedPostIds ?? []);
       setPosts(firestorePosts ?? POSTS);
+      setEvents(firestoreEvents?.length ? [...firestoreEvents, ...EVENTS] : EVENTS);
       setSettings({ ...DEFAULT_SETTINGS, ...saved.settings });
       setShowProfileSetup(false);
       if (hydratedUserIdRef.current !== userId) {
@@ -257,8 +268,8 @@ function AppContent() {
   useEffect(() => {
     if (!hydrated) return undefined;
     if (!userId && !DEV_MODE_SKIP_AUTH) return undefined;
-    const uid = userId ?? 'guest';
-    return subscribeToConversations(uid, setConversations);
+    if (!userId) return undefined;
+    return subscribeToConversations(userId, setConversations);
   }, [hydrated, userId]);
 
   useEffect(() => {
@@ -277,16 +288,7 @@ function AppContent() {
     fetchUserProfile(selectedMemberId)
       .then((doc) => {
         if (cancelled || !doc) return;
-        setFirestoreMember({
-          id: doc.uid,
-          name: doc.name,
-          role: doc.city?.trim() ? doc.city : 'Участник сообщества',
-          city: doc.city?.trim() ?? '',
-          country: '🇺🇸',
-          bio: '',
-          interests: doc.interests ?? [],
-          connectionIds: [],
-        });
+        setFirestoreMember(profileDocToMember(doc));
       })
       .catch(() => {
         if (!cancelled) setFirestoreMember(null);
@@ -296,6 +298,33 @@ function AppContent() {
       cancelled = true;
     };
   }, [selectedMemberId]);
+
+  useEffect(() => {
+    if (!selectedChatMemberId) {
+      setChatMemberProfile(null);
+      return undefined;
+    }
+
+    const mockMember = getMemberById(selectedChatMemberId);
+    if (mockMember) {
+      setChatMemberProfile(mockMember);
+      return undefined;
+    }
+
+    let cancelled = false;
+    fetchUserProfile(selectedChatMemberId)
+      .then((doc) => {
+        if (cancelled || !doc) return;
+        setChatMemberProfile(profileDocToMember(doc));
+      })
+      .catch(() => {
+        if (!cancelled) setChatMemberProfile(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedChatMemberId]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -338,7 +367,36 @@ function AppContent() {
       if (nextProfile.name?.trim()) {
         await updateDisplayName(nextProfile.name.trim());
       }
-      await updateUserProfile(userId, profileToFirestoreUpdate(nextProfile));
+
+      // Upload profile photo if it's a local URI
+      let profilePhotoUri = nextProfile.photoUri;
+      if (profilePhotoUri && (profilePhotoUri.startsWith('file://') || profilePhotoUri.startsWith('content://'))) {
+        try {
+          profilePhotoUri = await uploadProfilePhoto(userId, profilePhotoUri);
+        } catch (error) {
+          console.error('Failed to upload profile photo:', error);
+          // Continue anyway - don't block profile save
+        }
+      }
+
+      // Upload cover photo if it's a local URI
+      let coverPhotoUri = nextProfile.coverPhoto;
+      if (coverPhotoUri && (coverPhotoUri.startsWith('file://') || coverPhotoUri.startsWith('content://'))) {
+        try {
+          coverPhotoUri = await uploadProfileCover(userId, coverPhotoUri);
+        } catch (error) {
+          console.error('Failed to upload cover photo:', error);
+          // Continue anyway - don't block profile save
+        }
+      }
+
+      const profileToSave = {
+        ...profileToFirestoreUpdate(nextProfile),
+        photoUri: profilePhotoUri,
+        coverPhoto: coverPhotoUri,
+      };
+
+      await updateUserProfile(userId, profileToSave);
     } catch {
       // profile saved locally even if cloud sync fails
     }
@@ -438,36 +496,36 @@ function AppContent() {
     }
   };
 
-  const addPost = async ({ content, category }) => {
+  const addPost = async ({ content, category, imageUri }) => {
     const text = content.trim();
-    if (!text || !category) return;
+    if (!text && !imageUri) return;
+
+    const authorId = auth.currentUser?.uid ?? userId;
+    if (!authorId) {
+      throw new Error('Войдите в аккаунт, чтобы публиковать пост.');
+    }
 
     const firstName = getFirstName(profile, auth.currentUser);
+
+    let remoteImageUri = null;
+    if (imageUri) {
+      if (imageUri.startsWith('http://') || imageUri.startsWith('https://')) {
+        remoteImageUri = imageUri;
+      } else {
+        remoteImageUri = await uploadPostImage(authorId, imageUri);
+      }
+    }
+
     const payload = {
       author: `${firstName} (вы)`,
       city: getProfileCityLabel(profile),
       content: text,
       category,
+      imageUri: remoteImageUri,
     };
-    const authorId = auth.currentUser?.uid ?? userId ?? 'guest';
 
-    try {
-      const created = await createPost(authorId, payload);
-      setPosts((prev) => [created, ...prev]);
-    } catch {
-      setPosts((prev) => [
-        {
-          id: String(Date.now()),
-          ...payload,
-          authorId,
-          createdAt: new Date().toISOString(),
-          time: 'Только что',
-          likes: 0,
-          replies: [],
-        },
-        ...prev,
-      ]);
-    }
+    const created = await createPost(authorId, payload);
+    setPosts((prev) => [created, ...prev]);
   };
 
   const closeCreatePost = () => {
@@ -498,6 +556,20 @@ function AppContent() {
     closeCreatePost();
   };
 
+  const closeCreateEvent = () => setShowCreateEvent(false);
+
+  const handlePublishEvent = async (input) => {
+    const authorId = auth.currentUser?.uid ?? userId;
+    if (!authorId) {
+      throw new Error('Войдите в аккаунт, чтобы создать событие.');
+    }
+
+    const host = getFirstName(profile, auth.currentUser);
+    const created = await createEvent(authorId, { ...input, host });
+    setEvents((prev) => [created, ...prev]);
+    closeCreateEvent();
+  };
+
   const currentAuthorId = auth.currentUser?.uid ?? userId ?? 'guest';
 
   const handleEditPost = () => {
@@ -516,17 +588,23 @@ function AppContent() {
     if (!menuPost) return;
     const post = menuPost;
 
+    if (!isOwnPost(post, currentAuthorId)) {
+      setMenuPost(null);
+      Alert.alert('Недоступно', 'Удалять можно только свои посты.');
+      return;
+    }
+
     setMenuPost(null);
 
     const removePost = async () => {
       try {
         await deletePost(post.id);
+        setPosts((prev) => prev.filter((p) => p.id !== post.id));
+        if (selectedPostId === post.id) {
+          setSelectedPostId(null);
+        }
       } catch {
-        // удаляем локально даже при ошибке Firestore
-      }
-      setPosts((prev) => prev.filter((p) => p.id !== post.id));
-      if (selectedPostId === post.id) {
-        setSelectedPostId(null);
+        Alert.alert('Ошибка', 'Не удалось удалить пост. Попробуйте позже.');
       }
     };
 
@@ -558,8 +636,11 @@ function AppContent() {
   };
 
   const addReply = async (postId, reply) => {
+    const authorUid = auth.currentUser?.uid ?? userId;
+    if (!authorUid) return;
+
     try {
-      const saved = await addReplyToPost(postId, userId, {
+      const saved = await addReplyToPost(postId, authorUid, {
         author: reply.author,
         text: reply.text,
       });
@@ -599,6 +680,7 @@ function AppContent() {
     setSelectedGuide(null);
     setShowFeed(false);
     setShowCreatePost(false);
+    setShowCreateEvent(false);
     setShowSearch(false);
     setShowNotifications(false);
     setProfileView(null);
@@ -771,12 +853,24 @@ function AppContent() {
   };
 
   const selectedJob = selectedJobId ? getJobById(selectedJobId) : null;
-  const selectedEvent = selectedEventId ? getEventById(selectedEventId) : null;
+  const selectedEvent = selectedEventId ? getEventById(selectedEventId, events) : null;
+
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !selectedEvent) return undefined;
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setSelectedEventId(null);
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [selectedEvent]);
+
   const selectedMember = selectedMemberId
     ? (getMemberById(selectedMemberId) ?? firestoreMember)
     : null;
   const selectedPost = selectedPostId ? getPostById(selectedPostId, posts) : null;
-  const chatMember = selectedChatMemberId ? getMemberById(selectedChatMemberId) : null;
+  const chatMember = chatMemberProfile;
 
   const connectionsCount = connectedIds.length;
   const messagesCount = conversations.filter((conv) => conv.lastMessage?.trim()).length;
@@ -793,6 +887,7 @@ function AppContent() {
         <StatusBar style="dark" />
         <GlobalSearchScreen
           posts={posts}
+          authReady={authReady}
           onBack={() => setShowSearch(false)}
           onOpenJob={(id) => {
             setShowSearch(false);
@@ -900,6 +995,7 @@ function AppContent() {
         <ChatScreen
           member={chatMember}
           myName={profile.name}
+          userId={userId}
           onBack={() => setSelectedChatMemberId(null)}
         />
       </SafeAreaView>
@@ -931,6 +1027,8 @@ function AppContent() {
             onBack={profileReturnTab ? closeProfileView : () => setProfileView(null)}
             backLabel={getProfileBackLabel()}
             onOpenChat={openChat}
+            userId={userId}
+            connectedIds={connectedIds}
           />
         );
       case 'connections':
@@ -965,6 +1063,7 @@ function AppContent() {
             onOpenMember={openMember}
             onOpenOwnProfile={openOwnProfile}
             onToggleLike={toggleLikePost}
+            onOpenPostMenu={setMenuPost}
             onRefresh={refreshPosts}
             backLabel="Профиль"
             initialCategory={feedCategory}
@@ -980,8 +1079,10 @@ function AppContent() {
         return (
           <MyEventsScreen
             registeredEventIds={registeredEventIds}
+            events={events}
             onBack={() => setProfileView(null)}
             onOpenEvent={openEvent}
+            onCreateEvent={() => setShowCreateEvent(true)}
           />
         );
       case 'myPosts':
@@ -1053,6 +1154,14 @@ function AppContent() {
         />
       );
     }
+    if (showCreateEvent) {
+      return (
+        <CreateEventScreen
+          onBack={closeCreateEvent}
+          onPublish={handlePublishEvent}
+        />
+      );
+    }
     if (tab === 'home' && showFeed) {
       return (
         <FeedScreen
@@ -1064,6 +1173,7 @@ function AppContent() {
           onOpenMember={openMember}
           onOpenOwnProfile={openOwnProfile}
           onToggleLike={toggleLikePost}
+          onOpenPostMenu={setMenuPost}
           onRefresh={refreshPosts}
         />
       );
@@ -1100,15 +1210,21 @@ function AppContent() {
         />
       );
     }
+    if (tab === 'resources') {
+      return <ResourcesScreen />;
+    }
     if (tab === 'ai') {
       return <AiChatScreen userId={userId} />;
     }
     if (tab === 'networking') {
       return (
         <NetworkingScreen
+          events={events}
           onSelectEvent={openEvent}
           onSelectMember={openMember}
+          onCreateEvent={() => setShowCreateEvent(true)}
           connectedIds={connectedIds}
+          userId={userId}
         />
       );
     }
@@ -1167,8 +1283,12 @@ function AppContent() {
         visible={showProfileSetup}
         onComplete={handleProfileSetupComplete}
       />
-      {showNotifications ? (
-        <View style={[styles.notificationsOverlay, { backgroundColor: colors.background }]}>
+      <Modal
+        visible={showNotifications}
+        animationType="slide"
+        onRequestClose={closeNotifications}
+      >
+        <SafeAreaView style={[styles.notificationsOverlay, { backgroundColor: colors.background }]}>
           <NotificationsScreen
             onBack={closeNotifications}
             backLabel="Главная"
@@ -1177,8 +1297,8 @@ function AppContent() {
             onMarkRead={markNotificationRead}
             onMarkAllRead={markAllNotificationsRead}
           />
-        </View>
-      ) : null}
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1196,8 +1316,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   notificationsOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 20,
+    flex: 1,
   },
 });
 

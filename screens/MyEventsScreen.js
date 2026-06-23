@@ -23,8 +23,16 @@ function EventRow({ event, onPress }) {
   );
 }
 
-export default function MyEventsScreen({ registeredEventIds, onBack, onOpenEvent }) {
-  const events = registeredEventIds.map(getEventById).filter(Boolean);
+export default function MyEventsScreen({
+  registeredEventIds,
+  events: allEvents,
+  onBack,
+  onOpenEvent,
+  onCreateEvent,
+}) {
+  const events = registeredEventIds
+    .map((id) => getEventById(id, allEvents))
+    .filter(Boolean);
 
   return (
     <View style={styles.container}>
@@ -43,12 +51,19 @@ export default function MyEventsScreen({ registeredEventIds, onBack, onOpenEvent
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+        <Pressable
+          style={({ pressed }) => [styles.createButton, pressed && styles.cardPressed]}
+          onPress={onCreateEvent}
+        >
+          <Text style={styles.createButtonText}>＋ Создать событие</Text>
+        </Pressable>
+
         {events.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>📅</Text>
             <Text style={styles.emptyTitle}>Нет регистраций</Text>
             <Text style={styles.emptyText}>
-              Зарегистрируйтесь на события в разделе «Нетворкинг»
+              Зарегистрируйтесь на события в разделе «Нетворкинг» или создайте своё
             </Text>
           </View>
         ) : (
@@ -84,6 +99,17 @@ const styles = StyleSheet.create({
   },
   screenSubtitle: { fontSize: 15, color: '#64748B' },
   list: { paddingHorizontal: 24, paddingBottom: 16, gap: 12 },
+  createButton: {
+    backgroundColor: '#7C3AED',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  createButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,

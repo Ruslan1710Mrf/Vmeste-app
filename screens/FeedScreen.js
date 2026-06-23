@@ -1,45 +1,63 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
+import { getMemberByAuthorName } from '../data/members';
+import { FEED_CATEGORIES } from '../lib/interestUtils';
 
-const CATEGORIES = ['Все', 'Карьера', 'Иммиграция', 'Стартапы', 'Жизнь в США', 'Сообщество'];
-
-function PostCard({ post, isLiked, onPress, onCommentPress, onToggleLike }) {
+function PostCard({
+  post,
+  isLiked,
+  onPress,
+  onCommentPress,
+  onToggleLike,
+  onOpenAuthor,
+  onOpenMenu,
+}) {
   const replyCount = post.replies?.length ?? 0;
   const likes = post.likes + (isLiked ? 1 : 0);
 
   return (
-    <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-      onPress={() => onPress(post.id)}
-    >
+    <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{post.author.charAt(0)}</Text>
-        </View>
-        <View style={styles.authorInfo}>
-          <Text style={styles.author}>{post.author}</Text>
-          <Text style={styles.meta}>📍 {post.city} · {post.time}</Text>
-        </View>
+        <Pressable
+          style={({ pressed }) => [styles.authorPressable, pressed && styles.cardPressed]}
+          onPress={() => onOpenAuthor(post)}
+        >
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{post.author.charAt(0)}</Text>
+          </View>
+          <View style={styles.authorInfo}>
+            <Text style={styles.author}>{post.author}</Text>
+            <Text style={styles.meta}>📍 {post.city} · {post.time}</Text>
+          </View>
+        </Pressable>
         <View style={styles.categoryBadge}>
           <Text style={styles.categoryText}>{post.category}</Text>
         </View>
+        <Pressable hitSlop={8} style={styles.menuButton} onPress={() => onOpenMenu(post)}>
+          <Text style={styles.menuText}>•••</Text>
+        </Pressable>
       </View>
-      <Text style={styles.content} numberOfLines={4}>{post.content}</Text>
+      <Pressable
+        style={({ pressed }) => [pressed && styles.cardPressed]}
+        onPress={() => onPress(post.id)}
+      >
+        <Text style={styles.content} numberOfLines={4}>{post.content}</Text>
+        {post.imageUri ? (
+          <Image source={{ uri: post.imageUri }} style={styles.postImage} resizeMode="cover" />
+        ) : null}
+      </Pressable>
       <View style={styles.actions}>
         <Pressable
           style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
-          onPress={(e) => {
-            e?.stopPropagation?.();
-            onToggleLike(post.id);
-          }}
+          onPress={() => onToggleLike(post.id)}
         >
           <Text style={styles.actionText}>{isLiked ? '❤️' : '🤍'} {likes}</Text>
         </Pressable>
@@ -50,7 +68,7 @@ function PostCard({ post, isLiked, onPress, onCommentPress, onToggleLike }) {
           <Text style={styles.actionText}>💬 {replyCount}</Text>
         </Pressable>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -58,15 +76,24 @@ export default function FeedScreen({
   posts,
   likedPostIds,
   onBack,
-  onAddPost,
+  onOpenCreatePost,
   onSelectPost,
+  onOpenMember,
+  onOpenOwnProfile,
   onToggleLike,
+  onOpenPostMenu,
   onRefresh,
   backLabel = 'Главная',
+  initialCategory = 'Все',
+  feedTitle = 'Лента',
+  feedSubtitle = 'Посты от сообщества',
 }) {
-  const [draft, setDraft] = useState('');
-  const [category, setCategory] = useState('Все');
+  const [category, setCategory] = useState(initialCategory);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    setCategory(initialCategory);
+  }, [initialCategory]);
 
   const filtered = useMemo(() => {
     if (category === 'Все') return posts;
@@ -79,11 +106,15 @@ export default function FeedScreen({
     setRefreshing(false);
   };
 
-  const handlePost = () => {
-    const text = draft.trim();
-    if (!text) return;
-    onAddPost(text);
-    setDraft('');
+  const handleOpenAuthor = (post) => {
+    if (post.author?.includes('(вы)')) {
+      onOpenOwnProfile?.();
+      return;
+    }
+    const member = getMemberByAuthorName(post.author);
+    if (member) {
+      onOpenMember(member.id);
+    }
   };
 
   return (
@@ -96,8 +127,8 @@ export default function FeedScreen({
           <Text style={styles.backIcon}>←</Text>
           <Text style={styles.backLabel}>{backLabel}</Text>
         </Pressable>
-        <Text style={styles.screenTitle}>Лента</Text>
-        <Text style={styles.screenSubtitle}>Посты от сообщества</Text>
+        <Text style={styles.screenTitle}>{feedTitle}</Text>
+        <Text style={styles.screenSubtitle}>{feedSubtitle}</Text>
       </View>
 
       <ScrollView
@@ -113,7 +144,7 @@ export default function FeedScreen({
           style={styles.filtersScroll}
           contentContainerStyle={styles.filters}
         >
-          {CATEGORIES.map((cat) => (
+          {FEED_CATEGORIES.map((cat) => (
             <Pressable
               key={cat}
               style={[styles.filterChip, category === cat && styles.filterChipActive]}
@@ -126,27 +157,12 @@ export default function FeedScreen({
           ))}
         </ScrollView>
 
-        <View style={styles.compose}>
-          <TextInput
-            style={styles.composeInput}
-            placeholder="Поделитесь с сообществом..."
-            placeholderTextColor="#94A3B8"
-            value={draft}
-            onChangeText={setDraft}
-            multiline
-          />
-          <Pressable
-            style={({ pressed }) => [
-              styles.postButton,
-              !draft.trim() && styles.postButtonDisabled,
-              pressed && draft.trim() && styles.postButtonPressed,
-            ]}
-            onPress={handlePost}
-            disabled={!draft.trim()}
-          >
-            <Text style={styles.postButtonText}>Опубликовать</Text>
-          </Pressable>
-        </View>
+        <Pressable
+          style={({ pressed }) => [styles.composeButton, pressed && styles.composeButtonPressed]}
+          onPress={onOpenCreatePost}
+        >
+          <Text style={styles.composeButtonText}>＋ Написать пост</Text>
+        </Pressable>
 
         {filtered.length === 0 ? (
           <View style={styles.empty}>
@@ -161,8 +177,10 @@ export default function FeedScreen({
               post={post}
               isLiked={likedPostIds.includes(post.id)}
               onPress={onSelectPost}
+              onOpenAuthor={handleOpenAuthor}
               onCommentPress={onSelectPost}
               onToggleLike={onToggleLike}
+              onOpenMenu={onOpenPostMenu}
             />
           ))
         )}
@@ -207,35 +225,15 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
   filterText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
   filterTextActive: { color: '#FFFFFF' },
-  compose: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 4,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  composeInput: {
-    fontSize: 15,
-    color: '#1E293B',
-    minHeight: 60,
-    marginBottom: 12,
-    textAlignVertical: 'top',
-  },
-  postButton: {
+  composeButton: {
     backgroundColor: '#2563EB',
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: 'center',
-    alignSelf: 'flex-end',
-    paddingHorizontal: 20,
+    marginBottom: 4,
   },
-  postButtonDisabled: { backgroundColor: '#CBD5E1' },
-  postButtonPressed: { opacity: 0.9 },
-  postButtonText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
+  composeButtonPressed: { opacity: 0.9 },
+  composeButtonText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -248,6 +246,7 @@ const styles = StyleSheet.create({
   },
   cardPressed: { opacity: 0.95 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
+  authorPressable: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', marginRight: 8 },
   avatar: {
     width: 40,
     height: 40,
@@ -268,7 +267,16 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   categoryText: { fontSize: 11, fontWeight: '500', color: '#64748B' },
+  menuButton: { paddingHorizontal: 6, paddingVertical: 4, marginLeft: 6 },
+  menuText: { fontSize: 16, color: '#94A3B8', letterSpacing: 1 },
   content: { fontSize: 15, lineHeight: 22, color: '#475569', marginBottom: 14 },
+  postImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 14,
+    backgroundColor: '#F1F5F9',
+  },
   actions: { flexDirection: 'row', gap: 20 },
   action: { paddingVertical: 4 },
   actionPressed: { opacity: 0.6 },

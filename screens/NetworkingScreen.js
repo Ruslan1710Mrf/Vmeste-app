@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Linking,
   Pressable,
   ScrollView,
@@ -8,9 +9,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { EVENTS } from '../data/events';
 import { GROUPS } from '../data/groups';
 import { MEMBERS } from '../data/members';
+import { fetchNetworkUsers } from '../lib/userProfileService';
 
 function EventCard({ event, onPress }) {
   return (
@@ -69,21 +70,52 @@ function MemberCard({ member, onPress, isConnected }) {
 }
 
 export default function NetworkingScreen({
+  events,
   onSelectEvent,
   onSelectMember,
+  onCreateEvent,
   connectedIds,
+  userId,
 }) {
   const [query, setQuery] = useState('');
+  const [firestoreMembers, setFirestoreMembers] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(true);
   const q = query.trim().toLowerCase();
 
+  useEffect(() => {
+    let cancelled = false;
+    setMembersLoading(true);
+
+    fetchNetworkUsers(50, userId)
+      .then((members) => {
+        if (!cancelled) setFirestoreMembers(members);
+      })
+      .catch(() => {
+        if (!cancelled) setFirestoreMembers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setMembersLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const allMembers = useMemo(() => {
+    const seen = new Set(firestoreMembers.map((member) => member.id));
+    const mockOnly = MEMBERS.filter((member) => !seen.has(member.id));
+    return [...firestoreMembers, ...mockOnly];
+  }, [firestoreMembers]);
+
   const filteredEvents = useMemo(() => {
-    if (!q) return EVENTS;
-    return EVENTS.filter(
+    if (!q) return events;
+    return events.filter(
       (e) =>
         e.title.toLowerCase().includes(q) ||
         e.city.toLowerCase().includes(q),
     );
-  }, [q]);
+  }, [q, events]);
 
   const filteredGroups = useMemo(() => {
     if (!q) return GROUPS;
@@ -95,14 +127,14 @@ export default function NetworkingScreen({
   }, [q]);
 
   const filteredMembers = useMemo(() => {
-    if (!q) return MEMBERS;
-    return MEMBERS.filter(
+    if (!q) return allMembers;
+    return allMembers.filter(
       (m) =>
         m.name.toLowerCase().includes(q) ||
         m.role.toLowerCase().includes(q) ||
         m.city.toLowerCase().includes(q),
     );
-  }, [q]);
+  }, [q, allMembers]);
 
   const hasResults =
     filteredEvents.length > 0 ||
@@ -134,15 +166,18 @@ export default function NetworkingScreen({
           <Text style={styles.empty}>Ничего не найдено</Text>
         )}
 
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Ближайшие события</Text>
+          <Pressable onPress={onCreateEvent}>
+            <Text style={styles.createEventLink}>＋ Создать</Text>
+          </Pressable>
+        </View>
         {filteredEvents.length > 0 && (
-          <>
-            <Text style={styles.sectionTitle}>Ближайшие события</Text>
-            <View style={styles.eventsList}>
-              {filteredEvents.map((event) => (
-                <EventCard key={event.id} event={event} onPress={onSelectEvent} />
-              ))}
-            </View>
-          </>
+          <View style={styles.eventsList}>
+            {filteredEvents.map((event) => (
+              <EventCard key={event.id} event={event} onPress={onSelectEvent} />
+            ))}
+          </View>
         )}
 
         {filteredGroups.length > 0 && (
@@ -159,7 +194,9 @@ export default function NetworkingScreen({
           </>
         )}
 
-        {filteredMembers.length > 0 && (
+        {membersLoading ? (
+          <ActivityIndicator style={{ marginTop: 16, marginBottom: 24 }} color="#7C3AED" />
+        ) : filteredMembers.length > 0 ? (
           <>
             <Text style={styles.sectionTitle}>Люди рядом с вами</Text>
             <View style={styles.membersList}>
@@ -173,7 +210,7 @@ export default function NetworkingScreen({
               ))}
             </View>
           </>
-        )}
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -191,7 +228,7 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#EC4899',
     letterSpacing: -0.5,
     marginBottom: 6,
   },
@@ -231,9 +268,20 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#EA580C',
     marginBottom: 12,
     marginTop: 8,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  createEventLink: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7C3AED',
+    marginBottom: 12,
   },
   eventsList: {
     gap: 12,
