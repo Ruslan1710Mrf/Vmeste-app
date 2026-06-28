@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { getMemberByAuthorName } from '../data/members';
 import { FEED_CATEGORIES } from '../lib/interestUtils';
+import { useI18n } from '../lib/i18n';
 
 function PostCard({
   post,
@@ -20,6 +21,7 @@ function PostCard({
   onOpenAuthor,
   onOpenMenu,
 }) {
+  const { t } = useI18n();
   const replyCount = post.replies?.length ?? 0;
   const likes = post.likes + (isLiked ? 1 : 0);
 
@@ -83,11 +85,15 @@ export default function FeedScreen({
   onToggleLike,
   onOpenPostMenu,
   onRefresh,
-  backLabel = 'Главная',
+  backLabel,
   initialCategory = 'Все',
-  feedTitle = 'Лента',
-  feedSubtitle = 'Посты от сообщества',
+  feedTitle,
+  feedSubtitle,
 }) {
+  const { t } = useI18n();
+  const resolvedBackLabel = backLabel ?? t('feed.backLabel');
+  const resolvedFeedTitle = feedTitle ?? t('feed.title');
+  const resolvedFeedSubtitle = feedSubtitle ?? t('feed.subtitle');
   const [category, setCategory] = useState(initialCategory);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -125,10 +131,10 @@ export default function FeedScreen({
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>{backLabel}</Text>
+          <Text style={styles.backLabel}>{resolvedBackLabel}</Text>
         </Pressable>
-        <Text style={styles.screenTitle}>{feedTitle}</Text>
-        <Text style={styles.screenSubtitle}>{feedSubtitle}</Text>
+        <Text style={styles.screenTitle}>{resolvedFeedTitle}</Text>
+        <Text style={styles.screenSubtitle}>{resolvedFeedSubtitle}</Text>
       </View>
 
       <ScrollView
@@ -161,14 +167,14 @@ export default function FeedScreen({
           style={({ pressed }) => [styles.composeButton, pressed && styles.composeButtonPressed]}
           onPress={onOpenCreatePost}
         >
-          <Text style={styles.composeButtonText}>＋ Написать пост</Text>
+          <Text style={styles.composeButtonText}>＋ {t('feed.writePost')}</Text>
         </Pressable>
 
         {filtered.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>📝</Text>
-            <Text style={styles.emptyTitle}>Нет постов в этой категории</Text>
-            <Text style={styles.emptyText}>Попробуйте другой фильтр или напишите первым</Text>
+            <Text style={styles.emptyTitle}>{t('feed.emptyTitle')}</Text>
+            <Text style={styles.emptyText}>{t('feed.emptyText')}</Text>
           </View>
         ) : (
           filtered.map((post) => (

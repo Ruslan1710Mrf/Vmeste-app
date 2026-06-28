@@ -6,8 +6,10 @@ import {
   View,
 } from 'react-native';
 import { getEventById } from '../data/events';
+import { useI18n } from '../lib/i18n';
 
 function EventRow({ event, onPress }) {
+  const { t } = useI18n();
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -18,7 +20,7 @@ function EventRow({ event, onPress }) {
       </View>
       <Text style={styles.title}>{event.title}</Text>
       <Text style={styles.city}>📍 {event.city}</Text>
-      <Text style={styles.registered}>✓ Вы зарегистрированы</Text>
+      <Text style={styles.registered}>✓ {t('myEvents.registered')}</Text>
     </Pressable>
   );
 }
@@ -30,6 +32,7 @@ export default function MyEventsScreen({
   onOpenEvent,
   onCreateEvent,
 }) {
+  const { t } = useI18n();
   const events = registeredEventIds
     .map((id) => getEventById(id, allEvents))
     .filter(Boolean);
@@ -42,11 +45,11 @@ export default function MyEventsScreen({
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Профиль</Text>
+          <Text style={styles.backLabel}>{t('myEvents.backLabel')}</Text>
         </Pressable>
-        <Text style={styles.screenTitle}>Мои события</Text>
+        <Text style={styles.screenTitle}>{t('myEvents.title')}</Text>
         <Text style={styles.screenSubtitle}>
-          {events.length} предстоящих мероприятий
+          {t('myEvents.subtitle', { value: events.length })}
         </Text>
       </View>
 
@@ -55,15 +58,15 @@ export default function MyEventsScreen({
           style={({ pressed }) => [styles.createButton, pressed && styles.cardPressed]}
           onPress={onCreateEvent}
         >
-          <Text style={styles.createButtonText}>＋ Создать событие</Text>
+          <Text style={styles.createButtonText}>＋ {t('myEvents.createButton')}</Text>
         </Pressable>
 
         {events.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>📅</Text>
-            <Text style={styles.emptyTitle}>Нет регистраций</Text>
+            <Text style={styles.emptyTitle}>{t('myEvents.emptyTitle')}</Text>
             <Text style={styles.emptyText}>
-              Зарегистрируйтесь на события в разделе «Нетворкинг» или создайте своё
+              {t('myEvents.emptyText')}
             </Text>
           </View>
         ) : (

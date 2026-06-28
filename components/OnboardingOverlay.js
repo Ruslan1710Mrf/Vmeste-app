@@ -8,10 +8,12 @@ import {
   View,
 } from 'react-native';
 import { ONBOARDING_SLIDES } from '../data/onboarding';
+import { useI18n } from '../lib/i18n';
 
 const { width } = Dimensions.get('window');
 
 export default function OnboardingOverlay({ onComplete }) {
+  const { t } = useI18n();
   const [index, setIndex] = useState(0);
   const listRef = useRef(null);
   const isLast = index === ONBOARDING_SLIDES.length - 1;
@@ -58,11 +60,11 @@ export default function OnboardingOverlay({ onComplete }) {
           style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
           onPress={goNext}
         >
-          <Text style={styles.buttonText}>{isLast ? 'Начать' : 'Далее'}</Text>
+          <Text style={styles.buttonText}>{isLast ? t('onboarding.start') : t('onboarding.next')}</Text>
         </Pressable>
         {!isLast && (
           <Pressable onPress={onComplete} style={styles.skip}>
-            <Text style={styles.skipText}>Пропустить</Text>
+            <Text style={styles.skipText}>{t('onboarding.skip')}</Text>
           </Pressable>
         )}
       </View>

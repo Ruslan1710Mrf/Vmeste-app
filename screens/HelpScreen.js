@@ -6,31 +6,20 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useI18n } from '../lib/i18n';
 
 const SUPPORT_EMAIL = 'support@vmeste.app';
 
-const FAQ = [
-  {
-    q: 'Как найти работу в США?',
-    a: 'Используйте раздел «Работа» — там вакансии от компаний, открытых к кандидатам из СНГ. Обновляйте LinkedIn и готовьте резюме в американском формате.',
-  },
-  {
-    q: 'Где получить помощь с визой?',
-    a: 'Раздел «Иммиграция» содержит информацию о типах виз и ссылки на официальные ресурсы USCIS. Для сложных случаев рекомендуем accredited immigration attorney.',
-  },
-  {
-    q: 'Как познакомиться с соотечественниками?',
-    a: 'В «Нетворкинге» есть события, группы в Telegram/Discord и профили участников. Посещайте офлайн-встречи — это лучший способ завести связи.',
-  },
-  {
-    q: 'Безопасно ли делиться данными в приложении?',
-    a: 'Мы не передаём ваши данные третьим лицам. Не публикуйте номера документов и финансовую информацию в открытых разделах.',
-  },
-  {
-    q: 'Как связаться с поддержкой?',
-    a: 'Напишите нам на support@vmeste.app — отвечаем на русском и английском в течение 24 часов.',
-  },
-];
+function useFaq() {
+  const { t } = useI18n();
+  return [
+    { q: t('help.faq1.q'), a: t('help.faq1.a') },
+    { q: t('help.faq2.q'), a: t('help.faq2.a') },
+    { q: t('help.faq3.q'), a: t('help.faq3.a') },
+    { q: t('help.faq4.q'), a: t('help.faq4.a') },
+    { q: t('help.faq5.q'), a: t('help.faq5.a') },
+  ];
+}
 
 function FaqItem({ item }) {
   return (
@@ -42,6 +31,8 @@ function FaqItem({ item }) {
 }
 
 export default function HelpScreen({ onBack }) {
+  const { t } = useI18n();
+  const FAQ = useFaq();
   const openEmail = () => {
     Linking.openURL(`mailto:${SUPPORT_EMAIL}`);
   };
@@ -54,10 +45,10 @@ export default function HelpScreen({ onBack }) {
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Профиль</Text>
+          <Text style={styles.backLabel}>{t('help.backLabel')}</Text>
         </Pressable>
-        <Text style={styles.screenTitle}>Помощь и поддержка</Text>
-        <Text style={styles.screenSubtitle}>Частые вопросы о Vmeste</Text>
+        <Text style={styles.screenTitle}>{t('help.title')}</Text>
+        <Text style={styles.screenSubtitle}>{t('help.subtitle')}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
@@ -74,9 +65,9 @@ export default function HelpScreen({ onBack }) {
           style={({ pressed }) => [styles.contactCard, pressed && styles.contactPressed]}
           onPress={openEmail}
         >
-          <Text style={styles.contactTitle}>Не нашли ответ?</Text>
+          <Text style={styles.contactTitle}>{t('help.notFound')}</Text>
           <Text style={styles.contactText}>{SUPPORT_EMAIL}</Text>
-          <Text style={styles.contactHint}>Нажмите, чтобы написать</Text>
+          <Text style={styles.contactHint}>{t('help.tapToWrite')}</Text>
         </Pressable>
       </ScrollView>
     </View>

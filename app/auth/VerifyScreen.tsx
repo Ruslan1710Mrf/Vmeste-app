@@ -13,17 +13,20 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { auth } from '../../lib/firebase';
+import { useI18n } from '../../lib/i18n';
 import { createUserProfile, fetchUserProfile } from '../../lib/userProfileService';
 import styles from './phoneAuthStyles';
 
+// Возвращает ключ перевода (lib/i18n.js), а не готовый текст — экран должен
+// передать его через t() с учётом выбранного языка интерфейса.
 function mapVerifyError(code: string): string {
-  const messages: Record<string, string> = {
-    'auth/invalid-verification-code': 'Неверный код подтверждения',
-    'auth/code-expired': 'Срок действия кода истёк. Запросите новый',
-    'auth/missing-verification-code': 'Введите код из SMS',
-    'auth/session-expired': 'Сессия истекла. Запросите код заново',
+  const keys: Record<string, string> = {
+    'auth/invalid-verification-code': 'verify.errors.invalidCode',
+    'auth/code-expired': 'verify.errors.codeExpired',
+    'auth/missing-verification-code': 'verify.errors.missingCode',
+    'auth/session-expired': 'verify.errors.sessionExpired',
   };
-  return messages[code] ?? 'Не удалось подтвердить код. Попробуйте снова';
+  return keys[code] ?? 'verify.errors.generic';
 }
 
 function formatPhoneDisplay(phone: string): string {
@@ -33,6 +36,7 @@ function formatPhoneDisplay(phone: string): string {
 
 export default function VerifyScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const { verificationId, phoneNumber } = useLocalSearchParams<{
     verificationId?: string;
     phoneNumber?: string;
@@ -44,11 +48,11 @@ export default function VerifyScreen() {
   const handleVerify = async () => {
     setError('');
     if (!verificationId) {
-      setError('Сессия не найдена. Запросите код заново');
+      setError(t('verify.errors.sessionNotFound'));
       return;
     }
     if (!code.trim() || code.trim().length < 6) {
-      setError('Введите 6-значный код из SMS');
+      setError(t('verify.errors.enterSixDigitCode'));
       return;
     }
 
@@ -63,7 +67,7 @@ export default function VerifyScreen() {
         if (!existing) {
           await createUserProfile(user.uid, {
             uid: user.uid,
-            name: user.displayName?.trim() || 'Пользователь',
+            name: user.displayName?.trim() || t('verify.defaultUserName'),
             email: user.email ?? '',
             city: '',
             interests: [],
@@ -76,7 +80,7 @@ export default function VerifyScreen() {
       router.replace('/(tabs)');
     } catch (err: unknown) {
       const errorCode = (err as { code?: string }).code ?? '';
-      setError(mapVerifyError(errorCode));
+      setError(t(mapVerifyError(errorCode)));
     } finally {
       setLoading(false);
     }
@@ -95,21 +99,21 @@ export default function VerifyScreen() {
         >
           <Link href="/auth/phone" asChild>
             <Pressable style={styles.backLink}>
-              <Text style={styles.backLinkText}>← Изменить номер</Text>
+              <Text style={styles.backLinkText}>{t('verify.changeNumber')}</Text>
             </Pressable>
           </Link>
 
           <Text style={styles.brand}>Vmeste</Text>
-          <Text style={styles.title}>Код из SMS</Text>
+          <Text style={styles.title}>{t('verify.title')}</Text>
           <Text style={styles.subtitle}>
             {phoneNumber
-              ? `Мы отправили код на ${formatPhoneDisplay(phoneNumber)}`
-              : 'Введите код из SMS-сообщения'}
+              ? `${t('verify.codeSentToPrefix')} ${formatPhoneDisplay(phoneNumber)}`
+              : t('verify.enterCodeFromSms')}
           </Text>
 
           <View style={styles.card}>
             <View>
-              <Text style={styles.label}>Код подтверждения</Text>
+              <Text style={styles.label}>{t('verify.codeLabel')}</Text>
               <TextInput
                 style={[styles.input, error ? styles.inputError : null]}
                 placeholder="123456"
@@ -137,7 +141,7 @@ export default function VerifyScreen() {
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.primaryButtonText}>Подтвердить</Text>
+                <Text style={styles.primaryButtonText}>{t('verify.confirm')}</Text>
               )}
             </Pressable>
           </View>

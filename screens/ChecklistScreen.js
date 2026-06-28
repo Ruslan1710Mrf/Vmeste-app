@@ -6,8 +6,10 @@ import {
   View,
 } from 'react-native';
 import { CHECKLIST_ITEMS } from '../data/checklist';
+import { useI18n } from '../lib/i18n';
 
 function ChecklistItem({ item, checked, onToggle, onOpenGuide }) {
+  const { t } = useI18n();
   return (
     <View style={styles.row}>
       <Pressable
@@ -31,7 +33,7 @@ function ChecklistItem({ item, checked, onToggle, onOpenGuide }) {
               style={({ pressed }) => [styles.guideLink, pressed && styles.guideLinkPressed]}
               onPress={() => onOpenGuide(item.guideLink)}
             >
-              <Text style={styles.guideLinkText}>Подробнее →</Text>
+              <Text style={styles.guideLinkText}>{t('checklist.readMore')}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -41,6 +43,7 @@ function ChecklistItem({ item, checked, onToggle, onOpenGuide }) {
 }
 
 export default function ChecklistScreen({ checkedIds, onBack, onToggle, onOpenGuide }) {
+  const { t } = useI18n();
   const done = checkedIds.length;
   const total = CHECKLIST_ITEMS.length;
   const progress = Math.round((done / total) * 100);
@@ -53,11 +56,11 @@ export default function ChecklistScreen({ checkedIds, onBack, onToggle, onOpenGu
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Назад</Text>
+          <Text style={styles.backLabel}>{t('checklist.backLabel')}</Text>
         </Pressable>
-        <Text style={styles.screenTitle}>Чек-лист адаптации</Text>
+        <Text style={styles.screenTitle}>{t('checklist.title')}</Text>
         <Text style={styles.screenSubtitle}>
-          {done} из {total} выполнено · {progress}%
+          {t('checklist.progress', { done, total, progress })}
         </Text>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />

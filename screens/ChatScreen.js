@@ -6,27 +6,104 @@ import {
   Text,
   TextInput,
   View,
+  ActivityIndicator,
 } from 'react-native';
-import { formatChatTime } from '../lib/chatUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { auth } from '../lib/firebase';
+import {
+  ensureConversation,
+  sendMessage,
+  subscribeToMessages,
+} from '../lib/messageService';
+import MemberOptionsMenu from '../components/MemberOptionsMenu';
+import { useI18n } from '../lib/i18n';
 
-export default function ChatScreen({ member, messages, onSendMessage, onBack }) {
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+export default function ChatScreen({
+  member,
+  onBack,
+  myName = '',
+  userId,
+  onOpenMember,
+  isBlocked,
+  onBlock,
+  onUnblock,
+  onReport,
+}) {
+  const { t } = useI18n();
+  const insets = useSafeAreaInsets();
+  const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
+  const [convId, setConvId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [sendError, setSendError] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
   const scrollRef = useRef(null);
+  const myUid = auth.currentUser?.uid ?? userId ?? null;
+
+  useEffect(() => {
+    if (!myUid) {
+      setConvId(null);
+      setLoading(false);
+      return undefined;
+    }
+
+    let unsub = () => {};
+    setLoading(true);
+    setSendError('');
+
+    ensureConversation(myUid, member.id, member.name, myName)
+      .then((id) => {
+        setConvId(id);
+        unsub = subscribeToMessages(id, (msgs) => {
+          setMessages(msgs);
+          setLoading(false);
+        });
+      })
+      .catch((error) => {
+        console.error('[ChatScreen] ensureConversation failed', error);
+        setConvId(null);
+        setLoading(false);
+        setSendError(t('chat.openChatError'));
+      });
+
+    return () => unsub();
+  }, [member.id, myUid, myName, member.name]);
 
   useEffect(() => {
     if (!messages.length) return;
     scrollRef.current?.scrollToEnd({ animated: true });
   }, [messages.length]);
 
-  const send = () => {
+  const send = async () => {
     const text = draft.trim();
-    if (!text) return;
-    onSendMessage(text);
+
+    if (!text || !myUid) return;
+
+    if (!convId) {
+      setSendError(t('chat.chatLoadingError'));
+      return;
+    }
+
+    setSendError('');
+    const previousDraft = draft;
     setDraft('');
+
+    try {
+      await sendMessage(convId, myUid, text);
+    } catch {
+      setDraft(previousDraft);
+      setSendError(t('chat.sendMessageError'));
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
@@ -34,11 +111,36 @@ export default function ChatScreen({ member, messages, onSendMessage, onBack }) 
         >
           <Text style={styles.backIcon}>←</Text>
         </Pressable>
-        <View style={styles.headerInfo}>
+        <Pressable
+          style={styles.headerInfo}
+          onPress={onOpenMember ? () => onOpenMember(member.id) : undefined}
+        >
           <Text style={styles.name}>{member.name}</Text>
-          <Text style={styles.role}>{member.role}</Text>
-        </View>
+          <Text style={styles.role}>{member.role ?? ''}</Text>
+        </Pressable>
+        <Pressable hitSlop={8} onPress={() => setShowMenu(true)}>
+          <Text style={styles.menuDots}>•••</Text>
+        </Pressable>
       </View>
+
+      <MemberOptionsMenu
+        visible={showMenu}
+        onClose={() => setShowMenu(false)}
+        isBlocked={isBlocked}
+        onBlock={() => {
+          setShowMenu(false);
+          onBlock?.();
+          onBack?.();
+        }}
+        onUnblock={() => {
+          setShowMenu(false);
+          onUnblock?.();
+        }}
+        onReport={() => {
+          setShowMenu(false);
+          onReport?.();
+        }}
+      />
 
       <ScrollView
         ref={scrollRef}
@@ -47,44 +149,39 @@ export default function ChatScreen({ member, messages, onSendMessage, onBack }) 
         showsVerticalScrollIndicator={false}
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
       >
-        {messages.length === 0 ? (
-          <Text style={styles.emptyHint}>Напишите первое сообщение</Text>
+        {loading ? (
+          <ActivityIndicator style={{ marginTop: 40 }} color="#EA580C" />
+        ) : messages.length === 0 ? (
+          <Text style={styles.emptyHint}>{t('chat.writeFirstMessage')}</Text>
         ) : (
-          messages.map((msg) => (
-            <View
-              key={msg.id}
-              style={[
-                styles.messageWrap,
-                msg.from === 'me' ? styles.messageWrapMe : styles.messageWrapThem,
-              ]}
-            >
+          messages.map((msg) => {
+            const isMe = msg.fromUid === myUid;
+            return (
               <View
+                key={msg.id}
                 style={[
-                  styles.bubble,
-                  msg.from === 'me' ? styles.bubbleMe : styles.bubbleThem,
+                  styles.messageWrap,
+                  isMe ? styles.messageWrapMe : styles.messageWrapThem,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.bubbleText,
-                    msg.from === 'me' && styles.bubbleTextMe,
-                  ]}
-                >
-                  {msg.text}
-                </Text>
+                <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
+                  <Text style={[styles.bubbleText, isMe && styles.bubbleTextMe]}>
+                    {msg.text}
+                  </Text>
+                </View>
+                <Text style={styles.messageTime}>{formatTime(msg.createdAt)}</Text>
               </View>
-              {msg.time ? (
-                <Text style={styles.messageTime}>{formatChatTime(msg.time)}</Text>
-              ) : null}
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
 
-      <View style={styles.inputRow}>
+      {sendError ? <Text style={styles.sendError}>{sendError}</Text> : null}
+
+      <View style={[styles.inputRow, { paddingBottom: 12 + insets.bottom }]}>
         <TextInput
           style={styles.input}
-          placeholder="Сообщение..."
+          placeholder={t('chat.messagePlaceholder')}
           placeholderTextColor="#94A3B8"
           value={draft}
           onChangeText={setDraft}
@@ -117,28 +214,17 @@ const styles = StyleSheet.create({
   backPressed: { opacity: 0.6 },
   backIcon: { fontSize: 22, color: '#EA580C' },
   headerInfo: { flex: 1 },
+  menuDots: { fontSize: 18, color: '#64748B', letterSpacing: 1, padding: 8 },
   name: { fontSize: 17, fontWeight: '600', color: '#1E293B' },
   role: { fontSize: 13, color: '#94A3B8' },
   messages: { flex: 1 },
   messagesContent: { padding: 16, gap: 4 },
-  emptyHint: {
-    textAlign: 'center',
-    color: '#94A3B8',
-    fontSize: 15,
-    marginTop: 40,
-  },
+  emptyHint: { textAlign: 'center', color: '#94A3B8', fontSize: 15, marginTop: 40 },
   messageWrap: { marginBottom: 10, maxWidth: '82%' },
   messageWrapMe: { alignSelf: 'flex-end', alignItems: 'flex-end' },
   messageWrapThem: { alignSelf: 'flex-start', alignItems: 'flex-start' },
-  bubble: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
-  },
-  bubbleMe: {
-    backgroundColor: '#EA580C',
-    borderBottomRightRadius: 4,
-  },
+  bubble: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18 },
+  bubbleMe: { backgroundColor: '#EA580C', borderBottomRightRadius: 4 },
   bubbleThem: {
     backgroundColor: '#FFFFFF',
     borderBottomLeftRadius: 4,
@@ -150,12 +236,7 @@ const styles = StyleSheet.create({
   },
   bubbleText: { fontSize: 15, lineHeight: 20, color: '#1E293B' },
   bubbleTextMe: { color: '#FFFFFF' },
-  messageTime: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginTop: 4,
-    marginHorizontal: 4,
-  },
+  messageTime: { fontSize: 11, color: '#94A3B8', marginTop: 4, marginHorizontal: 4 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -185,4 +266,10 @@ const styles = StyleSheet.create({
   },
   sendPressed: { opacity: 0.85 },
   sendIcon: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
+  sendError: {
+    color: '#EF4444',
+    fontSize: 13,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
 });

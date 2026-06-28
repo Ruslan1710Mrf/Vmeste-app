@@ -1,16 +1,37 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AiTabIcon from './icons/AiTabIcon';
+import { useTheme } from '../lib/ThemeContext';
+import { useI18n } from '../lib/i18n';
+
+const TAB_ACTIVE_COLOR = '#22C55E';
 
 const TABS = [
-  { id: 'home', label: 'Главная', emoji: '🏠' },
-  { id: 'jobs', label: 'Работа', emoji: '💼' },
-  { id: 'immigration', label: 'Иммиграция', emoji: '🌍' },
-  { id: 'networking', label: 'Нетворкинг', emoji: '🤝' },
-  { id: 'profile', label: 'Профиль', emoji: '👤' },
+  { id: 'home', labelKey: 'tabBar.home', emoji: '🏠' },
+  { id: 'jobs', labelKey: 'tabBar.jobs', emoji: '💼' },
+  { id: 'resources', labelKey: 'tabBar.resources', emoji: '📚' },
+  { id: 'immigration', labelKey: 'tabBar.immigration', emoji: '🌍' },
+  { id: 'ai', labelKey: 'tabBar.ai', icon: 'ai' },
+  { id: 'networking', labelKey: 'tabBar.networking', emoji: '🤝' },
+  { id: 'profile', labelKey: 'tabBar.profile', emoji: '👤' },
 ];
 
 export default function TabBar({ active, onChange }) {
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const { t } = useI18n();
+
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBarBorder,
+          paddingBottom: 12 + (insets.bottom ?? 0),
+        },
+      ]}
+    >
       {TABS.map((tab) => {
         const isActive = active === tab.id;
         return (
@@ -18,15 +39,29 @@ export default function TabBar({ active, onChange }) {
             key={tab.id}
             style={({ pressed }) => [
               styles.tab,
-              isActive && styles.tabActive,
               pressed && styles.tabPressed,
             ]}
             onPress={() => onChange(tab.id)}
           >
-            <Text style={styles.emoji}>{tab.emoji}</Text>
-            <Text style={[styles.label, isActive && styles.labelActive]}>
-              {tab.label}
+            {tab.icon === 'ai' ? (
+              <View style={styles.iconWrap}>
+                <AiTabIcon active={isActive} inactiveColor={colors.tabInactive} />
+              </View>
+            ) : (
+              <Text style={styles.emoji}>{tab.emoji}</Text>
+            )}
+            <Text
+              style={[
+                styles.label,
+                { color: colors.tabInactive },
+                isActive && { color: TAB_ACTIVE_COLOR, fontWeight: '600' },
+              ]}
+            >
+              {t(tab.labelKey)}
             </Text>
+            {isActive ? (
+              <View style={[styles.activeDot, { backgroundColor: TAB_ACTIVE_COLOR }]} />
+            ) : null}
           </Pressable>
         );
       })}
@@ -37,29 +72,25 @@ export default function TabBar({ active, onChange }) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 8,
     paddingBottom: 12,
     paddingHorizontal: 4,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 8,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 6,
-    borderRadius: 12,
-  },
-  tabActive: {
-    backgroundColor: '#F1F5F9',
+    position: 'relative',
   },
   tabPressed: {
     opacity: 0.7,
+  },
+  iconWrap: {
+    height: 22,
+    marginBottom: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emoji: {
     fontSize: 20,
@@ -68,10 +99,12 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 10,
     fontWeight: '500',
-    color: '#94A3B8',
   },
-  labelActive: {
-    color: '#1E293B',
-    fontWeight: '600',
+  activeDot: {
+    position: 'absolute',
+    top: 0,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
 });

@@ -5,8 +5,10 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useI18n } from '../lib/i18n';
 
 export default function ImmigrationGuideScreen({ section, item, onBack }) {
+  const { t } = useI18n();
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -15,7 +17,7 @@ export default function ImmigrationGuideScreen({ section, item, onBack }) {
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Иммиграция</Text>
+          <Text style={styles.backLabel}>{t('immigrationGuide.backLabel')}</Text>
         </Pressable>
       </View>
 
@@ -30,7 +32,7 @@ export default function ImmigrationGuideScreen({ section, item, onBack }) {
 
         {item.steps?.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Пошагово</Text>
+            <Text style={styles.sectionTitle}>{t('immigrationGuide.stepByStep')}</Text>
             {item.steps.map((step, i) => (
               <View key={step} style={styles.stepRow}>
                 <View style={[styles.stepNum, { backgroundColor: `${section.color}18` }]}>
@@ -44,7 +46,7 @@ export default function ImmigrationGuideScreen({ section, item, onBack }) {
 
         {item.tip && (
           <View style={[styles.tipBox, { borderLeftColor: section.color }]}>
-            <Text style={styles.tipLabel}>💡 Совет</Text>
+            <Text style={styles.tipLabel}>{t('immigrationGuide.tipLabel')}</Text>
             <Text style={styles.tipText}>{item.tip}</Text>
           </View>
         )}

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
+  Image,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -9,43 +11,83 @@ import {
   View,
 } from 'react-native';
 import { JOBS } from '../data/jobs';
+import { useI18n } from '../lib/i18n';
 
-const TYPE_FILTERS = [
-  { id: 'all', label: 'Все типы', test: () => true },
-  { id: 'full', label: 'Полная занятость', test: (type) => type === 'Полная занятость' },
-  { id: 'flex', label: 'Гибкий график', test: (type) => type === 'Гибкий график' },
+const JOB_APPS = [
+  {
+    id: 'flagma',
+    name: 'Flagma.Job',
+    url: 'https://flagma.com/vacancies/',
+    icon: 'https://www.google.com/s2/favicons?domain=flagma.com&sz=128',
+    bg: '#FF6B2C',
+    fallback: 'FJ',
+  },
+  {
+    id: 'indeed',
+    name: 'Indeed Jobs',
+    url: 'https://www.indeed.com/',
+    icon: 'https://www.google.com/s2/favicons?domain=indeed.com&sz=128',
+    bg: '#2557A7',
+    fallback: 'in',
+  },
+  {
+    id: 'bazar',
+    name: 'Bazar',
+    url: 'https://www.bazar.club/',
+    icon: 'https://www.google.com/s2/favicons?domain=bazar.club&sz=128',
+    bg: '#7C3AED',
+    fallback: 'B',
+  },
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    url: 'https://www.linkedin.com/jobs/',
+    icon: 'https://www.google.com/s2/favicons?domain=linkedin.com&sz=128',
+    bg: '#0A66C2',
+    fallback: 'in',
+  },
 ];
 
-const CITY_FILTERS = [
-  { id: 'all', label: 'Все', test: () => true },
-  {
-    id: 'ny',
-    label: 'Нью-Йорк',
-    test: (city) => /NY|Нью-Йорк|Brighton/i.test(city),
-  },
-  {
-    id: 'ca',
-    label: 'Калифорния',
-    test: (city) => /CA|Менло|Лос-Анджелес/i.test(city),
-  },
-  {
-    id: 'tx',
-    label: 'Техас',
-    test: (city) => /TX|Остин/i.test(city),
-  },
-  {
-    id: 'other',
-    label: 'Другие',
-    test: (city) =>
-      !/NY|Нью-Йорк|Brighton|CA|Менло|Лос-Анджелес|TX|Остин/i.test(city),
-  },
-];
+function JobAppIcon({ app }) {
+  const [iconFailed, setIconFailed] = useState(false);
+
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.appItem, pressed && styles.appItemPressed]}
+      onPress={() => Linking.openURL(app.url)}
+    >
+      <View style={styles.appIcon}>
+        {!iconFailed ? (
+          <Image
+            source={{ uri: app.icon }}
+            style={styles.appIconImage}
+            resizeMode="cover"
+            onError={() => setIconFailed(true)}
+          />
+        ) : (
+          <Text style={[styles.appIconFallback, { color: app.bg }]}>{app.fallback}</Text>
+        )}
+      </View>
+      <Text style={styles.appName} numberOfLines={2}>
+        {app.name}
+      </Text>
+    </Pressable>
+  );
+}
 
 function JobCard({ job, onPress, isSaved, onToggleSave }) {
+  const handleOpen = () => {
+    if (job.applyUrl) {
+      Linking.openURL(job.applyUrl).catch(() => {});
+      return;
+    }
+    onPress(job.id);
+  };
+
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-      onPress={() => onPress(job.id)}
+      onPress={handleOpen}
     >
       <View style={styles.cardHeader}>
         <View style={styles.cardBody}>
@@ -73,99 +115,52 @@ function JobCard({ job, onPress, isSaved, onToggleSave }) {
   );
 }
 
-export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onRefresh }) {
+export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onRefresh = () => {} }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
-  const [cityFilter, setCityFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [dataVersion, setDataVersion] = useState(0);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const cityFn = CITY_FILTERS.find((f) => f.id === cityFilter)?.test ?? (() => true);
-    const typeFn = TYPE_FILTERS.find((f) => f.id === typeFilter)?.test ?? (() => true);
-    return JOBS.filter((job) => {
-      if (!cityFn(job.city) || !typeFn(job.type)) return false;
-      if (!q) return true;
-      return (
+    if (!q) return JOBS;
+    return JOBS.filter(
+      (job) =>
         job.title.toLowerCase().includes(q) ||
         job.company.toLowerCase().includes(q) ||
-        job.city.toLowerCase().includes(q)
-      );
-    });
-  }, [query, cityFilter, typeFilter]);
+        job.city.toLowerCase().includes(q),
+    );
+  }, [query, dataVersion]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await onRefresh?.();
-    setRefreshing(false);
+    try {
+      await onRefresh();
+      setDataVersion((v) => v + 1);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>Работа</Text>
+        <Text style={styles.screenTitle}>{t('jobs.title')}</Text>
         <Text style={styles.screenSubtitle}>
-          {filtered.length} вакансий для нашего сообщества
+          {t('jobs.subtitle', { value: filtered.length })}
         </Text>
         <TextInput
           style={styles.searchInput}
-          placeholder="Поиск по должности, компании, городу..."
+          placeholder={t('jobs.searchPlaceholder')}
           placeholderTextColor="#94A3B8"
           value={query}
           onChangeText={setQuery}
         />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filtersScroll}
-          contentContainerStyle={styles.filters}
-        >
-          {CITY_FILTERS.map((filter) => (
-            <Pressable
-              key={filter.id}
-              style={[
-                styles.filterChip,
-                cityFilter === filter.id && styles.filterChipActive,
-              ]}
-              onPress={() => setCityFilter(filter.id)}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  cityFilter === filter.id && styles.filterTextActive,
-                ]}
-              >
-                {filter.label}
-              </Text>
-            </Pressable>
+        <View style={styles.appsRow}>
+          {JOB_APPS.map((app) => (
+            <JobAppIcon key={app.id} app={app} />
           ))}
-        </ScrollView>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filtersScroll}
-          contentContainerStyle={styles.filters}
-        >
-          {TYPE_FILTERS.map((filter) => (
-            <Pressable
-              key={filter.id}
-              style={[
-                styles.filterChip,
-                typeFilter === filter.id && styles.filterChipActive,
-              ]}
-              onPress={() => setTypeFilter(filter.id)}
-            >
-              <Text
-                style={[
-                  styles.filterText,
-                  typeFilter === filter.id && styles.filterTextActive,
-                ]}
-              >
-                {filter.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        </View>
       </View>
 
       <ScrollView
@@ -177,7 +172,7 @@ export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onR
         }
       >
         {filtered.length === 0 ? (
-          <Text style={styles.empty}>Ничего не найдено</Text>
+          <Text style={styles.empty}>{t('jobs.empty')}</Text>
         ) : (
           filtered.map((job) => (
             <JobCard
@@ -206,7 +201,7 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#EAB308',
     letterSpacing: -0.5,
     marginBottom: 6,
   },
@@ -229,32 +224,48 @@ const styles = StyleSheet.create({
     elevation: 1,
     marginBottom: 12,
   },
-  filtersScroll: {
-    marginHorizontal: -24,
+  appsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
   },
-  filters: {
-    paddingHorizontal: 24,
-    gap: 8,
+  appItem: {
+    alignItems: 'center',
+    width: 72,
   },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+  appItemPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
+  },
+  appIcon: {
+    width: 60,
+    height: 60,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    marginBottom: 6,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  filterChipActive: {
-    backgroundColor: '#2563EB',
-    borderColor: '#2563EB',
+  appIconImage: {
+    width: 60,
+    height: 60,
   },
-  filterText: {
-    fontSize: 13,
+  appIconFallback: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  appName: {
+    fontSize: 11,
     fontWeight: '500',
-    color: '#64748B',
-  },
-  filterTextActive: {
     color: '#FFFFFF',
+    textAlign: 'center',
+    lineHeight: 14,
   },
   list: {
     flex: 1,

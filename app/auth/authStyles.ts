@@ -68,10 +68,45 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: '#EF4444',
   },
+  passwordWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+  },
+  passwordWrapError: {
+    borderColor: '#EF4444',
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#1E293B',
+  },
+  passwordToggle: {
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  passwordToggleIcon: {
+    fontSize: 18,
+  },
   errorText: {
     fontSize: 13,
     color: '#EF4444',
     marginTop: -8,
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#64748B',
+    lineHeight: 20,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#059669',
+    lineHeight: 20,
   },
   successText: {
     fontSize: 14,
@@ -96,6 +131,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
+  secondaryButton: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  secondaryButtonPressed: {
+    opacity: 0.9,
+  },
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#2563EB',
+  },
   footer: {
     marginTop: 24,
     alignItems: 'center',
@@ -117,8 +166,27 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     marginTop: 16,
-    marginBottom: 8,
     fontWeight: '500',
+  },
+  googleButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  googleButtonPressed: {
+    backgroundColor: '#F8FAFC',
+  },
+  googleButtonDisabled: {
+    opacity: 0.6,
+  },
+  googleButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1E293B',
   },
   backLink: {
     alignSelf: 'flex-start',

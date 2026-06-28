@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -11,6 +11,8 @@ import { EVENTS } from '../data/events';
 import { IMMIGRATION_SECTIONS } from '../data/immigration';
 import { JOBS } from '../data/jobs';
 import { MEMBERS } from '../data/members';
+import { memberMatchesQuery, searchUsers } from '../lib/userProfileService';
+import { useI18n } from '../lib/i18n';
 
 function ResultSection({ title, count, children }) {
   if (!count) return null;
@@ -46,9 +48,46 @@ export default function GlobalSearchScreen({
   onOpenPost,
   onOpenGuide,
   onOpenMember,
+  authReady,
+  blockedUserIds = [],
 }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
+  const [firestoreMembers, setFirestoreMembers] = useState([]);
   const q = query.trim().toLowerCase();
+
+  useEffect(() => {
+    if (!authReady || !q) {
+      if (!q) setFirestoreMembers([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      searchUsers(q)
+        .then((members) => {
+          if (!cancelled) setFirestoreMembers(members);
+        })
+        .catch((error) => {
+          console.error('[GlobalSearch] searchUsers failed', error);
+        });
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [q, authReady]);
+
+  const allMembers = useMemo(() => {
+    const seen = new Set(firestoreMembers.map((member) => member.id));
+    const mockMatches = MEMBERS.filter(
+      (member) => !seen.has(member.id) && memberMatchesQuery(member, q),
+    );
+    return [...firestoreMembers, ...mockMatches].filter(
+      (member) => !blockedUserIds.includes(member.id),
+    );
+  }, [firestoreMembers, q, blockedUserIds]);
 
   const results = useMemo(() => {
     if (!q) return { jobs: [], events: [], posts: [], guides: [], members: [] };
@@ -86,15 +125,10 @@ export default function GlobalSearchScreen({
       });
     });
 
-    const members = MEMBERS.filter(
-      (m) =>
-        m.name.toLowerCase().includes(q) ||
-        m.role.toLowerCase().includes(q) ||
-        m.city.toLowerCase().includes(q),
-    );
+    const members = q ? allMembers : [];
 
     return { jobs, events, posts: matchedPosts, guides, members };
-  }, [q, posts]);
+  }, [q, posts, allMembers]);
 
   const total =
     results.jobs.length +
@@ -114,7 +148,7 @@ export default function GlobalSearchScreen({
         </Pressable>
         <TextInput
           style={styles.input}
-          placeholder="Поиск по всему приложению..."
+          placeholder={t('search.placeholder')}
           placeholderTextColor="#94A3B8"
           value={query}
           onChangeText={setQuery}
@@ -124,14 +158,14 @@ export default function GlobalSearchScreen({
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {q.length === 0 ? (
-          <Text style={styles.hint}>Введите запрос — вакансии, события, посты, визы, люди</Text>
+          <Text style={styles.hint}>{t('search.hint')}</Text>
         ) : total === 0 ? (
-          <Text style={styles.empty}>Ничего не найдено по запросу «{query}»</Text>
+          <Text style={styles.empty}>{t('search.noResults', { value: query })}</Text>
         ) : (
           <>
-            <Text style={styles.count}>{total} результатов</Text>
+            <Text style={styles.count}>{t('search.resultsCount', { value: total })}</Text>
 
-            <ResultSection title="Работа" count={results.jobs.length}>
+            <ResultSection title={t('search.jobs')} count={results.jobs.length}>
               {results.jobs.map((job) => (
                 <ResultRow
                   key={job.id}
@@ -143,7 +177,7 @@ export default function GlobalSearchScreen({
               ))}
             </ResultSection>
 
-            <ResultSection title="События" count={results.events.length}>
+            <ResultSection title={t('search.events')} count={results.events.length}>
               {results.events.map((event) => (
                 <ResultRow
                   key={event.id}
@@ -155,7 +189,7 @@ export default function GlobalSearchScreen({
               ))}
             </ResultSection>
 
-            <ResultSection title="Посты" count={results.posts.length}>
+            <ResultSection title={t('search.posts')} count={results.posts.length}>
               {results.posts.map((post) => (
                 <ResultRow
                   key={post.id}
@@ -167,7 +201,7 @@ export default function GlobalSearchScreen({
               ))}
             </ResultSection>
 
-            <ResultSection title="Иммиграция" count={results.guides.length}>
+            <ResultSection title={t('search.immigration')} count={results.guides.length}>
               {results.guides.map(({ section, item }) => (
                 <ResultRow
                   key={`${section.id}-${item.title}`}
@@ -179,7 +213,7 @@ export default function GlobalSearchScreen({
               ))}
             </ResultSection>
 
-            <ResultSection title="Люди" count={results.members.length}>
+            <ResultSection title={t('search.people')} count={results.members.length}>
               {results.members.map((member) => (
                 <ResultRow
                   key={member.id}

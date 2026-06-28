@@ -1,4 +1,15 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(git diff *)",
+      "Bash(cat /Users/rus/sng-community2/CLAUDE.md; echo \"---\"; cat /Users/rus/sng-community2/AGENTS.md; echo \"---local---\"; find /Users/rus/sng-community2 -iname \"CLAUDE.local.md\" -not -path \"*/node_modules/*\"; echo \"---home---\"; cat ~/.claude/CLAUDE.md 2>/dev/null)",
+      "Read(//Users/rus/.claude/**)",
+      "Bash(npx tsc *)",
+      "Bash(firebase deploy *)",
+      "Bash(eas build *)",
+      "Bash(npx eslint *)"
+    ]
+  },
   "enabledPlugins": {
     "expo@claude-plugins-official": true
   }

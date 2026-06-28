@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import {
+  Image,
   Linking,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,16 +11,80 @@ import {
   View,
 } from 'react-native';
 import { IMMIGRATION_SECTIONS } from '../data/immigration';
+import { useI18n } from '../lib/i18n';
+
+const IMMIGRATION_APPS = [
+  {
+    id: 'uscis',
+    name: 'USCIS',
+    url: 'https://www.uscis.gov/',
+    icon: 'https://www.google.com/s2/favicons?domain=uscis.gov&sz=128',
+    bg: '#003366',
+    fallback: 'US',
+  },
+  {
+    id: 'boundless',
+    name: 'Boundless',
+    url: 'https://www.boundless.com/',
+    icon: 'https://www.google.com/s2/favicons?domain=boundless.com&sz=128',
+    bg: '#00A896',
+    fallback: 'B',
+  },
+  {
+    id: 'citizenpath',
+    name: 'CitizenPath',
+    url: 'https://citizenpath.com/',
+    icon: 'https://www.google.com/s2/favicons?domain=citizenpath.com&sz=128',
+    bg: '#2E7D32',
+    fallback: 'CP',
+  },
+  {
+    id: 'nolo',
+    name: 'Nolo',
+    url: 'https://www.nolo.com/',
+    icon: 'https://www.google.com/s2/favicons?domain=nolo.com&sz=128',
+    bg: '#E65100',
+    fallback: 'N',
+  },
+];
+
+function ImmigrationAppIcon({ app }) {
+  const [iconFailed, setIconFailed] = useState(false);
+
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.appItem, pressed && styles.appItemPressed]}
+      onPress={() => Linking.openURL(app.url)}
+    >
+      <View style={[styles.appIcon, { backgroundColor: app.bg }]}>
+        {!iconFailed ? (
+          <Image
+            source={{ uri: app.icon }}
+            style={styles.appIconImage}
+            resizeMode="cover"
+            onError={() => setIconFailed(true)}
+          />
+        ) : (
+          <Text style={styles.appIconFallback}>{app.fallback}</Text>
+        )}
+      </View>
+      <Text style={styles.appName} numberOfLines={2}>
+        {app.name}
+      </Text>
+    </Pressable>
+  );
+}
 
 function ResourceItem({ item, isLink, accentColor, onSelectGuide }) {
+  const { t } = useI18n();
   const content = (
     <>
       <Text style={styles.itemTitle}>{item.title}</Text>
       <Text style={styles.itemDescription}>{item.description}</Text>
       {isLink ? (
-        <Text style={[styles.linkHint, { color: accentColor }]}>Открыть →</Text>
+        <Text style={[styles.linkHint, { color: accentColor }]}>{t('immigration.openLink')}</Text>
       ) : (
-        <Text style={[styles.linkHint, { color: accentColor }]}>Подробнее →</Text>
+        <Text style={[styles.linkHint, { color: accentColor }]}>{t('immigration.readMore')}</Text>
       )}
     </>
   );
@@ -72,8 +138,19 @@ function Section({ section, onSelectGuide }) {
   );
 }
 
-export default function ImmigrationScreen({ onSelectGuide }) {
+export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const filteredSections = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -91,26 +168,34 @@ export default function ImmigrationScreen({ onSelectGuide }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>Иммиграция</Text>
+        <Text style={styles.screenTitle}>{t('immigration.title')}</Text>
         <Text style={styles.screenSubtitle}>
-          Гид по иммиграции в США для соотечественников из СНГ
+          {t('immigration.subtitle')}
         </Text>
         <TextInput
           style={styles.searchInput}
-          placeholder="Поиск по визам, грин карте, гражданству..."
+          placeholder={t('immigration.searchPlaceholder')}
           placeholderTextColor="#94A3B8"
           value={query}
           onChangeText={setQuery}
         />
+        <View style={styles.appsRow}>
+          {IMMIGRATION_APPS.map((app) => (
+            <ImmigrationAppIcon key={app.id} app={app} />
+          ))}
+        </View>
       </View>
 
       <ScrollView
         style={styles.list}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       >
         {filteredSections.length === 0 ? (
-          <Text style={styles.empty}>Ничего не найдено</Text>
+          <Text style={styles.empty}>{t('immigration.noResults')}</Text>
         ) : (
           filteredSections.map((section) => (
             <Section key={section.id} section={section} onSelectGuide={onSelectGuide} />
@@ -127,7 +212,7 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: 32,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#22C55E',
     letterSpacing: -0.5,
     marginBottom: 6,
   },
@@ -149,6 +234,50 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 1,
+    marginBottom: 12,
+  },
+  appsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  appItem: {
+    alignItems: 'center',
+    width: 72,
+  },
+  appItemPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
+  },
+  appIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 13,
+    marginBottom: 6,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  appIconImage: {
+    width: 60,
+    height: 60,
+  },
+  appIconFallback: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  appName: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    lineHeight: 14,
   },
   empty: { textAlign: 'center', fontSize: 15, color: '#94A3B8', marginTop: 32 },
   list: { flex: 1 },
@@ -163,7 +292,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sectionEmoji: { fontSize: 18 },
-  sectionTitle: { fontSize: 20, fontWeight: '600', color: '#1E293B' },
+  sectionTitle: { fontSize: 20, fontWeight: '600', color: '#22C55E' },
   sectionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,

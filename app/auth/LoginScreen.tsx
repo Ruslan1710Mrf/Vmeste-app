@@ -11,19 +11,25 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { mapAuthError, signInWithEmail } from '../../lib/authService';
+import { statusCodes } from '@react-native-google-signin/google-signin';
+import { mapAuthError, signInWithEmail, signInWithGoogle } from '../../lib/authService';
+import { useI18n } from '../../lib/i18n';
 import styles from './authStyles';
+import PasswordField from './PasswordField';
 
 export default function LoginScreen() {
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const busy = loading || googleLoading;
 
   const handleLogin = async () => {
     setError('');
     if (!email.trim() || !password) {
-      setError('Заполните email и пароль');
+      setError(t('auth.errors.fillEmailPassword'));
       return;
     }
     setLoading(true);
@@ -32,14 +38,34 @@ export default function LoginScreen() {
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string };
       if (error.code?.startsWith('auth/')) {
-        setError(mapAuthError(error.code));
+        setError(t(mapAuthError(error.code)));
       } else if (error.message) {
         setError(error.message);
       } else {
-        setError('Произошла ошибка. Попробуйте снова');
+        setError(t('auth.errors.generic'));
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) return;
+      if (error.code?.startsWith('auth/')) {
+        setError(t(mapAuthError(error.code)));
+      } else if (error.message) {
+        setError(error.message);
+      } else {
+        setError(t('auth.errors.googleGeneric'));
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -56,17 +82,17 @@ export default function LoginScreen() {
         >
           <Text style={styles.brand}>Vmeste</Text>
           <Text style={styles.tagline}>
-            Сообщество для соотечественников в США
+            {t('auth.tagline.login')}
           </Text>
 
-          <Text style={styles.title}>Вход</Text>
+          <Text style={styles.title}>{t('auth.login.title')}</Text>
           <Text style={styles.subtitle}>
-            Войдите — мы загрузим ваш профиль из базы данных
+            {t('auth.login.subtitle')}
           </Text>
 
           <View style={styles.card}>
             <View>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('auth.emailLabel')}</Text>
               <TextInput
                 style={[styles.input, error ? styles.inputError : null]}
                 placeholder="you@example.com"
@@ -80,53 +106,69 @@ export default function LoginScreen() {
               />
             </View>
 
-            <View>
-              <Text style={styles.label}>Пароль</Text>
-              <TextInput
-                style={[styles.input, error ? styles.inputError : null]}
-                placeholder="••••••••"
-                placeholderTextColor="#94A3B8"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                textContentType="password"
-              />
-            </View>
+            <PasswordField
+              label={t('auth.passwordLabel')}
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              hasError={Boolean(error)}
+            />
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <Pressable
               style={({ pressed }) => [
                 styles.primaryButton,
-                loading && styles.primaryButtonDisabled,
-                pressed && !loading && styles.primaryButtonPressed,
+                busy && styles.primaryButtonDisabled,
+                pressed && !busy && styles.primaryButtonPressed,
               ]}
               onPress={handleLogin}
-              disabled={loading}
+              disabled={busy}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.primaryButtonText}>Войти</Text>
+                <Text style={styles.primaryButtonText}>{t('auth.login.submit')}</Text>
               )}
             </Pressable>
 
-            <Link href="/auth/phone" asChild>
-              <Pressable style={({ pressed }) => pressed && styles.pressed}>
-                <Text style={styles.phoneButton}>📱 Войти по номеру телефона</Text>
-              </Pressable>
-            </Link>
+            {Platform.OS === 'web' ? (
+              <Link href="/auth/phone" asChild>
+                <Pressable
+                  style={({ pressed }) => pressed && styles.pressed}
+                  disabled={busy}
+                >
+                  <Text style={styles.phoneButton}>{t('auth.login.phoneButton')}</Text>
+                </Pressable>
+              </Link>
+            ) : null}
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.googleButton,
+                busy && styles.googleButtonDisabled,
+                pressed && !busy && styles.googleButtonPressed,
+              ]}
+              onPress={handleGoogleLogin}
+              disabled={busy}
+            >
+              {googleLoading ? (
+                <ActivityIndicator color="#1E293B" />
+              ) : (
+                <Text style={styles.googleButtonText}>{t('auth.login.googleButton')}</Text>
+              )}
+            </Pressable>
           </View>
 
           <View style={styles.footer}>
             <Link href="/auth/forgot-password" asChild>
               <Pressable style={({ pressed }) => pressed && styles.linkPressed}>
-                <Text style={styles.linkText}>Забыли пароль?</Text>
+                <Text style={styles.linkText}>{t('auth.login.forgotPassword')}</Text>
               </Pressable>
             </Link>
             <Link href="/auth/register" asChild>
               <Pressable style={({ pressed }) => pressed && styles.linkPressed}>
-                <Text style={styles.linkText}>Нет аккаунта? Зарегистрироваться</Text>
+                <Text style={styles.linkText}>{t('auth.login.noAccount')}</Text>
               </Pressable>
             </Link>
           </View>

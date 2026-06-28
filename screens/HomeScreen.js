@@ -12,15 +12,17 @@ import { getMemberByAuthorName } from '../data/members';
 import { getPostShareUrl } from '../lib/sharePost';
 import ShareSheet from '../components/ShareSheet';
 import { useTheme } from '../lib/ThemeContext';
+import { useI18n } from '../lib/i18n';
 import { getFirstName } from '../lib/profileUtils';
 import { fetchRecentUsers } from '../lib/userProfileService';
 
 const STORY_COLORS = ['#F58529', '#DD2A7B', '#8134AF', '#405DE6', '#5851DB'];
 
 function TopHeader({ styles, insets, onOpenSearch, onOpenMessages, onOpenNotifications, unreadCount, messagesCount }) {
+  const { t } = useI18n();
   return (
     <View style={[styles.topBar, { paddingTop: 8 + (insets?.top ?? 0) }]}>
-      <Text style={styles.screenTitle}>Главная</Text>
+      <Text style={styles.screenTitle}>{t('home.title')}</Text>
       <View style={styles.topActions}>
         <Pressable style={styles.topAction} onPress={onOpenSearch}>
           <Text style={styles.topActionIcon}>🔍</Text>
@@ -47,6 +49,7 @@ function TopHeader({ styles, insets, onOpenSearch, onOpenMessages, onOpenNotific
 }
 
 function ComposerBar({ styles, initial, onOpenCreatePost, onOpenOwnProfile }) {
+  const { t } = useI18n();
   return (
     <View style={styles.composer}>
       <Pressable
@@ -62,7 +65,7 @@ function ComposerBar({ styles, initial, onOpenCreatePost, onOpenOwnProfile }) {
         onPress={onOpenCreatePost}
       >
         <View style={styles.composerInput}>
-          <Text style={styles.composerPlaceholder}>Что у вас нового?</Text>
+          <Text style={styles.composerPlaceholder}>{t('home.composerPlaceholder')}</Text>
         </View>
       </Pressable>
       <Pressable
@@ -76,7 +79,7 @@ function ComposerBar({ styles, initial, onOpenCreatePost, onOpenOwnProfile }) {
   );
 }
 
-function StoryBubble({ styles, name, initial, photoUri, isOwn, ringColor, onPress }) {
+function StoryBubble({ styles, name, initial, photoUri, isOwn, ringColor, onPress, onPressAdd }) {
   return (
     <Pressable style={({ pressed }) => [styles.storyItem, pressed && styles.pressed]} onPress={onPress}>
       <View style={[styles.storyRing, { borderColor: ringColor }]}>
@@ -86,7 +89,11 @@ function StoryBubble({ styles, name, initial, photoUri, isOwn, ringColor, onPres
           ) : (
             <Text style={styles.storyAvatarText}>{initial}</Text>
           )}
-          {isOwn ? <View style={styles.storyAdd}><Text style={styles.storyAddText}>＋</Text></View> : null}
+          {isOwn ? (
+            <Pressable style={styles.storyAdd} onPress={onPressAdd} hitSlop={6}>
+              <Text style={styles.storyAddText}>＋</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
       <Text style={styles.storyName} numberOfLines={1}>{name}</Text>
@@ -101,7 +108,9 @@ function StoriesRow({
   userId,
   onOpenMember,
   onOpenCreatePost,
+  onOpenOwnProfile,
 }) {
+  const { t } = useI18n();
   const [storyUsers, setStoryUsers] = useState([]);
 
   useEffect(() => {
@@ -127,7 +136,7 @@ function StoriesRow({
   const stories = [
     {
       id: 'own',
-      name: 'История',
+      name: t('home.ownStoryLabel'),
       initial: profileInitial,
       photoUri: profile.photoUri ?? null,
       isOwn: true,
@@ -159,11 +168,12 @@ function StoriesRow({
           ringColor={story.ringColor ?? '#3897F0'}
           onPress={() => {
             if (story.isOwn) {
-              onOpenCreatePost?.();
+              onOpenOwnProfile?.();
               return;
             }
             onOpenMember(story.id);
           }}
+          onPressAdd={story.isOwn ? onOpenCreatePost : undefined}
         />
       ))}
     </ScrollView>
@@ -180,6 +190,7 @@ function FeedPost({
   onOpenAuthor,
   onShare,
 }) {
+  const { t } = useI18n();
   const replyCount = post.replies?.length ?? 0;
   const likes = post.likes + (isLiked ? 1 : 0);
 
@@ -223,7 +234,7 @@ function FeedPost({
           style={({ pressed }) => [styles.postAction, pressed && styles.pressed]}
           onPress={() => onToggleLike(post.id)}
         >
-          <Text style={styles.postActionText}>{isLiked ? '❤️' : '🤍'} Нравится</Text>
+          <Text style={styles.postActionText}>{isLiked ? '❤️' : '🤍'} {t('home.like')}</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.postAction, pressed && styles.pressed]}
@@ -235,7 +246,7 @@ function FeedPost({
           style={({ pressed }) => [styles.postAction, pressed && styles.pressed]}
           onPress={() => onShare(post)}
         >
-          <Text style={styles.postActionText}>↗ Поделиться</Text>
+          <Text style={styles.postActionText}>↗ {t('home.share')}</Text>
         </Pressable>
       </View>
     </View>
@@ -316,6 +327,7 @@ export default function HomeScreen({
           userId={userId}
           onOpenMember={onOpenMember}
           onOpenCreatePost={onOpenCreatePost}
+          onOpenOwnProfile={onOpenOwnProfile}
         />
 
         <View style={styles.feedDivider} />

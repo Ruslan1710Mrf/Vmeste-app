@@ -1,12 +1,36 @@
 import {
+  Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { useI18n } from '../lib/i18n';
 
 export default function EventDetailScreen({ event, onBack, isRegistered, onRegister }) {
+  const { t } = useI18n();
+  const openMap = () => {
+    const query = encodeURIComponent(event.venue || event.city || '');
+    const url = Platform.OS === 'ios'
+      ? `maps:0,0?q=${query}`
+      : `geo:0,0?q=${query}`;
+
+    Linking.canOpenURL(url)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(url);
+        }
+        const fallback = `https://www.google.com/maps/search/?api=1&query=${query}`;
+        return Linking.openURL(fallback);
+      })
+      .catch(() => {
+        const fallback = `https://www.google.com/maps/search/?api=1&query=${query}`;
+        Linking.openURL(fallback).catch(() => {});
+      });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -15,7 +39,7 @@ export default function EventDetailScreen({ event, onBack, isRegistered, onRegis
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Назад</Text>
+          <Text style={styles.backLabel}>{t('eventDetail.back')}</Text>
         </Pressable>
       </View>
 
@@ -27,29 +51,32 @@ export default function EventDetailScreen({ event, onBack, isRegistered, onRegis
           <Text style={styles.dateText}>{event.date}</Text>
         </View>
         <Text style={styles.title}>{event.title}</Text>
-        <Text style={styles.host}>Организатор: {event.host}</Text>
+        <Text style={styles.host}>{t('eventDetail.organizer', { value: event.host })}</Text>
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>📍 Город</Text>
+            <Text style={styles.infoLabel}>📍 {t('eventDetail.city')}</Text>
             <Text style={styles.infoValue}>{event.city}</Text>
           </View>
           <View style={styles.divider} />
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>🏢 Место</Text>
+          <Pressable
+            style={({ pressed }) => [styles.infoRow, pressed && styles.pressed]}
+            onPress={openMap}
+          >
+            <Text style={styles.infoLabel}>🏢 {t('eventDetail.venue')}</Text>
             <Text style={[styles.infoValue, styles.venue]}>{event.venue}</Text>
-          </View>
+          </Pressable>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>👥 Участники</Text>
-            <Text style={styles.infoValue}>{event.attendees} человек</Text>
+            <Text style={styles.infoLabel}>👥 {t('eventDetail.attendeesLabel')}</Text>
+            <Text style={styles.infoValue}>{t('eventDetail.attendeesValue', { value: event.attendees })}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>О событии</Text>
+        <Text style={styles.sectionTitle}>{t('eventDetail.about')}</Text>
         <Text style={styles.body}>{event.description}</Text>
 
-        <Text style={styles.sectionTitle}>Программа</Text>
+        <Text style={styles.sectionTitle}>{t('eventDetail.agenda')}</Text>
         <View style={styles.agenda}>
           {event.agenda.map((item) => (
             <View key={item} style={styles.agendaRow}>
@@ -61,14 +88,14 @@ export default function EventDetailScreen({ event, onBack, isRegistered, onRegis
 
         {isRegistered ? (
           <View style={styles.successBanner}>
-            <Text style={styles.successText}>✓ Вы зарегистрированы!</Text>
+            <Text style={styles.successText}>✓ {t('eventDetail.registered')}</Text>
           </View>
         ) : (
           <Pressable
             style={({ pressed }) => [styles.registerButton, pressed && styles.buttonPressed]}
             onPress={() => onRegister(event.id)}
           >
-            <Text style={styles.registerText}>Зарегистрироваться</Text>
+            <Text style={styles.registerText}>{t('eventDetail.register')}</Text>
           </Pressable>
         )}
       </ScrollView>

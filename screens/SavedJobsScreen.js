@@ -6,6 +6,7 @@ import {
   View,
 } from 'react-native';
 import { getJobById } from '../data/jobs';
+import { useI18n } from '../lib/i18n';
 
 function SavedJobCard({ job, onPress, onRemove }) {
   return (
@@ -38,6 +39,7 @@ function SavedJobCard({ job, onPress, onRemove }) {
 }
 
 export default function SavedJobsScreen({ savedJobIds, onBack, onSelectJob, onToggleSave }) {
+  const { t } = useI18n();
   const jobs = savedJobIds.map(getJobById).filter(Boolean);
 
   return (
@@ -48,11 +50,11 @@ export default function SavedJobsScreen({ savedJobIds, onBack, onSelectJob, onTo
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Профиль</Text>
+          <Text style={styles.backLabel}>{t('savedJobs.backLabel')}</Text>
         </Pressable>
-        <Text style={styles.screenTitle}>Сохранённое</Text>
+        <Text style={styles.screenTitle}>{t('savedJobs.title')}</Text>
         <Text style={styles.screenSubtitle}>
-          {jobs.length} сохранённых вакансий
+          {t('savedJobs.subtitle', { value: jobs.length })}
         </Text>
       </View>
 
@@ -63,9 +65,9 @@ export default function SavedJobsScreen({ savedJobIds, onBack, onSelectJob, onTo
         {jobs.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🔖</Text>
-            <Text style={styles.emptyTitle}>Пока пусто</Text>
+            <Text style={styles.emptyTitle}>{t('savedJobs.emptyTitle')}</Text>
             <Text style={styles.emptyText}>
-              Сохраняйте интересные вакансии, нажав на закладку
+              {t('savedJobs.emptyText')}
             </Text>
           </View>
         ) : (

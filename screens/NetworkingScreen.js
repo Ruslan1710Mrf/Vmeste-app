@@ -12,8 +12,10 @@ import {
 import { GROUPS } from '../data/groups';
 import { MEMBERS } from '../data/members';
 import { fetchNetworkUsers } from '../lib/userProfileService';
+import { useI18n } from '../lib/i18n';
 
 function EventCard({ event, onPress }) {
+  const { t } = useI18n();
   return (
     <Pressable
       style={({ pressed }) => [styles.eventCard, pressed && styles.cardPressed]}
@@ -25,13 +27,14 @@ function EventCard({ event, onPress }) {
       <Text style={styles.eventTitle}>{event.title}</Text>
       <View style={styles.eventMeta}>
         <Text style={styles.eventCity}>📍 {event.city}</Text>
-        <Text style={styles.eventAttendees}>{event.attendees} участников</Text>
+        <Text style={styles.eventAttendees}>{t('networking.attendees', { value: event.attendees })}</Text>
       </View>
     </Pressable>
   );
 }
 
 function GroupRow({ group }) {
+  const { t } = useI18n();
   return (
     <Pressable
       style={({ pressed }) => [styles.groupRow, pressed && styles.rowPressed]}
@@ -40,10 +43,10 @@ function GroupRow({ group }) {
       <View style={styles.groupInfo}>
         <Text style={styles.groupName}>{group.name}</Text>
         <Text style={styles.groupMeta}>
-          {group.members} участников · {group.platform}
+          {t('networking.membersCount', { value: group.members })} · {group.platform}
         </Text>
       </View>
-      <Text style={styles.joinButton}>Вступить</Text>
+      <Text style={styles.joinButton}>{t('networking.join')}</Text>
     </Pressable>
   );
 }
@@ -76,7 +79,9 @@ export default function NetworkingScreen({
   onCreateEvent,
   connectedIds,
   userId,
+  blockedUserIds = [],
 }) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [firestoreMembers, setFirestoreMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(true);
@@ -105,8 +110,10 @@ export default function NetworkingScreen({
   const allMembers = useMemo(() => {
     const seen = new Set(firestoreMembers.map((member) => member.id));
     const mockOnly = MEMBERS.filter((member) => !seen.has(member.id));
-    return [...firestoreMembers, ...mockOnly];
-  }, [firestoreMembers]);
+    return [...firestoreMembers, ...mockOnly].filter(
+      (member) => !blockedUserIds.includes(member.id),
+    );
+  }, [firestoreMembers, blockedUserIds]);
 
   const filteredEvents = useMemo(() => {
     if (!q) return events;
@@ -144,13 +151,13 @@ export default function NetworkingScreen({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>Нетворкинг</Text>
+        <Text style={styles.screenTitle}>{t('networking.title')}</Text>
         <Text style={styles.screenSubtitle}>
-          События, группы и знакомства в diaspora-сообществе
+          {t('networking.subtitle')}
         </Text>
         <TextInput
           style={styles.searchInput}
-          placeholder="Поиск событий, групп, людей..."
+          placeholder={t('networking.searchPlaceholder')}
           placeholderTextColor="#94A3B8"
           value={query}
           onChangeText={setQuery}
@@ -163,13 +170,13 @@ export default function NetworkingScreen({
         showsVerticalScrollIndicator={false}
       >
         {!hasResults && (
-          <Text style={styles.empty}>Ничего не найдено</Text>
+          <Text style={styles.empty}>{t('networking.noResults')}</Text>
         )}
 
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Ближайшие события</Text>
+          <Text style={styles.sectionTitle}>{t('networking.upcomingEvents')}</Text>
           <Pressable onPress={onCreateEvent}>
-            <Text style={styles.createEventLink}>＋ Создать</Text>
+            <Text style={styles.createEventLink}>＋ {t('networking.create')}</Text>
           </Pressable>
         </View>
         {filteredEvents.length > 0 && (
@@ -182,7 +189,7 @@ export default function NetworkingScreen({
 
         {filteredGroups.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Сообщества</Text>
+            <Text style={styles.sectionTitle}>{t('networking.communities')}</Text>
             <View style={styles.groupsCard}>
               {filteredGroups.map((group, index) => (
                 <View key={group.id}>
@@ -198,7 +205,7 @@ export default function NetworkingScreen({
           <ActivityIndicator style={{ marginTop: 16, marginBottom: 24 }} color="#7C3AED" />
         ) : filteredMembers.length > 0 ? (
           <>
-            <Text style={styles.sectionTitle}>Люди рядом с вами</Text>
+            <Text style={styles.sectionTitle}>{t('networking.peopleNearYou')}</Text>
             <View style={styles.membersList}>
               {filteredMembers.map((member) => (
                 <MemberCard

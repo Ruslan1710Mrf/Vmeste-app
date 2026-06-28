@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import {
+  Alert,
+  Linking,
   Pressable,
   ScrollView,
   Share,
@@ -7,17 +8,41 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useI18n } from '../lib/i18n';
+
+function getJobShareMessage(job) {
+  const lines = [job.title, job.company, `💰 ${job.salary}`];
+  if (job.applyUrl) {
+    lines.push(job.applyUrl);
+  }
+  return lines.join('\n');
+}
 
 export default function JobDetailScreen({ job, onBack, isSaved, onToggleSave }) {
-  const [applied, setApplied] = useState(false);
-
+  const { t } = useI18n();
   const handleShare = async () => {
     try {
-      await Share.share({
-        message: `${job.title}\n${job.company}\n📍 ${job.city}\n💰 ${job.salary}\n\n— Vmeste`,
-      });
+      await Share.share({ message: getJobShareMessage(job) });
     } catch {
       // user cancelled
+    }
+  };
+
+  const handleApply = async () => {
+    if (!job.applyUrl) {
+      Alert.alert(t('jobDetail.linkUnavailableTitle'), t('jobDetail.linkUnavailableMessage'));
+      return;
+    }
+
+    try {
+      const supported = await Linking.canOpenURL(job.applyUrl);
+      if (!supported) {
+        Alert.alert(t('jobDetail.linkOpenFailedTitle'), job.applyUrl);
+        return;
+      }
+      await Linking.openURL(job.applyUrl);
+    } catch {
+      Alert.alert(t('jobDetail.linkOpenFailedTitle'), t('jobDetail.tryAgainLater'));
     }
   };
 
@@ -29,7 +54,7 @@ export default function JobDetailScreen({ job, onBack, isSaved, onToggleSave }) 
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Назад</Text>
+          <Text style={styles.backLabel}>{t('jobDetail.back')}</Text>
         </Pressable>
         <View style={styles.headerActions}>
           <Pressable
@@ -64,20 +89,20 @@ export default function JobDetailScreen({ job, onBack, isSaved, onToggleSave }) 
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>📍 Город</Text>
+            <Text style={styles.infoLabel}>📍 {t('jobDetail.city')}</Text>
             <Text style={styles.infoValue}>{job.city}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>💰 Зарплата</Text>
+            <Text style={styles.infoLabel}>💰 {t('jobDetail.salary')}</Text>
             <Text style={[styles.infoValue, styles.salary]}>{job.salary}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Описание</Text>
+        <Text style={styles.sectionTitle}>{t('jobDetail.description')}</Text>
         <Text style={styles.body}>{job.description}</Text>
 
-        <Text style={styles.sectionTitle}>Требования</Text>
+        <Text style={styles.sectionTitle}>{t('jobDetail.requirements')}</Text>
         <View style={styles.requirements}>
           {job.requirements.map((req) => (
             <View key={req} style={styles.requirementRow}>
@@ -87,18 +112,12 @@ export default function JobDetailScreen({ job, onBack, isSaved, onToggleSave }) 
           ))}
         </View>
 
-        {applied ? (
-          <View style={styles.successBanner}>
-            <Text style={styles.successText}>✓ Отклик отправлен!</Text>
-          </View>
-        ) : (
-          <Pressable
-            style={({ pressed }) => [styles.applyButton, pressed && styles.applyPressed]}
-            onPress={() => setApplied(true)}
-          >
-            <Text style={styles.applyText}>Откликнуться</Text>
-          </Pressable>
-        )}
+        <Pressable
+          style={({ pressed }) => [styles.applyButton, pressed && styles.applyPressed]}
+          onPress={handleApply}
+        >
+          <Text style={styles.applyText}>{t('jobDetail.apply')}</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -262,16 +281,5 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
-  },
-  successBanner: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  successText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2563EB',
   },
 });

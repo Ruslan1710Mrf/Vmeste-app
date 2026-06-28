@@ -6,6 +6,7 @@ import {
   View,
 } from 'react-native';
 import { NOTIFICATIONS } from '../data/notifications';
+import { useI18n } from '../lib/i18n';
 
 function NotificationRow({ item, isRead, onPress }) {
   const unread = item.unread && !isRead;
@@ -30,6 +31,7 @@ function NotificationRow({ item, isRead, onPress }) {
 }
 
 export default function NotificationsScreen({ onBack, onAction, readIds, onMarkRead, onMarkAllRead }) {
+  const { t } = useI18n();
   const unreadCount = NOTIFICATIONS.filter(
     (n) => n.unread && !readIds.includes(n.id),
   ).length;
@@ -47,19 +49,19 @@ export default function NotificationsScreen({ onBack, onAction, readIds, onMarkR
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Профиль</Text>
+          <Text style={styles.backLabel}>{t('notifications.backLabel')}</Text>
         </Pressable>
         <View style={styles.titleRow}>
           <View style={styles.titleBlock}>
-            <Text style={styles.screenTitle}>Уведомления</Text>
-            <Text style={styles.screenSubtitle}>{unreadCount} непрочитанных</Text>
+            <Text style={styles.screenTitle}>{t('notifications.title')}</Text>
+            <Text style={styles.screenSubtitle}>{t('notifications.unreadCount', { value: unreadCount })}</Text>
           </View>
           {unreadCount > 0 && (
             <Pressable
               style={({ pressed }) => [styles.markAllButton, pressed && styles.backPressed]}
               onPress={onMarkAllRead}
             >
-              <Text style={styles.markAllText}>Прочитать все</Text>
+              <Text style={styles.markAllText}>{t('notifications.markAllRead')}</Text>
             </Pressable>
           )}
         </View>

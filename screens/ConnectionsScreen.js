@@ -1,11 +1,14 @@
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { getMemberById } from '../data/members';
+import { fetchUsersByIds } from '../lib/userProfileService';
+import { useI18n } from '../lib/i18n';
 
 function ConnectionRow({ member, onPress, onMessage }) {
   return (
@@ -37,7 +40,27 @@ export default function ConnectionsScreen({
   onOpenMember,
   onMessage,
 }) {
-  const connections = connectedIds.map(getMemberById).filter(Boolean);
+  const { t } = useI18n();
+  const [connections, setConnections] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetchUsersByIds(connectedIds)
+      .then((members) => {
+        if (!cancelled) setConnections(members);
+      })
+      .catch(() => {
+        if (!cancelled) setConnections([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [connectedIds]);
 
   return (
     <View style={styles.container}>
@@ -47,19 +70,21 @@ export default function ConnectionsScreen({
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Профиль</Text>
+          <Text style={styles.backLabel}>{t('connections.backLabel')}</Text>
         </Pressable>
-        <Text style={styles.screenTitle}>Мои связи</Text>
-        <Text style={styles.screenSubtitle}>{connections.length} человек</Text>
+        <Text style={styles.screenTitle}>{t('connections.title')}</Text>
+        <Text style={styles.screenSubtitle}>{t('connections.peopleCount', { value: connections.length })}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {connections.length === 0 ? (
+        {loading ? (
+          <ActivityIndicator style={{ marginTop: 40 }} color="#7C3AED" />
+        ) : connections.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🤝</Text>
-            <Text style={styles.emptyTitle}>Пока нет связей</Text>
+            <Text style={styles.emptyTitle}>{t('connections.emptyTitle')}</Text>
             <Text style={styles.emptyText}>
-              Добавляйте людей через раздел «Нетворкинг»
+              {t('connections.emptyText')}
             </Text>
           </View>
         ) : (

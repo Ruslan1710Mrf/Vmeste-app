@@ -8,17 +8,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useI18n } from '../lib/i18n';
 
-const INTEREST_OPTIONS = [
-  'IT',
-  'Иммиграция',
-  'Предпринимательство',
-  'Нетворкинг',
-  'Карьера',
-  'Жизнь в США',
+const INTEREST_OPTION_KEYS = [
+  { tag: 'IT', key: 'profileSetup.interests.it' },
+  { tag: 'Иммиграция', key: 'profileSetup.interests.immigration' },
+  { tag: 'Предпринимательство', key: 'profileSetup.interests.entrepreneurship' },
+  { tag: 'Нетворкинг', key: 'profileSetup.interests.networking' },
+  { tag: 'Карьера', key: 'profileSetup.interests.career' },
+  { tag: 'Жизнь в США', key: 'profileSetup.interests.lifeInUs' },
 ];
 
 export default function ProfileSetupSheet({ profile, visible, onComplete }) {
+  const { t } = useI18n();
   const [city, setCity] = useState(profile.city ?? '');
   const [interests, setInterests] = useState(profile.interests ?? []);
 
@@ -43,23 +45,23 @@ export default function ProfileSetupSheet({ profile, visible, onComplete }) {
       <View style={styles.overlay}>
         <View style={styles.sheet}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.title}>Добро пожаловать в Vmeste!</Text>
+            <Text style={styles.title}>{t('profileSetup.welcome')}</Text>
             <Text style={styles.subtitle}>
-              Расскажите немного о себе — так мы подберём полезные рекомендации
+              {t('profileSetup.subtitle')}
             </Text>
 
-            <Text style={styles.label}>Город в США</Text>
+            <Text style={styles.label}>{t('profileSetup.cityLabel')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Например: Бруклин, Нью-Йорк"
+              placeholder={t('profileSetup.cityPlaceholder')}
               placeholderTextColor="#94A3B8"
               value={city}
               onChangeText={setCity}
             />
 
-            <Text style={styles.label}>Интересы</Text>
+            <Text style={styles.label}>{t('profileSetup.interestsLabel')}</Text>
             <View style={styles.chips}>
-              {INTEREST_OPTIONS.map((tag) => {
+              {INTEREST_OPTION_KEYS.map(({ tag, key }) => {
                 const active = interests.includes(tag);
                 return (
                   <Pressable
@@ -68,7 +70,7 @@ export default function ProfileSetupSheet({ profile, visible, onComplete }) {
                     onPress={() => toggleInterest(tag)}
                   >
                     <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                      {tag}
+                      {t(key)}
                     </Text>
                   </Pressable>
                 );
@@ -84,7 +86,7 @@ export default function ProfileSetupSheet({ profile, visible, onComplete }) {
               onPress={handleSave}
               disabled={!city.trim()}
             >
-              <Text style={styles.buttonText}>Продолжить</Text>
+              <Text style={styles.buttonText}>{t('profileSetup.continueButton')}</Text>
             </Pressable>
           </ScrollView>
         </View>

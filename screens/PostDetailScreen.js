@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,8 +9,10 @@ import {
   View,
 } from 'react-native';
 import { getFirstName } from '../lib/profileUtils';
+import { useI18n } from '../lib/i18n';
 
 export default function PostDetailScreen({ post, profile, onBack, onAddReply }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState('');
   const replies = post.replies ?? [];
 
@@ -20,7 +23,7 @@ export default function PostDetailScreen({ post, profile, onBack, onAddReply }) 
       id: String(Date.now()),
       author: getFirstName(profile),
       text,
-      time: 'Только что',
+      time: t('postDetail.justNow'),
     });
     setDraft('');
   };
@@ -33,7 +36,7 @@ export default function PostDetailScreen({ post, profile, onBack, onAddReply }) 
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>Назад</Text>
+          <Text style={styles.backLabel}>{t('postDetail.back')}</Text>
         </Pressable>
       </View>
 
@@ -49,17 +52,20 @@ export default function PostDetailScreen({ post, profile, onBack, onAddReply }) 
             </View>
           </View>
           <Text style={styles.postContent}>{post.content}</Text>
+          {post.imageUri ? (
+            <Image source={{ uri: post.imageUri }} style={styles.postImage} resizeMode="cover" />
+          ) : null}
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryText}>{post.category}</Text>
           </View>
         </View>
 
         <Text style={styles.sectionTitle}>
-          Комментарии ({replies.length})
+          {t('postDetail.comments', { value: replies.length })}
         </Text>
 
         {replies.length === 0 ? (
-          <Text style={styles.empty}>Будьте первым — оставьте комментарий</Text>
+          <Text style={styles.empty}>{t('postDetail.beFirstComment')}</Text>
         ) : (
           replies.map((reply) => (
             <View key={reply.id} style={styles.reply}>
@@ -73,7 +79,7 @@ export default function PostDetailScreen({ post, profile, onBack, onAddReply }) 
         <View style={styles.compose}>
           <TextInput
             style={styles.composeInput}
-            placeholder="Написать комментарий..."
+            placeholder={t('postDetail.commentPlaceholder')}
             placeholderTextColor="#94A3B8"
             value={draft}
             onChangeText={setDraft}
@@ -88,7 +94,7 @@ export default function PostDetailScreen({ post, profile, onBack, onAddReply }) 
             onPress={handleReply}
             disabled={!draft.trim()}
           >
-            <Text style={styles.sendText}>Отправить</Text>
+            <Text style={styles.sendText}>{t('postDetail.send')}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -135,6 +141,13 @@ const styles = StyleSheet.create({
   author: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
   meta: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
   postContent: { fontSize: 16, lineHeight: 24, color: '#475569', marginBottom: 12 },
+  postImage: {
+    width: '100%',
+    height: 240,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: '#F1F5F9',
+  },
   categoryBadge: {
     alignSelf: 'flex-start',
     backgroundColor: '#F1F5F9',

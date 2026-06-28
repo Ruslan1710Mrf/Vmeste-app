@@ -4,7 +4,10 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { clearSignedOutFlag, shouldRequireLogin } from '../lib/authService';
 import { auth } from '../lib/firebase';
+import { ThemeProvider } from '../lib/ThemeContext';
+import { I18nProvider } from '../lib/i18n';
 
 export default function RootLayout() {
   const [initializing, setInitializing] = useState(true);
@@ -23,11 +26,30 @@ export default function RootLayout() {
   useEffect(() => {
     if (initializing) return;
 
-    const inAuthGroup = segments[0] === 'auth';
+    const segmentList = segments as string[];
+    const inAuthGroup = segmentList[0] === 'auth';
+    const onCheckEmail = segmentList[0] === 'auth' && segmentList[1] === 'check-email';
+    const needsEmailVerification =
+      user?.providerData.some((provider) => provider.providerId === 'password')
+      && !user.emailVerified;
 
-    if (!user && !inAuthGroup) {
-      router.replace('/auth/login');
-    } else if (user && inAuthGroup) {
+    if (!user) {
+      if (!inAuthGroup && shouldRequireLogin()) {
+        router.replace('/auth/login');
+      }
+      return;
+    }
+
+    clearSignedOutFlag();
+
+    if (needsEmailVerification) {
+      if (!onCheckEmail) {
+        router.replace('/auth/check-email');
+      }
+      return;
+    }
+
+    if (inAuthGroup) {
       router.replace('/(tabs)');
     }
   }, [user, segments, initializing, router]);
@@ -35,16 +57,24 @@ export default function RootLayout() {
   if (initializing) {
     return (
       <SafeAreaProvider>
-        <View style={styles.loading}>
-          <ActivityIndicator size="large" color="#2563EB" />
-        </View>
+        <ThemeProvider>
+          <I18nProvider>
+            <View style={styles.loading}>
+              <ActivityIndicator size="large" color="#2563EB" />
+            </View>
+          </I18nProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     );
   }
 
   return (
     <SafeAreaProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <ThemeProvider>
+        <I18nProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </I18nProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

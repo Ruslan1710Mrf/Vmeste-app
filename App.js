@@ -1,5 +1,5 @@
 import * as ExpoLinking from 'expo-linking';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Alert, BackHandler, Modal, Platform, StyleSheet, View } from 'react-native';
@@ -15,12 +15,15 @@ import { getMemberById, getMutualConnections } from './data/members';
 import { getPostById, POSTS } from './data/posts';
 import { DEFAULT_PROFILE } from './data/profile';
 import { updateDisplayName } from './lib/authService';
+import { blockUser, unblockUser, fetchBlockedByMe, fetchBlockedMe } from './lib/blockService';
+import { reportContent } from './lib/reportService';
 import { DEFAULT_SETTINGS } from './lib/chatUtils';
 import { createEvent, fetchEvents } from './lib/eventService';
 import { subscribeToConversations } from './lib/messageService';
 import { DEV_MODE_SKIP_AUTH } from './lib/devMode';
 import { auth } from './lib/firebase';
 import { useTheme } from './lib/ThemeContext';
+import { useI18n } from './lib/i18n';
 import {
   getFirstName,
   getProfileCityLabel,
@@ -82,17 +85,7 @@ import { CHECKLIST_ITEMS } from './data/checklist';
 import { NOTIFICATIONS } from './data/notifications';
 import { uploadPostImage, uploadProfilePhoto, uploadProfileCover } from './lib/postImageService';
 
-const TAB_BACK_LABELS = {
-  home: 'Главная',
-  jobs: 'Работа',
-  resources: 'Наша база',
-  immigration: 'Иммиграция',
-  ai: 'AI',
-  networking: 'Нетворкинг',
-  profile: 'Профиль',
-};
-
-const VALID_TABS = Object.keys(TAB_BACK_LABELS);
+const VALID_TABS = ['home', 'jobs', 'resources', 'immigration', 'ai', 'networking', 'profile'];
 
 const VALID_PROFILE_VIEWS = new Set([
   'saved',
@@ -118,6 +111,7 @@ function restoreProfileView(value) {
 
 function AppContent() {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const [tab, setTab] = useState('home');
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [selectedEventId, setSelectedEventId] = useState(null);
@@ -139,6 +133,8 @@ function AppContent() {
   const [feedCategory, setFeedCategory] = useState('Все');
   const [savedJobIds, setSavedJobIds] = useState([]);
   const [connectedIds, setConnectedIds] = useState([]);
+  const [blockedByMe, setBlockedByMe] = useState([]);
+  const [blockedMe, setBlockedMe] = useState([]);
   const [registeredEventIds, setRegisteredEventIds] = useState([]);
   const [readNotificationIds, setReadNotificationIds] = useState([]);
   const [checkedChecklistIds, setCheckedChecklistIds] = useState([]);
@@ -171,6 +167,60 @@ function AppContent() {
   const completeOnboarding = async () => {
     await saveOnboardingSeen();
     setShowOnboarding(false);
+  };
+
+  useEffect(() => {
+    if (!userId) {
+      setBlockedByMe([]);
+      setBlockedMe([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    Promise.all([fetchBlockedByMe(userId), fetchBlockedMe(userId)])
+      .then(([byMe, me]) => {
+        if (cancelled) return;
+        setBlockedByMe(byMe);
+        setBlockedMe(me);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setBlockedByMe([]);
+          setBlockedMe([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const hiddenUserIds = useMemo(
+    () => new Set([...blockedByMe, ...blockedMe]),
+    [blockedByMe, blockedMe],
+  );
+
+  const handleBlockMember = (memberId) => {
+    if (!userId || !memberId) return;
+    setBlockedByMe((prev) => (prev.includes(memberId) ? prev : [...prev, memberId]));
+    blockUser(userId, memberId).catch(() => {
+      setBlockedByMe((prev) => prev.filter((id) => id !== memberId));
+      Alert.alert(t('settings.error'), t('app.blockUserError'));
+    });
+  };
+
+  const handleUnblockMember = (memberId) => {
+    if (!userId || !memberId) return;
+    setBlockedByMe((prev) => prev.filter((id) => id !== memberId));
+    unblockUser(userId, memberId).catch(() => {
+      Alert.alert(t('settings.error'), t('app.unblockUserError'));
+    });
+  };
+
+  const handleReportMember = (memberId) => {
+    if (!userId || !memberId) return;
+    reportContent(userId, 'user', memberId).catch(() => {});
+    Alert.alert(t('app.thanks'), t('app.reportSentMessage'));
   };
 
   useEffect(() => {
@@ -228,7 +278,7 @@ function AppContent() {
       setCheckedChecklistIds(saved.checkedChecklistIds ?? []);
       setLikedPostIds(saved.likedPostIds ?? []);
       setPosts(firestorePosts ?? POSTS);
-      setEvents(firestoreEvents?.length ? [...firestoreEvents, ...EVENTS] : EVENTS);
+      setEvents(firestoreEvents ?? EVENTS);
       setSettings({ ...DEFAULT_SETTINGS, ...saved.settings });
       setShowProfileSetup(false);
       if (hydratedUserIdRef.current !== userId) {
@@ -368,27 +418,27 @@ function AppContent() {
         await updateDisplayName(nextProfile.name.trim());
       }
 
-      // Upload profile photo if it's a local URI
+      // Upload profile photo and cover photo in parallel if they're local URIs
       let profilePhotoUri = nextProfile.photoUri;
-      if (profilePhotoUri && (profilePhotoUri.startsWith('file://') || profilePhotoUri.startsWith('content://'))) {
-        try {
-          profilePhotoUri = await uploadProfilePhoto(userId, profilePhotoUri);
-        } catch (error) {
-          console.error('Failed to upload profile photo:', error);
-          // Continue anyway - don't block profile save
-        }
-      }
-
-      // Upload cover photo if it's a local URI
       let coverPhotoUri = nextProfile.coverPhoto;
-      if (coverPhotoUri && (coverPhotoUri.startsWith('file://') || coverPhotoUri.startsWith('content://'))) {
-        try {
-          coverPhotoUri = await uploadProfileCover(userId, coverPhotoUri);
-        } catch (error) {
-          console.error('Failed to upload cover photo:', error);
-          // Continue anyway - don't block profile save
-        }
-      }
+      const isLocalUri = (uri) => uri && (uri.startsWith('file://') || uri.startsWith('content://'));
+
+      const [profilePhotoResult, coverPhotoResult] = await Promise.all([
+        isLocalUri(profilePhotoUri)
+          ? uploadProfilePhoto(userId, profilePhotoUri).catch((error) => {
+              console.error('Failed to upload profile photo:', error);
+              return profile.photoUri ?? null;
+            })
+          : Promise.resolve(profilePhotoUri),
+        isLocalUri(coverPhotoUri)
+          ? uploadProfileCover(userId, coverPhotoUri).catch((error) => {
+              console.error('Failed to upload cover photo:', error);
+              return profile.coverPhoto ?? null;
+            })
+          : Promise.resolve(coverPhotoUri),
+      ]);
+      profilePhotoUri = profilePhotoResult;
+      coverPhotoUri = coverPhotoResult;
 
       const profileToSave = {
         ...profileToFirestoreUpdate(nextProfile),
@@ -403,7 +453,7 @@ function AppContent() {
   };
 
   const getProfileBackLabel = () =>
-    TAB_BACK_LABELS[profileReturnTab ?? 'profile'] ?? 'Профиль';
+    t(`backLabel.${profileReturnTab ?? 'profile'}`);
 
   const closeProfileView = () => {
     const returnTab = profileReturnTab;
@@ -502,7 +552,7 @@ function AppContent() {
 
     const authorId = auth.currentUser?.uid ?? userId;
     if (!authorId) {
-      throw new Error('Войдите в аккаунт, чтобы публиковать пост.');
+      throw new Error(t('app.signInToPostError'));
     }
 
     const firstName = getFirstName(profile, auth.currentUser);
@@ -561,7 +611,7 @@ function AppContent() {
   const handlePublishEvent = async (input) => {
     const authorId = auth.currentUser?.uid ?? userId;
     if (!authorId) {
-      throw new Error('Войдите в аккаунт, чтобы создать событие.');
+      throw new Error(t('app.signInToCreateEventError'));
     }
 
     const host = getFirstName(profile, auth.currentUser);
@@ -576,7 +626,7 @@ function AppContent() {
     if (!menuPost) return;
     if (!isOwnPost(menuPost, currentAuthorId)) {
       setMenuPost(null);
-      Alert.alert('Недоступно', 'Редактировать можно только свои посты.');
+      Alert.alert(t('app.notAvailable'), t('app.editOwnPostsOnly'));
       return;
     }
     setEditingPost(menuPost);
@@ -590,7 +640,7 @@ function AppContent() {
 
     if (!isOwnPost(post, currentAuthorId)) {
       setMenuPost(null);
-      Alert.alert('Недоступно', 'Удалять можно только свои посты.');
+      Alert.alert(t('app.notAvailable'), t('app.deleteOwnPostsOnly'));
       return;
     }
 
@@ -604,13 +654,13 @@ function AppContent() {
           setSelectedPostId(null);
         }
       } catch {
-        Alert.alert('Ошибка', 'Не удалось удалить пост. Попробуйте позже.');
+        Alert.alert(t('settings.error'), t('app.deletePostError'));
       }
     };
 
     if (Platform.OS === 'web') {
       const confirmed = window.confirm(
-        'Удалить пост? Пост будет удалён без возможности восстановления.',
+        `${t('app.deletePostConfirmTitle')} ${t('app.deletePostConfirmMessage')}`,
       );
       if (confirmed) {
         void removePost();
@@ -618,10 +668,10 @@ function AppContent() {
       return;
     }
 
-    Alert.alert('Удалить пост?', 'Пост будет удалён без возможности восстановления.', [
-      { text: 'Отмена', style: 'cancel' },
+    Alert.alert(t('app.deletePostConfirmTitle'), t('app.deletePostConfirmMessage'), [
+      { text: t('app.cancel'), style: 'cancel' },
       {
-        text: 'Удалить',
+        text: t('app.delete'),
         style: 'destructive',
         onPress: () => {
           void removePost();
@@ -631,8 +681,14 @@ function AppContent() {
   };
 
   const handleReportPost = () => {
+    if (!menuPost) return;
+    const post = menuPost;
     setMenuPost(null);
-    Alert.alert('Спасибо', 'Жалоба отправлена. Мы рассмотрим её в ближайшее время.');
+    const reporterId = auth.currentUser?.uid ?? userId;
+    if (reporterId) {
+      reportContent(reporterId, 'post', post.id).catch(() => {});
+    }
+    Alert.alert(t('app.thanks'), t('app.reportSentMessage'));
   };
 
   const addReply = async (postId, reply) => {
@@ -875,6 +931,7 @@ function AppContent() {
   const connectionsCount = connectedIds.length;
   const messagesCount = conversations.filter((conv) => conv.lastMessage?.trim()).length;
   const ownPosts = getOwnPosts(posts, auth.currentUser?.uid ?? userId ?? 'guest');
+  const visiblePosts = posts.filter((post) => !hiddenUserIds.has(post.authorId));
   const postsCount = ownPosts.length;
   const eventsCount = registeredEventIds.length;
   const unreadCount = NOTIFICATIONS.filter(
@@ -886,8 +943,9 @@ function AppContent() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar style="dark" />
         <GlobalSearchScreen
-          posts={posts}
+          posts={visiblePosts}
           authReady={authReady}
+          blockedUserIds={Array.from(hiddenUserIds)}
           onBack={() => setShowSearch(false)}
           onOpenJob={(id) => {
             setShowSearch(false);
@@ -969,6 +1027,10 @@ function AppContent() {
           onMessage={openMessage}
           onOpenPost={openPost}
           onOpenMember={openMember}
+          isBlocked={blockedByMe.includes(selectedMember.id)}
+          onBlock={() => handleBlockMember(selectedMember.id)}
+          onUnblock={() => handleUnblockMember(selectedMember.id)}
+          onReport={() => handleReportMember(selectedMember.id)}
         />
       </SafeAreaView>
     );
@@ -997,6 +1059,11 @@ function AppContent() {
           myName={profile.name}
           userId={userId}
           onBack={() => setSelectedChatMemberId(null)}
+          onOpenMember={openMember}
+          isBlocked={blockedByMe.includes(chatMember.id)}
+          onBlock={() => handleBlockMember(chatMember.id)}
+          onUnblock={() => handleUnblockMember(chatMember.id)}
+          onReport={() => handleReportMember(chatMember.id)}
         />
       </SafeAreaView>
     );
@@ -1029,6 +1096,7 @@ function AppContent() {
             onOpenChat={openChat}
             userId={userId}
             connectedIds={connectedIds}
+            blockedUserIds={Array.from(hiddenUserIds)}
           />
         );
       case 'connections':
@@ -1055,7 +1123,7 @@ function AppContent() {
       case 'feed':
         return (
           <FeedScreen
-            posts={posts}
+            posts={visiblePosts}
             likedPostIds={likedPostIds}
             onBack={closeTagFeed}
             onOpenCreatePost={() => setShowCreatePost(true)}
@@ -1065,13 +1133,13 @@ function AppContent() {
             onToggleLike={toggleLikePost}
             onOpenPostMenu={setMenuPost}
             onRefresh={refreshPosts}
-            backLabel="Профиль"
+            backLabel={t('backLabel.profile')}
             initialCategory={feedCategory}
-            feedTitle={feedCategory === 'Все' ? 'Лента' : feedCategory}
+            feedTitle={feedCategory === 'Все' ? t('feed.title') : feedCategory}
             feedSubtitle={
               feedCategory === 'Все'
-                ? 'Посты от сообщества'
-                : `Посты по теме «${feedCategory}»`
+                ? t('feed.subtitle')
+                : t('app.feedByTopic', { value: feedCategory })
             }
           />
         );
@@ -1098,7 +1166,7 @@ function AppContent() {
         return (
           <NotificationsScreen
             onBack={closeNotifications}
-            backLabel="Главная"
+            backLabel={t('backLabel.home')}
             readIds={readNotificationIds}
             onAction={() => {}}
             onMarkRead={markNotificationRead}
@@ -1165,7 +1233,7 @@ function AppContent() {
     if (tab === 'home' && showFeed) {
       return (
         <FeedScreen
-          posts={posts}
+          posts={visiblePosts}
           likedPostIds={likedPostIds}
           onBack={() => setShowFeed(false)}
           onOpenCreatePost={() => setShowCreatePost(true)}
@@ -1182,7 +1250,7 @@ function AppContent() {
       return (
         <HomeScreen
           profile={profile}
-          posts={posts}
+          posts={visiblePosts}
           userId={userId}
           onOpenFeed={() => setShowFeed(true)}
           onOpenCreatePost={() => setShowCreatePost(true)}
@@ -1225,6 +1293,7 @@ function AppContent() {
           onCreateEvent={() => setShowCreateEvent(true)}
           connectedIds={connectedIds}
           userId={userId}
+          blockedUserIds={Array.from(hiddenUserIds)}
         />
       );
     }
@@ -1291,7 +1360,7 @@ function AppContent() {
         <SafeAreaView style={[styles.notificationsOverlay, { backgroundColor: colors.background }]}>
           <NotificationsScreen
             onBack={closeNotifications}
-            backLabel="Главная"
+            backLabel={t('backLabel.home')}
             readIds={readNotificationIds}
             onAction={() => {}}
             onMarkRead={markNotificationRead}

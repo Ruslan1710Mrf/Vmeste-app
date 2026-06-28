@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body { margin: 0; padding: 0; background: #1E293B; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="recaptcha-container"></div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+    import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyAONK_kRVNGLjI_k3jIR9jyG-1kre5pzl8',
+      authDomain: 'veste-app-bffb0.firebaseapp.com',
+      projectId: 'veste-app-bffb0',
+      storageBucket: 'veste-app-bffb0.firebasestorage.app',
+      messagingSenderId: '1029398639222',
+      appId: '1:1029398639222:web:e19ff90b8b8c8155592557',
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    let verifier = null;
+
+    function post(message) {
+      window.ReactNativeWebView.postMessage(JSON.stringify(message));
+    }
+
+    function ensureVerifier() {
+      if (verifier) return verifier;
+      verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'normal',
+        callback: () => post({ type: 'recaptcha-solved' }),
+        'expired-callback': () => post({ type: 'recaptcha-expired' }),
+      });
+      verifier.render();
+      return verifier;
+    }
+
+    async function handleMessage(event) {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+      if (data.type !== 'send-code') return;
+      try {
+        const confirmation = await signInWithPhoneNumber(auth, data.phoneNumber, ensureVerifier());
+        post({ type: 'code-sent', verificationId: confirmation.verificationId });
+      } catch (error) {
+        post({ type: 'error', code: error && error.code ? error.code : '', message: error && error.message ? error.message : String(error) });
+      }
+    }
+
+    document.addEventListener('message', handleMessage);
+    window.addEventListener('message', handleMessage);
+
+    ensureVerifier();
+    post({ type: 'ready' });
+  </script>
+</body>
+</html>

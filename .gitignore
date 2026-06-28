@@ -30,7 +30,11 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# Firebase CLI local cache
+.firebase/
+
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -39,3 +43,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# marketing video raw footage (large binaries, not app code)
+/marketing/

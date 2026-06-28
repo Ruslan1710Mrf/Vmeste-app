@@ -11,9 +11,11 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../lib/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 export default function CreateEventScreen({ onBack, onPublish }) {
   const { colors } = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
@@ -27,7 +29,7 @@ export default function CreateEventScreen({ onBack, onPublish }) {
 
   const handlePublish = async () => {
     if (!title.trim() || !date.trim() || !city.trim()) {
-      setError('Заполните название, дату и город');
+      setError(t('createEvent.errorRequiredFields'));
       return;
     }
 
@@ -42,7 +44,7 @@ export default function CreateEventScreen({ onBack, onPublish }) {
         description: description.trim(),
       });
     } catch (err) {
-      setError(err?.message || 'Не удалось создать событие. Попробуйте снова.');
+      setError(err?.message || t('createEvent.errorGeneric'));
     } finally {
       setPublishing(false);
     }
@@ -61,9 +63,9 @@ export default function CreateEventScreen({ onBack, onPublish }) {
             disabled={publishing}
           >
             <Text style={styles.backIcon}>←</Text>
-            <Text style={styles.backLabel}>Отмена</Text>
+            <Text style={styles.backLabel}>{t('createEvent.cancel')}</Text>
           </Pressable>
-          <Text style={styles.title}>Новое событие</Text>
+          <Text style={styles.title}>{t('createEvent.newEvent')}</Text>
           <View style={styles.headerSpacer} />
         </View>
 
@@ -72,10 +74,10 @@ export default function CreateEventScreen({ onBack, onPublish }) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.label}>Название</Text>
+          <Text style={styles.label}>{t('createEvent.titleLabel')}</Text>
           <TextInput
             style={[styles.input, error && !title.trim() ? styles.inputError : null]}
-            placeholder="Например: Встреча предпринимателей СНГ"
+            placeholder={t('createEvent.titlePlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={title}
             onChangeText={(value) => {
@@ -85,10 +87,10 @@ export default function CreateEventScreen({ onBack, onPublish }) {
             autoFocus
           />
 
-          <Text style={styles.label}>Дата и время</Text>
+          <Text style={styles.label}>{t('createEvent.dateLabel')}</Text>
           <TextInput
             style={[styles.input, error && !date.trim() ? styles.inputError : null]}
-            placeholder="Например: 12 июля · 18:00"
+            placeholder={t('createEvent.datePlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={date}
             onChangeText={(value) => {
@@ -97,10 +99,10 @@ export default function CreateEventScreen({ onBack, onPublish }) {
             }}
           />
 
-          <Text style={styles.label}>Город</Text>
+          <Text style={styles.label}>{t('createEvent.cityLabel')}</Text>
           <TextInput
             style={[styles.input, error && !city.trim() ? styles.inputError : null]}
-            placeholder="Например: Нью-Йорк"
+            placeholder={t('createEvent.cityPlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={city}
             onChangeText={(value) => {
@@ -109,19 +111,19 @@ export default function CreateEventScreen({ onBack, onPublish }) {
             }}
           />
 
-          <Text style={styles.label}>Место проведения</Text>
+          <Text style={styles.label}>{t('createEvent.venueLabel')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Например: Central Park, Sheep Meadow"
+            placeholder={t('createEvent.venuePlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={venue}
             onChangeText={setVenue}
           />
 
-          <Text style={styles.label}>Описание</Text>
+          <Text style={styles.label}>{t('createEvent.descriptionLabel')}</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder="О чём событие, кому будет интересно..."
+            placeholder={t('createEvent.descriptionPlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={description}
             onChangeText={setDescription}
@@ -141,7 +143,7 @@ export default function CreateEventScreen({ onBack, onPublish }) {
             {publishing ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={styles.publishButtonText}>Создать событие</Text>
+              <Text style={styles.publishButtonText}>{t('createEvent.publish')}</Text>
             )}
           </Pressable>
 

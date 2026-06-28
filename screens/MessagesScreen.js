@@ -1,28 +1,31 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { getMemberById } from '../data/members';
 import { formatChatTime } from '../lib/chatUtils';
 import { auth } from '../lib/firebase';
-import { subscribeToConversations } from '../lib/messageService';
+import { deleteConversation, subscribeToConversations } from '../lib/messageService';
+import { fetchUsersByIds } from '../lib/userProfileService';
+import { useI18n } from '../lib/i18n';
 
 function getOtherParticipant(conv, myUid) {
   return conv.participants.find((id) => id !== myUid) ?? null;
 }
 
-function ConversationRow({ conv, myUid, onPress }) {
+function ConversationRow({ conv, myUid, onPress, onDelete }) {
+  const { t } = useI18n();
   const otherUid = getOtherParticipant(conv, myUid);
   if (!otherUid) return null;
 
-  const member = getMemberById(otherUid);
-  const name = conv.participantNames[otherUid] || member?.name || 'Пользователь';
-  const preview = conv.lastMessage?.trim() || 'Начните переписку';
+  const name = conv.participantNames[otherUid] || t('messages.defaultUserName');
+  const preview = conv.lastMessage?.trim() || t('messages.startConversation');
   const time = formatChatTime(conv.lastMessageAt);
 
   return (
@@ -40,6 +43,13 @@ function ConversationRow({ conv, myUid, onPress }) {
         </View>
         <Text style={styles.preview} numberOfLines={1}>{preview}</Text>
       </View>
+      <Pressable
+        style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
+        onPress={() => onDelete(conv)}
+        hitSlop={8}
+      >
+        <Text style={styles.deleteIcon}>🗑</Text>
+      </Pressable>
     </Pressable>
   );
 }
@@ -64,16 +74,33 @@ function FriendRow({ member, onPress }) {
 
 export default function MessagesScreen({
   onBack,
-  backLabel = 'Профиль',
+  backLabel,
   onOpenChat,
   userId,
   connectedIds = [],
+  blockedUserIds = [],
 }) {
+  const { t } = useI18n();
+  const resolvedBackLabel = backLabel ?? t('messages.backLabel');
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [composing, setComposing] = useState(false);
+  const [connections, setConnections] = useState([]);
   const myUid = auth.currentUser?.uid ?? userId ?? null;
-  const connections = connectedIds.map(getMemberById).filter(Boolean);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchUsersByIds(connectedIds)
+      .then((members) => {
+        if (!cancelled) setConnections(members.filter((m) => !blockedUserIds.includes(m.id)));
+      })
+      .catch(() => {
+        if (!cancelled) setConnections([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [connectedIds, blockedUserIds]);
 
   useEffect(() => {
     if (!myUid) {
@@ -95,8 +122,36 @@ export default function MessagesScreen({
     onOpenChat(memberId);
   };
 
+  const handleDeleteConversation = (conv) => {
+    const removeConversation = async () => {
+      try {
+        await deleteConversation(conv.id);
+        setConversations((prev) => prev.filter((c) => c.id !== conv.id));
+      } catch {
+        Alert.alert(t('messages.errorTitle'), t('messages.deleteConversationError'));
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`${t('messages.deleteConversationConfirmTitle')} ${t('messages.deleteConversationConfirmMessage')}`)) {
+        void removeConversation();
+      }
+      return;
+    }
+
+    Alert.alert(t('messages.deleteConversationConfirmTitle'), t('messages.deleteConversationConfirmMessage'), [
+      { text: t('messages.cancel'), style: 'cancel' },
+      { text: t('messages.delete'), style: 'destructive', onPress: () => void removeConversation() },
+    ]);
+  };
+
+  const visibleConversations = conversations.filter((conv) => {
+    const otherUid = getOtherParticipant(conv, myUid);
+    return !otherUid || !blockedUserIds.includes(otherUid);
+  });
+
   const showFriendsList = !loading
-    && (composing || (conversations.length === 0 && connections.length > 0));
+    && (composing || (visibleConversations.length === 0 && connections.length > 0));
 
   return (
     <View style={styles.container}>
@@ -106,13 +161,13 @@ export default function MessagesScreen({
           onPress={onBack}
         >
           <Text style={styles.backIcon}>←</Text>
-          <Text style={styles.backLabel}>{backLabel}</Text>
+          <Text style={styles.backLabel}>{resolvedBackLabel}</Text>
         </Pressable>
         <View style={styles.headerTopRow}>
           <View>
-            <Text style={styles.screenTitle}>Сообщения</Text>
+            <Text style={styles.screenTitle}>{t('messages.title')}</Text>
             <Text style={styles.screenSubtitle}>
-              {conversations.length} диалогов
+              {t('messages.conversationsCount', { value: visibleConversations.length })}
             </Text>
           </View>
           {connections.length > 0 ? (
@@ -131,7 +186,7 @@ export default function MessagesScreen({
           <ActivityIndicator style={{ marginTop: 40 }} color="#EA580C" />
         ) : showFriendsList ? (
           <>
-            {composing ? <Text style={styles.sectionLabel}>Выберите друга</Text> : null}
+            {composing ? <Text style={styles.sectionLabel}>{t('messages.chooseFriend')}</Text> : null}
             <View style={styles.card}>
               {connections.map((member, index) => (
                 <View key={member.id}>
@@ -141,26 +196,27 @@ export default function MessagesScreen({
               ))}
             </View>
           </>
-        ) : conversations.length === 0 ? (
+        ) : visibleConversations.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>💬</Text>
-            <Text style={styles.emptyTitle}>Пока нет сообщений</Text>
+            <Text style={styles.emptyTitle}>{t('messages.emptyTitle')}</Text>
             <Text style={styles.emptyText}>
               {!myUid
-                ? 'Войдите в аккаунт, чтобы отправлять и получать сообщения'
-                : 'Добавьте друзей в разделе «Нетворкинг», чтобы начать переписку'}
+                ? t('messages.signInToMessage')
+                : t('messages.addFriendsToStart')}
             </Text>
           </View>
         ) : (
           <View style={styles.card}>
-            {conversations.map((conv, index) => (
+            {visibleConversations.map((conv, index) => (
               <View key={conv.id}>
                 <ConversationRow
                   conv={conv}
                   myUid={myUid}
                   onPress={onOpenChat}
+                  onDelete={handleDeleteConversation}
                 />
-                {index < conversations.length - 1 && <View style={styles.divider} />}
+                {index < visibleConversations.length - 1 && <View style={styles.divider} />}
               </View>
             ))}
           </View>
@@ -240,6 +296,9 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
   time: { fontSize: 12, color: '#94A3B8' },
   preview: { fontSize: 14, color: '#64748B' },
+  deleteButton: { padding: 8, marginLeft: 4 },
+  deleteButtonPressed: { opacity: 0.6 },
+  deleteIcon: { fontSize: 16 },
   divider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 16 },
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyEmoji: { fontSize: 48, marginBottom: 16 },

@@ -16,14 +16,30 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.vmeste.group",
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      "@react-native-google-signin/google-signin",
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Vmeste запросит доступ к фото, чтобы вы могли добавить их в пост или профиль."
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6b5068cd-22cd-431e-a463-176d0385be54"
+      }
+    }
   }
 }

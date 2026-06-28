@@ -12,10 +12,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { mapAuthError, sendPasswordReset } from '../../lib/authService';
+import { useI18n } from '../../lib/i18n';
 import styles from './authStyles';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -25,16 +27,16 @@ export default function ForgotPasswordScreen() {
     setError('');
     setSuccess('');
     if (!email.trim()) {
-      setError('Введите email');
+      setError(t('auth.errors.enterEmail'));
       return;
     }
     setLoading(true);
     try {
       await sendPasswordReset(email);
-      setSuccess('Ссылка для сброса пароля отправлена на ваш email');
+      setSuccess(t('auth.forgotPassword.successMessage'));
     } catch (err: unknown) {
       const code = (err as { code?: string }).code ?? '';
-      setError(mapAuthError(code));
+      setError(t(mapAuthError(code)));
     } finally {
       setLoading(false);
     }
@@ -53,18 +55,18 @@ export default function ForgotPasswordScreen() {
         >
           <Link href="/auth/login" asChild>
             <Pressable style={styles.backLink}>
-              <Text style={styles.backLinkText}>← Назад ко входу</Text>
+              <Text style={styles.backLinkText}>{t('auth.forgotPassword.backLink')}</Text>
             </Pressable>
           </Link>
 
-          <Text style={styles.title}>Сброс пароля</Text>
+          <Text style={styles.title}>{t('auth.forgotPassword.title')}</Text>
           <Text style={styles.subtitle}>
-            Введите email — мы отправим ссылку для восстановления доступа
+            {t('auth.forgotPassword.subtitle')}
           </Text>
 
           <View style={styles.card}>
             <View>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>{t('auth.emailLabel')}</Text>
               <TextInput
                 style={[styles.input, error ? styles.inputError : null]}
                 placeholder="you@example.com"
@@ -93,7 +95,7 @@ export default function ForgotPasswordScreen() {
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.primaryButtonText}>Отправить ссылку</Text>
+                <Text style={styles.primaryButtonText}>{t('auth.forgotPassword.submit')}</Text>
               )}
             </Pressable>
           </View>
@@ -104,7 +106,7 @@ export default function ForgotPasswordScreen() {
                 style={({ pressed }) => pressed && styles.linkPressed}
                 onPress={() => router.replace('/auth/login')}
               >
-                <Text style={styles.linkText}>Вернуться ко входу</Text>
+                <Text style={styles.linkText}>{t('auth.forgotPassword.backToLogin')}</Text>
               </Pressable>
             </View>
           ) : null}
