@@ -10,7 +10,10 @@
       "Bash(npx eslint *)",
       "Bash(node --check screens/JobsScreen.js)",
       "Bash(echo \"exit: $?\")",
-      "Bash(node --check /tmp/test_jsx_check.js)"
+      "Bash(node --check /tmp/test_jsx_check.js)",
+      "Bash(node --check /Users/rus/sng-community2/lib/i18n.js)",
+      "Bash(firebase firestore:indexes --project veste-app-bffb0)",
+      "Bash(node -e ' *)"
     ]
   },
   "enabledPlugins": {
