@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { RESOURCE_CATEGORIES, RESOURCES } from '../data/resources';
-import { useI18n } from '../lib/i18n';
+import { localize, useI18n } from '../lib/i18n';
 
 function ServiceIcon({ item }) {
   const [iconFailed, setIconFailed] = useState(false);
@@ -36,7 +36,7 @@ function ServiceIcon({ item }) {
 }
 
 function ResourceCard({ item }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const openUrl = () => {
     Linking.openURL(item.url).catch(() => {});
   };
@@ -47,7 +47,7 @@ function ResourceCard({ item }) {
         <ServiceIcon item={item} />
         <View style={styles.cardContent}>
           <Text style={styles.cardTitle}>{item.name}</Text>
-          <Text style={styles.cardDescription}>{item.description}</Text>
+          <Text style={styles.cardDescription}>{localize(item.description, language)}</Text>
         </View>
       </View>
       <Pressable
@@ -61,7 +61,7 @@ function ResourceCard({ item }) {
 }
 
 export default function ResourcesScreen() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [activeCategory, setActiveCategory] = useState(RESOURCE_CATEGORIES[0].id);
 
   const items = useMemo(
@@ -91,7 +91,7 @@ export default function ResourcesScreen() {
                 style={[styles.tabChipText, selected && styles.tabChipTextActive]}
                 numberOfLines={1}
               >
-                {category.label}
+                {localize(category.label, language)}
               </Text>
             </Pressable>
           );

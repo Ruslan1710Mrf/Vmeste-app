@@ -7,7 +7,10 @@
       "Bash(npx tsc *)",
       "Bash(firebase deploy *)",
       "Bash(eas build *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(node --check screens/JobsScreen.js)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(node --check /tmp/test_jsx_check.js)"
     ]
   },
   "enabledPlugins": {

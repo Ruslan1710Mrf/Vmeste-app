@@ -8,10 +8,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useI18n } from '../lib/i18n';
+import { localize, useI18n } from '../lib/i18n';
 
-function getJobShareMessage(job) {
-  const lines = [job.title, job.company, `💰 ${job.salary}`];
+function getJobShareMessage(job, language) {
+  const lines = [localize(job.title, language), job.company, `💰 ${job.salary}`];
   if (job.applyUrl) {
     lines.push(job.applyUrl);
   }
@@ -19,10 +19,10 @@ function getJobShareMessage(job) {
 }
 
 export default function JobDetailScreen({ job, onBack, isSaved, onToggleSave }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const handleShare = async () => {
     try {
-      await Share.share({ message: getJobShareMessage(job) });
+      await Share.share({ message: getJobShareMessage(job, language) });
     } catch {
       // user cancelled
     }
@@ -77,20 +77,20 @@ export default function JobDetailScreen({ job, onBack, isSaved, onToggleSave }) 
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.titleBlock}>
-          <Text style={styles.title}>{job.title}</Text>
+          <Text style={styles.title}>{localize(job.title, language)}</Text>
           <Text style={styles.company}>{job.company}</Text>
           <View style={styles.badges}>
             <View style={styles.typeBadge}>
-              <Text style={styles.typeText}>{job.type}</Text>
+              <Text style={styles.typeText}>{localize(job.type, language)}</Text>
             </View>
-            <Text style={styles.posted}>{job.posted}</Text>
+            <Text style={styles.posted}>{localize(job.posted, language)}</Text>
           </View>
         </View>
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>📍 {t('jobDetail.city')}</Text>
-            <Text style={styles.infoValue}>{job.city}</Text>
+            <Text style={styles.infoValue}>{localize(job.city, language)}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
@@ -100,11 +100,11 @@ export default function JobDetailScreen({ job, onBack, isSaved, onToggleSave }) 
         </View>
 
         <Text style={styles.sectionTitle}>{t('jobDetail.description')}</Text>
-        <Text style={styles.body}>{job.description}</Text>
+        <Text style={styles.body}>{localize(job.description, language)}</Text>
 
         <Text style={styles.sectionTitle}>{t('jobDetail.requirements')}</Text>
         <View style={styles.requirements}>
-          {job.requirements.map((req) => (
+          {localize(job.requirements, language).map((req) => (
             <View key={req} style={styles.requirementRow}>
               <Text style={styles.bullet}>•</Text>
               <Text style={styles.requirementText}>{req}</Text>

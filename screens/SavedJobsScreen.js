@@ -6,9 +6,10 @@ import {
   View,
 } from 'react-native';
 import { getJobById } from '../data/jobs';
-import { useI18n } from '../lib/i18n';
+import { localize, useI18n } from '../lib/i18n';
 
 function SavedJobCard({ job, onPress, onRemove }) {
+  const { language } = useI18n();
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -16,7 +17,7 @@ function SavedJobCard({ job, onPress, onRemove }) {
     >
       <View style={styles.cardTop}>
         <View style={styles.cardInfo}>
-          <Text style={styles.title}>{job.title}</Text>
+          <Text style={styles.title}>{localize(job.title, language)}</Text>
           <Text style={styles.company}>{job.company}</Text>
         </View>
         <Pressable
@@ -31,7 +32,7 @@ function SavedJobCard({ job, onPress, onRemove }) {
         </Pressable>
       </View>
       <View style={styles.meta}>
-        <Text style={styles.city}>📍 {job.city}</Text>
+        <Text style={styles.city}>📍 {localize(job.city, language)}</Text>
         <Text style={styles.salary}>{job.salary}</Text>
       </View>
     </Pressable>

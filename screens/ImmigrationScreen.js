@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { IMMIGRATION_SECTIONS } from '../data/immigration';
-import { useI18n } from '../lib/i18n';
+import { localize, useI18n } from '../lib/i18n';
 
 const IMMIGRATION_APPS = [
   {
@@ -76,11 +76,11 @@ function ImmigrationAppIcon({ app }) {
 }
 
 function ResourceItem({ item, isLink, accentColor, onSelectGuide }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const content = (
     <>
-      <Text style={styles.itemTitle}>{item.title}</Text>
-      <Text style={styles.itemDescription}>{item.description}</Text>
+      <Text style={styles.itemTitle}>{localize(item.title, language)}</Text>
+      <Text style={styles.itemDescription}>{localize(item.description, language)}</Text>
       {isLink ? (
         <Text style={[styles.linkHint, { color: accentColor }]}>{t('immigration.openLink')}</Text>
       ) : (
@@ -111,6 +111,7 @@ function ResourceItem({ item, isLink, accentColor, onSelectGuide }) {
 }
 
 function Section({ section, onSelectGuide }) {
+  const { language } = useI18n();
   const isLinks = section.id === 'links';
 
   return (
@@ -119,11 +120,11 @@ function Section({ section, onSelectGuide }) {
         <View style={[styles.sectionIcon, { backgroundColor: `${section.color}18` }]}>
           <Text style={styles.sectionEmoji}>{section.emoji}</Text>
         </View>
-        <Text style={styles.sectionTitle}>{section.title}</Text>
+        <Text style={styles.sectionTitle}>{localize(section.title, language)}</Text>
       </View>
       <View style={[styles.sectionCard, { borderLeftColor: section.color }]}>
         {section.items.map((item, index) => (
-          <View key={item.title}>
+          <View key={item.id}>
             <ResourceItem
               item={item}
               isLink={isLinks}
@@ -139,7 +140,7 @@ function Section({ section, onSelectGuide }) {
 }
 
 export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -159,11 +160,11 @@ export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} 
       ...section,
       items: section.items.filter(
         (item) =>
-          item.title.toLowerCase().includes(q) ||
-          item.description.toLowerCase().includes(q),
+          localize(item.title, language).toLowerCase().includes(q) ||
+          localize(item.description, language).toLowerCase().includes(q),
       ),
     })).filter((section) => section.items.length > 0);
-  }, [query]);
+  }, [query, language]);
 
   return (
     <View style={styles.container}>

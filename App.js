@@ -538,7 +538,7 @@ function AppContent() {
   };
 
   const openChecklistGuide = (guideLink) => {
-    const ctx = findGuideContext(guideLink.sectionId, guideLink.title);
+    const ctx = findGuideContext(guideLink.sectionId, guideLink.id);
     if (ctx) {
       setProfileView(null);
       setTab('immigration');

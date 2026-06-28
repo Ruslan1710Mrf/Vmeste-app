@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { JOBS } from '../data/jobs';
-import { useI18n } from '../lib/i18n';
+import { localize, useI18n } from '../lib/i18n';
 
 const JOB_APPS = [
   {
@@ -76,6 +76,7 @@ function JobAppIcon({ app }) {
 }
 
 function JobCard({ job, onPress, isSaved, onToggleSave }) {
+  const { language } = useI18n();
   const handleOpen = () => {
     if (job.applyUrl) {
       Linking.openURL(job.applyUrl).catch(() => {});
@@ -91,7 +92,7 @@ function JobCard({ job, onPress, isSaved, onToggleSave }) {
     >
       <View style={styles.cardHeader}>
         <View style={styles.cardBody}>
-          <Text style={styles.title}>{job.title}</Text>
+          <Text style={styles.title}>{localize(job.title, language)}</Text>
           <Text style={styles.company}>{job.company}</Text>
         </View>
         <Pressable
@@ -105,7 +106,7 @@ function JobCard({ job, onPress, isSaved, onToggleSave }) {
       <View style={styles.meta}>
         <View style={styles.cityRow}>
           <Text style={styles.cityIcon}>📍</Text>
-          <Text style={styles.city}>{job.city}</Text>
+          <Text style={styles.city}>{localize(job.city, language)}</Text>
         </View>
         <View style={styles.salaryBadge}>
           <Text style={styles.salary}>{job.salary}</Text>
@@ -116,7 +117,7 @@ function JobCard({ job, onPress, isSaved, onToggleSave }) {
 }
 
 export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onRefresh = () => {} }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [dataVersion, setDataVersion] = useState(0);
@@ -126,11 +127,11 @@ export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onR
     if (!q) return JOBS;
     return JOBS.filter(
       (job) =>
-        job.title.toLowerCase().includes(q) ||
+        localize(job.title, language).toLowerCase().includes(q) ||
         job.company.toLowerCase().includes(q) ||
-        job.city.toLowerCase().includes(q),
+        localize(job.city, language).toLowerCase().includes(q),
     );
-  }, [query, dataVersion]);
+  }, [query, dataVersion, language]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

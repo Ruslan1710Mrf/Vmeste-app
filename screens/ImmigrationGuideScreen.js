@@ -5,10 +5,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useI18n } from '../lib/i18n';
+import { localize, useI18n } from '../lib/i18n';
 
 export default function ImmigrationGuideScreen({ section, item, onBack }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const steps = localize(item.steps, language) ?? [];
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -24,16 +25,16 @@ export default function ImmigrationGuideScreen({ section, item, onBack }) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.badge, { backgroundColor: `${section.color}18` }]}>
           <Text style={[styles.badgeText, { color: section.color }]}>
-            {section.emoji} {section.title}
+            {section.emoji} {localize(section.title, language)}
           </Text>
         </View>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.description}>{item.description}</Text>
+        <Text style={styles.title}>{localize(item.title, language)}</Text>
+        <Text style={styles.description}>{localize(item.description, language)}</Text>
 
-        {item.steps?.length > 0 && (
+        {steps.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>{t('immigrationGuide.stepByStep')}</Text>
-            {item.steps.map((step, i) => (
+            {steps.map((step, i) => (
               <View key={step} style={styles.stepRow}>
                 <View style={[styles.stepNum, { backgroundColor: `${section.color}18` }]}>
                   <Text style={[styles.stepNumText, { color: section.color }]}>{i + 1}</Text>
@@ -47,7 +48,7 @@ export default function ImmigrationGuideScreen({ section, item, onBack }) {
         {item.tip && (
           <View style={[styles.tipBox, { borderLeftColor: section.color }]}>
             <Text style={styles.tipLabel}>{t('immigrationGuide.tipLabel')}</Text>
-            <Text style={styles.tipText}>{item.tip}</Text>
+            <Text style={styles.tipText}>{localize(item.tip, language)}</Text>
           </View>
         )}
       </ScrollView>

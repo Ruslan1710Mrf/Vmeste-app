@@ -12,7 +12,7 @@ import { IMMIGRATION_SECTIONS } from '../data/immigration';
 import { JOBS } from '../data/jobs';
 import { MEMBERS } from '../data/members';
 import { memberMatchesQuery, searchUsers } from '../lib/userProfileService';
-import { useI18n } from '../lib/i18n';
+import { localize, useI18n } from '../lib/i18n';
 
 function ResultSection({ title, count, children }) {
   if (!count) return null;
@@ -51,7 +51,7 @@ export default function GlobalSearchScreen({
   authReady,
   blockedUserIds = [],
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [query, setQuery] = useState('');
   const [firestoreMembers, setFirestoreMembers] = useState([]);
   const q = query.trim().toLowerCase();
@@ -94,9 +94,9 @@ export default function GlobalSearchScreen({
 
     const jobs = JOBS.filter(
       (j) =>
-        j.title.toLowerCase().includes(q) ||
+        localize(j.title, language).toLowerCase().includes(q) ||
         j.company.toLowerCase().includes(q) ||
-        j.city.toLowerCase().includes(q),
+        localize(j.city, language).toLowerCase().includes(q),
     );
 
     const events = EVENTS.filter(
@@ -117,8 +117,8 @@ export default function GlobalSearchScreen({
       if (section.id === 'links') return;
       section.items.forEach((item) => {
         if (
-          item.title.toLowerCase().includes(q) ||
-          item.description.toLowerCase().includes(q)
+          localize(item.title, language).toLowerCase().includes(q) ||
+          localize(item.description, language).toLowerCase().includes(q)
         ) {
           guides.push({ section, item });
         }
@@ -128,7 +128,7 @@ export default function GlobalSearchScreen({
     const members = q ? allMembers : [];
 
     return { jobs, events, posts: matchedPosts, guides, members };
-  }, [q, posts, allMembers]);
+  }, [q, posts, allMembers, language]);
 
   const total =
     results.jobs.length +
@@ -170,8 +170,8 @@ export default function GlobalSearchScreen({
                 <ResultRow
                   key={job.id}
                   emoji="💼"
-                  title={job.title}
-                  subtitle={`${job.company} · ${job.city}`}
+                  title={localize(job.title, language)}
+                  subtitle={`${job.company} · ${localize(job.city, language)}`}
                   onPress={() => onOpenJob(job.id)}
                 />
               ))}
@@ -204,10 +204,10 @@ export default function GlobalSearchScreen({
             <ResultSection title={t('search.immigration')} count={results.guides.length}>
               {results.guides.map(({ section, item }) => (
                 <ResultRow
-                  key={`${section.id}-${item.title}`}
+                  key={`${section.id}-${item.id}`}
                   emoji={section.emoji}
-                  title={item.title}
-                  subtitle={section.title}
+                  title={localize(item.title, language)}
+                  subtitle={localize(section.title, language)}
                   onPress={() => onOpenGuide(section, item)}
                 />
               ))}

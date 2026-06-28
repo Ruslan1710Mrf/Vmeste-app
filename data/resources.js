@@ -1,8 +1,8 @@
 export const RESOURCE_CATEGORIES = [
-  { id: 'banks', label: 'Банки' },
-  { id: 'transfers', label: 'Переводы' },
-  { id: 'installments', label: 'Рассрочка' },
-  { id: 'credit', label: 'Бюро' },
+  { id: 'banks', label: { ru: 'Банки', en: 'Banks' } },
+  { id: 'transfers', label: { ru: 'Переводы', en: 'Transfers' } },
+  { id: 'installments', label: { ru: 'Рассрочка', en: 'Installments' } },
+  { id: 'credit', label: { ru: 'Бюро', en: 'Bureau' } },
 ];
 
 function resourceIcon(domain) {
@@ -14,8 +14,10 @@ export const RESOURCES = {
     {
       id: 'chase',
       name: 'Chase',
-      description:
-        'Крупный банк с отделениями по всей стране. Удобно открыть checking/savings при наличии SSN или ITIN.',
+      description: {
+        ru: 'Крупный банк с отделениями по всей стране. Удобно открыть checking/savings при наличии SSN или ITIN.',
+        en: 'A major bank with branches nationwide. Easy to open a checking/savings account if you have an SSN or ITIN.',
+      },
       url: 'https://www.chase.com/',
       domain: 'chase.com',
       icon: resourceIcon('chase.com'),
@@ -25,8 +27,10 @@ export const RESOURCES = {
     {
       id: 'bofa',
       name: 'Bank of America',
-      description:
-        'Популярный выбор для новоприбывших: онлайн-заявка, мобильное приложение и широкая сеть банкоматов.',
+      description: {
+        ru: 'Популярный выбор для новоприбывших: онлайн-заявка, мобильное приложение и широкая сеть банкоматов.',
+        en: 'A popular choice for newcomers: online application, a mobile app, and a wide ATM network.',
+      },
       url: 'https://www.bankofamerica.com/',
       domain: 'bankofamerica.com',
       icon: resourceIcon('bankofamerica.com'),
@@ -36,8 +40,10 @@ export const RESOURCES = {
     {
       id: 'wells-fargo',
       name: 'Wells Fargo',
-      description:
-        'Базовые счета для повседневных операций, переводы Zelle и дебетовые карты для старта в США.',
+      description: {
+        ru: 'Базовые счета для повседневных операций, переводы Zelle и дебетовые карты для старта в США.',
+        en: 'Basic accounts for everyday banking, Zelle transfers, and debit cards to get started in the U.S.',
+      },
       url: 'https://www.wellsfargo.com/',
       domain: 'wellsfargo.com',
       icon: resourceIcon('wellsfargo.com'),
@@ -47,8 +53,10 @@ export const RESOURCES = {
     {
       id: 'capital-one',
       name: 'Capital One',
-      description:
-        'Часто одобряют первый счёт без сложной кредитной истории. Хороший вариант для первых месяцев в стране.',
+      description: {
+        ru: 'Часто одобряют первый счёт без сложной кредитной истории. Хороший вариант для первых месяцев в стране.',
+        en: 'Often approves a first account without an extensive credit history. A good option for your first months in the country.',
+      },
       url: 'https://www.capitalone.com/',
       domain: 'capitalone.com',
       icon: resourceIcon('capitalone.com'),
@@ -60,8 +68,10 @@ export const RESOURCES = {
     {
       id: 'wise',
       name: 'Wise',
-      description:
-        'Международные переводы с прозрачным курсом. Подходит для отправки денег в СНГ и между счетами в разных валютах.',
+      description: {
+        ru: 'Международные переводы с прозрачным курсом. Подходит для отправки денег в СНГ и между счетами в разных валютах.',
+        en: 'International transfers with a transparent exchange rate. Good for sending money to the CIS and moving funds between accounts in different currencies.',
+      },
       url: 'https://wise.com/',
       domain: 'wise.com',
       icon: resourceIcon('wise.com'),
@@ -71,8 +81,10 @@ export const RESOURCES = {
     {
       id: 'paysend',
       name: 'PaySend',
-      description:
-        'Переводы в СНГ и Европу с фиксированной комиссией. Популярен среди русскоязычных иммигрантов в США.',
+      description: {
+        ru: 'Переводы в СНГ и Европу с фиксированной комиссией. Популярен среди русскоязычных иммигрантов в США.',
+        en: 'Transfers to the CIS and Europe with a fixed fee. Popular among Russian-speaking immigrants in the U.S.',
+      },
       url: 'https://paysend.com/',
       domain: 'paysend.com',
       icon: resourceIcon('paysend.com'),
@@ -82,8 +94,10 @@ export const RESOURCES = {
     {
       id: 'remitly',
       name: 'Remitly',
-      description:
-        'Быстрые переводы родственникам за рубеж. Есть доставка на карту, счёт и наличными в ряде стран.',
+      description: {
+        ru: 'Быстрые переводы родственникам за рубеж. Есть доставка на карту, счёт и наличными в ряде стран.',
+        en: 'Fast transfers to relatives abroad. Delivery options include card, bank account, and cash pickup in several countries.',
+      },
       url: 'https://www.remitly.com/',
       domain: 'remitly.com',
       icon: resourceIcon('remitly.com'),
@@ -93,8 +107,10 @@ export const RESOURCES = {
     {
       id: 'sendwave',
       name: 'Sendwave',
-      description:
-        'Переводы на мобильные кошельки и карты. Удобен для регулярных небольших отправок без комиссии в приложении.',
+      description: {
+        ru: 'Переводы на мобильные кошельки и карты. Удобен для регулярных небольших отправок без комиссии в приложении.',
+        en: 'Transfers to mobile wallets and cards. Convenient for regular small transfers with no fee in the app.',
+      },
       url: 'https://www.sendwave.com/',
       domain: 'sendwave.com',
       icon: resourceIcon('sendwave.com'),
@@ -104,8 +120,10 @@ export const RESOURCES = {
     {
       id: 'zelle',
       name: 'Zelle',
-      description:
-        'Мгновенные переводы между банками внутри США по email или телефону. Встроен в приложения многих банков.',
+      description: {
+        ru: 'Мгновенные переводы между банками внутри США по email или телефону. Встроен в приложения многих банков.',
+        en: "Instant transfers between U.S. banks using an email or phone number. Built into many banks' apps.",
+      },
       url: 'https://www.zellepay.com/',
       domain: 'zellepay.com',
       icon: resourceIcon('zellepay.com'),
@@ -117,8 +135,10 @@ export const RESOURCES = {
     {
       id: 'affirm',
       name: 'Affirm',
-      description:
-        'Рассрочка на покупки в интернет-магазинах и у партнёров. Показывает условия до подтверждения платежа.',
+      description: {
+        ru: 'Рассрочка на покупки в интернет-магазинах и у партнёров. Показывает условия до подтверждения платежа.',
+        en: 'Installment plans for purchases at online stores and partner retailers. Shows terms before you confirm payment.',
+      },
       url: 'https://www.affirm.com/',
       domain: 'affirm.com',
       icon: resourceIcon('affirm.com'),
@@ -128,8 +148,10 @@ export const RESOURCES = {
     {
       id: 'klarna',
       name: 'Klarna',
-      description:
-        'Оплата частями в магазинах одежды, техники и маркетплейсах. Есть отложенный платёж и план на несколько месяцев.',
+      description: {
+        ru: 'Оплата частями в магазинах одежды, техники и маркетплейсах. Есть отложенный платёж и план на несколько месяцев.',
+        en: 'Pay in installments at clothing and electronics stores and marketplaces. Offers pay-later and multi-month payment plans.',
+      },
       url: 'https://www.klarna.com/us/',
       domain: 'klarna.com',
       icon: resourceIcon('klarna.com'),
@@ -139,8 +161,10 @@ export const RESOURCES = {
     {
       id: 'afterpay',
       name: 'Afterpay',
-      description:
-        'Разбивка чека на 4 платежа без процентов у тысяч ритейлеров. Полезно для крупных бытовых покупок.',
+      description: {
+        ru: 'Разбивка чека на 4 платежа без процентов у тысяч ритейлеров. Полезно для крупных бытовых покупок.',
+        en: 'Splits your purchase into 4 interest-free payments at thousands of retailers. Useful for larger household purchases.',
+      },
       url: 'https://www.afterpay.com/',
       domain: 'afterpay.com',
       icon: resourceIcon('afterpay.com'),
@@ -150,8 +174,10 @@ export const RESOURCES = {
     {
       id: 'sunbit',
       name: 'Sunbit',
-      description:
-        'Рассрочка для медицины, стоматологии и авторемонта. Одобрение за 30 секунд.',
+      description: {
+        ru: 'Рассрочка для медицины, стоматологии и авторемонта. Одобрение за 30 секунд.',
+        en: 'Installment plans for medical, dental, and auto repair expenses. Approval in 30 seconds.',
+      },
       url: 'https://sunbit.com/',
       domain: 'sunbit.com',
       icon: resourceIcon('sunbit.com'),
@@ -161,8 +187,10 @@ export const RESOURCES = {
     {
       id: 'paypal-pay-later',
       name: 'PayPal Pay Later',
-      description:
-        'Рассрочка и отложенная оплата через PayPal там, где принимают этот способ оплаты.',
+      description: {
+        ru: 'Рассрочка и отложенная оплата через PayPal там, где принимают этот способ оплаты.',
+        en: 'Installments and pay-later options through PayPal, anywhere that accepts it as a payment method.',
+      },
       url: 'https://www.paypal.com/us/digital-wallet/ways-to-pay/buy-now-pay-later',
       domain: 'paypal.com',
       icon: resourceIcon('paypal.com'),
@@ -174,8 +202,10 @@ export const RESOURCES = {
     {
       id: 'credit-karma',
       name: 'Credit Karma',
-      description:
-        'Бесплатный мониторинг кредитного скора и рекомендации по картам. Помогает понять, что влияет на кредитную историю.',
+      description: {
+        ru: 'Бесплатный мониторинг кредитного скора и рекомендации по картам. Помогает понять, что влияет на кредитную историю.',
+        en: 'Free credit score monitoring and card recommendations. Helps you understand what affects your credit history.',
+      },
       url: 'https://www.creditkarma.com/',
       domain: 'creditkarma.com',
       icon: resourceIcon('creditkarma.com'),
@@ -185,8 +215,10 @@ export const RESOURCES = {
     {
       id: 'discover-secured',
       name: 'Discover it Secured',
-      description:
-        'Залоговая карта для старта кредитной истории. Через несколько месяцев ответственного использования можно перейти на обычную карту.',
+      description: {
+        ru: 'Залоговая карта для старта кредитной истории. Через несколько месяцев ответственного использования можно перейти на обычную карту.',
+        en: 'A secured card to start building credit history. After a few months of responsible use, you can graduate to an unsecured card.',
+      },
       url: 'https://www.discover.com/credit-cards/secured/',
       domain: 'discover.com',
       icon: resourceIcon('discover.com'),
@@ -196,8 +228,10 @@ export const RESOURCES = {
     {
       id: 'self',
       name: 'Self',
-      description:
-        'Credit builder: небольшой кредит на свой депозит, чтобы появились первые записи в credit report.',
+      description: {
+        ru: 'Credit builder: небольшой кредит на свой депозит, чтобы появились первые записи в credit report.',
+        en: 'Credit builder: a small loan secured by your own deposit, so you start building entries on your credit report.',
+      },
       url: 'https://www.self.inc/',
       domain: 'self.inc',
       icon: resourceIcon('self.inc'),
@@ -207,8 +241,10 @@ export const RESOURCES = {
     {
       id: 'experian',
       name: 'Experian',
-      description:
-        'Официальный отчёт о кредитной истории и инструменты для отслеживания изменений в бюро.',
+      description: {
+        ru: 'Официальный отчёт о кредитной истории и инструменты для отслеживания изменений в бюро.',
+        en: 'An official credit report and tools to track changes at the bureau.',
+      },
       url: 'https://www.experian.com/',
       domain: 'experian.com',
       icon: resourceIcon('experian.com'),
