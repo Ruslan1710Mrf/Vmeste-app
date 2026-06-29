@@ -911,22 +911,95 @@ function AppContent() {
   const selectedJob = selectedJobId ? getJobById(selectedJobId) : null;
   const selectedEvent = selectedEventId ? getEventById(selectedEventId, events) : null;
 
-  useEffect(() => {
-    if (Platform.OS !== 'android' || !selectedEvent) return undefined;
-
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      setSelectedEventId(null);
-      return true;
-    });
-
-    return () => subscription.remove();
-  }, [selectedEvent]);
-
   const selectedMember = selectedMemberId
     ? (getMemberById(selectedMemberId) ?? firestoreMember)
     : null;
   const selectedPost = selectedPostId ? getPostById(selectedPostId, posts) : null;
   const chatMember = chatMemberProfile;
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (showNotifications) {
+        closeNotifications();
+        return true;
+      }
+      if (menuPost) {
+        setMenuPost(null);
+        return true;
+      }
+      if (showCreatePost) {
+        closeCreatePost();
+        return true;
+      }
+      if (showCreateEvent) {
+        closeCreateEvent();
+        return true;
+      }
+      if (showSearch) {
+        setShowSearch(false);
+        return true;
+      }
+      if (selectedGuide) {
+        setSelectedGuide(null);
+        return true;
+      }
+      if (selectedJob) {
+        setSelectedJobId(null);
+        return true;
+      }
+      if (selectedEvent) {
+        setSelectedEventId(null);
+        return true;
+      }
+      if (selectedMember) {
+        setSelectedMemberId(null);
+        return true;
+      }
+      if (selectedPost) {
+        setSelectedPostId(null);
+        return true;
+      }
+      if (chatMember) {
+        setSelectedChatMemberId(null);
+        return true;
+      }
+      if (tab === 'home' && showFeed) {
+        setShowFeed(false);
+        return true;
+      }
+      if (profileView) {
+        if (profileView === 'feed') {
+          closeTagFeed();
+        } else if (profileReturnTab) {
+          closeProfileView();
+        } else {
+          setProfileView(null);
+        }
+        return true;
+      }
+      return false;
+    });
+
+    return () => subscription.remove();
+  }, [
+    showNotifications,
+    menuPost,
+    showCreatePost,
+    showCreateEvent,
+    showSearch,
+    selectedGuide,
+    selectedJob,
+    selectedEvent,
+    selectedMember,
+    selectedPost,
+    chatMember,
+    tab,
+    showFeed,
+    profileView,
+    profileReturnTab,
+  ]);
 
   const connectionsCount = connectedIds.length;
   const messagesCount = conversations.filter((conv) => conv.lastMessage?.trim()).length;

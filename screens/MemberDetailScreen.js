@@ -32,6 +32,7 @@ function MemberPostRow({ post, onPress }) {
 }
 
 function MutualConnectionRow({ member, onPress }) {
+  const { t } = useI18n();
   return (
     <Pressable
       style={({ pressed }) => [styles.mutualRow, pressed && styles.buttonPressed]}
@@ -42,7 +43,7 @@ function MutualConnectionRow({ member, onPress }) {
       </View>
       <View style={styles.mutualInfo}>
         <Text style={styles.mutualName}>{member.name}</Text>
-        <Text style={styles.mutualRole}>{member.role}</Text>
+        <Text style={styles.mutualRole}>{member.role || t('networking.communityMember')}</Text>
       </View>
       <Text style={styles.mutualArrow}>›</Text>
     </Pressable>
@@ -106,7 +107,7 @@ export default function MemberDetailScreen({
             <Text style={styles.avatarText}>{member.name.charAt(0)}</Text>
           </View>
           <Text style={styles.name}>{member.name}</Text>
-          <Text style={styles.role}>{member.role}</Text>
+          <Text style={styles.role}>{member.role || t('networking.communityMember')}</Text>
           <Text style={styles.city}>{member.country} {member.city}</Text>
         </View>
 

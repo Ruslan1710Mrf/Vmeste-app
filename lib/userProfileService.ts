@@ -48,7 +48,7 @@ export function profileDocToMember(doc: UserProfileDoc): MemberProfile {
   return {
     id: doc.uid,
     name: doc.name?.trim() || 'Пользователь',
-    role: doc.city?.trim() ? doc.city : 'Участник сообщества',
+    role: doc.city?.trim() ?? '',
     city: doc.city?.trim() ?? '',
     country: '🇺🇸',
     bio: '',

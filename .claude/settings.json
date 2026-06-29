@@ -13,7 +13,13 @@
       "Bash(node --check /tmp/test_jsx_check.js)",
       "Bash(node --check /Users/rus/sng-community2/lib/i18n.js)",
       "Bash(firebase firestore:indexes --project veste-app-bffb0)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(ls -la ~/Desktop/ | cat -A | grep -i \"конкурс\" | head -5)",
+      "Read(//Users/rus/Desktop/**)",
+      "Bash(node --check /Users/rus/sng-community2/App.js)",
+      "Bash(open ~/Desktop/\"marketing\")",
+      "Bash(open /Users/rus/sng-community2/marketing/durov-contest/)",
+      "Bash(ln -sfn /Users/rus/sng-community2/marketing/durov-contest ~/Desktop/\"Материалы для видео \\(проект\\)\")"
     ]
   },
   "enabledPlugins": {

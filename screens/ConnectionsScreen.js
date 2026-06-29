@@ -11,6 +11,7 @@ import { fetchUsersByIds } from '../lib/userProfileService';
 import { useI18n } from '../lib/i18n';
 
 function ConnectionRow({ member, onPress, onMessage }) {
+  const { t } = useI18n();
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
@@ -21,7 +22,7 @@ function ConnectionRow({ member, onPress, onMessage }) {
       </View>
       <View style={styles.content}>
         <Text style={styles.name}>{member.name}</Text>
-        <Text style={styles.role}>{member.role}</Text>
+        <Text style={styles.role}>{member.role || t('networking.communityMember')}</Text>
         <Text style={styles.city}>📍 {member.city}</Text>
       </View>
       <Pressable

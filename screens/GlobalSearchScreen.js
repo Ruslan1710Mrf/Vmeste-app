@@ -219,7 +219,7 @@ export default function GlobalSearchScreen({
                   key={member.id}
                   emoji="👤"
                   title={member.name}
-                  subtitle={`${member.role} · ${member.city}`}
+                  subtitle={`${member.role || t('networking.communityMember')} · ${member.city}`}
                   onPress={() => onOpenMember(member.id)}
                 />
               ))}

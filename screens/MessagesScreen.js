@@ -55,6 +55,7 @@ function ConversationRow({ conv, myUid, onPress, onDelete }) {
 }
 
 function FriendRow({ member, onPress }) {
+  const { t } = useI18n();
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
@@ -65,7 +66,7 @@ function FriendRow({ member, onPress }) {
       </View>
       <View style={styles.content}>
         <Text style={styles.name}>{member.name}</Text>
-        <Text style={styles.preview} numberOfLines={1}>{member.role}</Text>
+        <Text style={styles.preview} numberOfLines={1}>{member.role || t('networking.communityMember')}</Text>
       </View>
       <Text style={styles.friendMsgIcon}>💬</Text>
     </Pressable>

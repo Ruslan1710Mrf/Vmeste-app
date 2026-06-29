@@ -12,7 +12,7 @@ import {
 import { GROUPS } from '../data/groups';
 import { MEMBERS } from '../data/members';
 import { fetchNetworkUsers } from '../lib/userProfileService';
-import { useI18n } from '../lib/i18n';
+import { localize, useI18n } from '../lib/i18n';
 
 function EventCard({ event, onPress }) {
   const { t } = useI18n();
@@ -34,14 +34,14 @@ function EventCard({ event, onPress }) {
 }
 
 function GroupRow({ group }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   return (
     <Pressable
       style={({ pressed }) => [styles.groupRow, pressed && styles.rowPressed]}
       onPress={() => Linking.openURL(group.url)}
     >
       <View style={styles.groupInfo}>
-        <Text style={styles.groupName}>{group.name}</Text>
+        <Text style={styles.groupName}>{localize(group.name, language)}</Text>
         <Text style={styles.groupMeta}>
           {t('networking.membersCount', { value: group.members })} · {group.platform}
         </Text>
@@ -52,6 +52,7 @@ function GroupRow({ group }) {
 }
 
 function MemberCard({ member, onPress, isConnected }) {
+  const { t } = useI18n();
   return (
     <Pressable
       style={({ pressed }) => [styles.memberCard, pressed && styles.cardPressed]}
@@ -62,7 +63,7 @@ function MemberCard({ member, onPress, isConnected }) {
       </View>
       <View style={styles.memberInfo}>
         <Text style={styles.memberName}>{member.name}</Text>
-        <Text style={styles.memberRole}>{member.role}</Text>
+        <Text style={styles.memberRole}>{member.role || t('networking.communityMember')}</Text>
         <Text style={styles.memberCity}>{member.country} {member.city}</Text>
       </View>
       <Text style={[styles.connectButton, isConnected && styles.connectedButton]}>
@@ -81,7 +82,7 @@ export default function NetworkingScreen({
   userId,
   blockedUserIds = [],
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const [query, setQuery] = useState('');
   const [firestoreMembers, setFirestoreMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(true);
@@ -128,10 +129,10 @@ export default function NetworkingScreen({
     if (!q) return GROUPS;
     return GROUPS.filter(
       (g) =>
-        g.name.toLowerCase().includes(q) ||
+        localize(g.name, language).toLowerCase().includes(q) ||
         g.platform.toLowerCase().includes(q),
     );
-  }, [q]);
+  }, [q, language]);
 
   const filteredMembers = useMemo(() => {
     if (!q) return allMembers;
