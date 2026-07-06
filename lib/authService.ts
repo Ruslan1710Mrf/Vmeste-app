@@ -75,9 +75,7 @@ export async function signInWithGoogle() {
   }
 
   if (!GOOGLE_WEB_CLIENT_ID) {
-    throw new Error(
-      'Добавьте EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID в .env.local (Web client ID из Firebase Console)',
-    );
+    throw new Error('auth.errors.googleNotConfigured');
   }
 
   GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });
