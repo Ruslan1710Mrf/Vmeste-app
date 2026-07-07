@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1029398639222",
+    "project_id": "veste-app-bffb0",
+    "storage_bucket": "veste-app-bffb0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1029398639222:android:a95cf4a37eeee59a592557",
+        "android_client_info": {
+          "package_name": "com.vmeste.group"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1029398639222-rti9t423d8q9vrord6hsja6avt1av3if.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3H-IXZI1hdbjRdlk1Krce6UlTvf4YzZY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1029398639222-rti9t423d8q9vrord6hsja6avt1av3if.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
