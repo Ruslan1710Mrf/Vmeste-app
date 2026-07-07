@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1029398639222-3cmcs7nvqk2ktdc6aa6isj1sldsojbo0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vmeste.group",
+            "certificate_hash": "7d3df56c1e02142ae96ecdd4d24202beee891671"
+          }
+        },
+        {
           "client_id": "1029398639222-rti9t423d8q9vrord6hsja6avt1av3if.apps.googleusercontent.com",
           "client_type": 3
         }
