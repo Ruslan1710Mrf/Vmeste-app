@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getMemberByAuthorName } from '../data/members';
+import { isOwnPost } from '../lib/postUtils';
 import { getPostShareUrl } from '../lib/sharePost';
 import ShareSheet from '../components/ShareSheet';
 import { useTheme } from '../lib/ThemeContext';
@@ -184,6 +185,7 @@ function FeedPost({
   styles,
   post,
   isLiked,
+  userId,
   onPress,
   onToggleLike,
   onOpenMenu,
@@ -193,6 +195,8 @@ function FeedPost({
   const { t } = useI18n();
   const replyCount = post.replies?.length ?? 0;
   const likes = post.likes + (isLiked ? 1 : 0);
+  const cleanName = (post.author || '').replace(/\s*\(вы\)\s*$/, '');
+  const displayName = isOwnPost(post, userId) ? `${cleanName} (вы)` : cleanName;
 
   return (
     <View style={styles.postCard}>
@@ -202,10 +206,10 @@ function FeedPost({
           onPress={() => onOpenAuthor(post)}
         >
           <View style={styles.postAvatar}>
-            <Text style={styles.postAvatarText}>{post.author.charAt(0)}</Text>
+            <Text style={styles.postAvatarText}>{cleanName.charAt(0)}</Text>
           </View>
           <View style={styles.postHeaderInfo}>
-            <Text style={styles.postAuthor}>{post.author}</Text>
+            <Text style={styles.postAuthor}>{displayName}</Text>
             <Text style={styles.postMeta}>{post.time} · 🌐</Text>
           </View>
         </Pressable>
@@ -287,14 +291,20 @@ export default function HomeScreen({
   };
 
   const handleOpenAuthor = (post) => {
+    if (isOwnPost(post, userId)) {
+      onOpenOwnProfile?.();
+      return;
+    }
+    if (post.authorId) {
+      onOpenMember(post.authorId);
+      return;
+    }
     if (post.author?.includes('(вы)')) {
       onOpenOwnProfile?.();
       return;
     }
     const member = getMemberByAuthorName(post.author);
-    if (member) {
-      onOpenMember(member.id);
-    }
+    if (member) onOpenMember(member.id);
   };
 
   return (
@@ -338,6 +348,7 @@ export default function HomeScreen({
             styles={styles}
             post={post}
             isLiked={likedPostIds.includes(post.id)}
+            userId={userId}
             onPress={onOpenPost}
             onToggleLike={onToggleLike}
             onOpenMenu={onOpenPostMenu}

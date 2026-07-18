@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   orderBy,
@@ -20,7 +21,7 @@ export function getConversationId(uid1: string, uid2: string): string {
   return [uid1, uid2].sort().join('_');
 }
 
-// Создать или обновить conversation doc
+// Создать или открыть conversation doc
 export async function ensureConversation(
   myUid: string,
   otherUid: string,
@@ -30,19 +31,21 @@ export async function ensureConversation(
   const convId = getConversationId(myUid, otherUid);
   const ref = doc(db, 'conversations', convId);
 
-  // setDoc+merge вместо getDoc: правила read требуют resource.data,
-  // которого нет у ещё не созданного документа
-  await setDoc(
-    ref,
-    {
-      participants: [myUid, otherUid],
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      participants: [myUid, otherUid].sort(),
       participantNames: { [myUid]: myName, [otherUid]: otherName },
       lastMessage: '',
       lastMessageAt: serverTimestamp(),
       createdAt: serverTimestamp(),
-    },
-    { merge: true },
-  );
+    });
+  } else {
+    await updateDoc(ref, {
+      participantNames: { [myUid]: myName, [otherUid]: otherName },
+    });
+  }
 
   return convId;
 }

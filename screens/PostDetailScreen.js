@@ -10,11 +10,14 @@ import {
 } from 'react-native';
 import { getFirstName } from '../lib/profileUtils';
 import { useI18n } from '../lib/i18n';
+import { isOwnPost } from '../lib/postUtils';
 
-export default function PostDetailScreen({ post, profile, onBack, onAddReply }) {
+export default function PostDetailScreen({ post, profile, userId, onBack, onAddReply }) {
   const { t } = useI18n();
   const [draft, setDraft] = useState('');
   const replies = post.replies ?? [];
+  const cleanName = (post.author || '').replace(/\s*\(вы\)\s*$/, '');
+  const displayName = isOwnPost(post, userId) ? `${cleanName} (вы)` : cleanName;
 
   const handleReply = () => {
     const text = draft.trim();
@@ -44,10 +47,10 @@ export default function PostDetailScreen({ post, profile, onBack, onAddReply }) 
         <View style={styles.postCard}>
           <View style={styles.postHeader}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{post.author.charAt(0)}</Text>
+              <Text style={styles.avatarText}>{cleanName.charAt(0)}</Text>
             </View>
             <View>
-              <Text style={styles.author}>{post.author}</Text>
+              <Text style={styles.author}>{displayName}</Text>
               <Text style={styles.meta}>📍 {post.city} · {post.time}</Text>
             </View>
           </View>

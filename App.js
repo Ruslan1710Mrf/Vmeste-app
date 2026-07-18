@@ -567,7 +567,7 @@ function AppContent() {
     }
 
     const payload = {
-      author: `${firstName} (вы)`,
+      author: firstName,
       city: getProfileCityLabel(profile),
       content: text,
       category,
@@ -1116,6 +1116,7 @@ function AppContent() {
         <PostDetailScreen
           post={selectedPost}
           profile={profile}
+          userId={userId}
           onBack={() => setSelectedPostId(null)}
           onAddReply={addReply}
         />
@@ -1198,6 +1199,7 @@ function AppContent() {
           <FeedScreen
             posts={visiblePosts}
             likedPostIds={likedPostIds}
+            userId={userId}
             onBack={closeTagFeed}
             onOpenCreatePost={() => setShowCreatePost(true)}
             onSelectPost={openPost}
@@ -1308,6 +1310,7 @@ function AppContent() {
         <FeedScreen
           posts={visiblePosts}
           likedPostIds={likedPostIds}
+          userId={userId}
           onBack={() => setShowFeed(false)}
           onOpenCreatePost={() => setShowCreatePost(true)}
           onSelectPost={openPost}

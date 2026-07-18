@@ -11,10 +11,12 @@ import {
 import { getMemberByAuthorName } from '../data/members';
 import { FEED_CATEGORIES } from '../lib/interestUtils';
 import { useI18n } from '../lib/i18n';
+import { isOwnPost } from '../lib/postUtils';
 
 function PostCard({
   post,
   isLiked,
+  userId,
   onPress,
   onCommentPress,
   onToggleLike,
@@ -24,6 +26,8 @@ function PostCard({
   const { t } = useI18n();
   const replyCount = post.replies?.length ?? 0;
   const likes = post.likes + (isLiked ? 1 : 0);
+  const cleanName = (post.author || '').replace(/\s*\(вы\)\s*$/, '');
+  const displayName = isOwnPost(post, userId) ? `${cleanName} (вы)` : cleanName;
 
   return (
     <View style={styles.card}>
@@ -33,10 +37,10 @@ function PostCard({
           onPress={() => onOpenAuthor(post)}
         >
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{post.author.charAt(0)}</Text>
+            <Text style={styles.avatarText}>{cleanName.charAt(0)}</Text>
           </View>
           <View style={styles.authorInfo}>
-            <Text style={styles.author}>{post.author}</Text>
+            <Text style={styles.author}>{displayName}</Text>
             <Text style={styles.meta}>📍 {post.city} · {post.time}</Text>
           </View>
         </Pressable>
@@ -77,6 +81,7 @@ function PostCard({
 export default function FeedScreen({
   posts,
   likedPostIds,
+  userId,
   onBack,
   onOpenCreatePost,
   onSelectPost,
@@ -113,14 +118,20 @@ export default function FeedScreen({
   };
 
   const handleOpenAuthor = (post) => {
+    if (isOwnPost(post, userId)) {
+      onOpenOwnProfile?.();
+      return;
+    }
+    if (post.authorId) {
+      onOpenMember(post.authorId);
+      return;
+    }
     if (post.author?.includes('(вы)')) {
       onOpenOwnProfile?.();
       return;
     }
     const member = getMemberByAuthorName(post.author);
-    if (member) {
-      onOpenMember(member.id);
-    }
+    if (member) onOpenMember(member.id);
   };
 
   return (
@@ -182,6 +193,7 @@ export default function FeedScreen({
               key={post.id}
               post={post}
               isLiked={likedPostIds.includes(post.id)}
+              userId={userId}
               onPress={onSelectPost}
               onOpenAuthor={handleOpenAuthor}
               onCommentPress={onSelectPost}
