@@ -8,6 +8,7 @@
     "babel-preset-expo": "~56.0.0",
     "cors": "^2.8.6",
     "expo": "~56.0.9",
+    "expo-apple-authentication": "~56.0.4",
     "expo-auth-session": "~56.0.14",
     "expo-constants": "~56.0.17",
     "expo-crypto": "~56.0.4",

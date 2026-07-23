@@ -4,6 +4,7 @@ import {
   deleteUser,
   EmailAuthProvider,
   GoogleAuthProvider,
+  OAuthProvider,
   reauthenticateWithCredential,
   sendEmailVerification,
   sendPasswordResetEmail,
@@ -15,6 +16,8 @@ import {
   type User,
 } from 'firebase/auth';
 import { Platform } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import { DEV_MODE_SKIP_AUTH } from './devMode';
 import { auth } from './firebase';
 import {
@@ -41,7 +44,7 @@ export function shouldRequireLogin() {
 
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
 
-async function ensureGoogleUserProfile(user: User) {
+async function ensureOAuthUserProfile(user: User) {
   let profile: UserProfileDoc | null = null;
   try {
     profile = await fetchUserProfile(user.uid);
@@ -71,7 +74,7 @@ export async function signInWithGoogle() {
   if (Platform.OS === 'web') {
     const provider = new GoogleAuthProvider();
     const credential = await signInWithPopup(auth, provider);
-    return ensureGoogleUserProfile(credential.user);
+    return ensureOAuthUserProfile(credential.user);
   }
 
   if (!GOOGLE_WEB_CLIENT_ID) {
@@ -95,7 +98,49 @@ export async function signInWithGoogle() {
 
   const firebaseCredential = GoogleAuthProvider.credential(idToken);
   const credential = await signInWithCredential(auth, firebaseCredential);
-  return ensureGoogleUserProfile(credential.user);
+  return ensureOAuthUserProfile(credential.user);
+}
+
+export async function signInWithApple() {
+  const nonceBytes = await Crypto.getRandomBytesAsync(32);
+  const nonce = Array.from(nonceBytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  const hashedNonce = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    nonce,
+  );
+
+  const appleCredential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+    nonce: hashedNonce,
+  });
+
+  const { identityToken, fullName } = appleCredential;
+  if (!identityToken) {
+    throw new Error('Не удалось получить токен Apple');
+  }
+
+  const provider = new OAuthProvider('apple.com');
+  const firebaseCredential = provider.credential({
+    idToken: identityToken,
+    rawNonce: nonce,
+  });
+
+  const result = await signInWithCredential(auth, firebaseCredential);
+
+  const displayName = [fullName?.givenName, fullName?.familyName]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  if (displayName && !result.user.displayName) {
+    await updateProfile(result.user, { displayName });
+  }
+
+  return ensureOAuthUserProfile(result.user);
 }
 
 export async function signInWithEmail(email: string, password: string) {

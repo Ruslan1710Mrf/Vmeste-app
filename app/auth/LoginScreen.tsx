@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { statusCodes } from '@react-native-google-signin/google-signin';
-import { mapAuthError, signInWithEmail, signInWithGoogle } from '../../lib/authService';
+import { mapAuthError, signInWithApple, signInWithEmail, signInWithGoogle } from '../../lib/authService';
 import { useI18n } from '../../lib/i18n';
 import styles from './authStyles';
 import PasswordField from './PasswordField';
@@ -24,7 +25,17 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const busy = loading || googleLoading;
+  const [appleLoading, setAppleLoading] = useState(false);
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  const busy = loading || googleLoading || appleLoading;
+
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      AppleAuthentication.isAvailableAsync()
+        .then(setAppleAvailable)
+        .catch(() => {});
+    }
+  }, []);
 
   const handleLogin = async () => {
     setError('');
@@ -46,6 +57,20 @@ export default function LoginScreen() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setError('');
+    setAppleLoading(true);
+    try {
+      await signInWithApple();
+    } catch (err: unknown) {
+      const e = err as { code?: string; message?: string };
+      if (e.code === 'ERR_REQUEST_CANCELED') return;
+      setError(t(mapAuthError(e.code ?? '')));
+    } finally {
+      setAppleLoading(false);
     }
   };
 
@@ -158,6 +183,16 @@ export default function LoginScreen() {
                 <Text style={styles.googleButtonText}>{t('auth.login.googleButton')}</Text>
               )}
             </Pressable>
+
+            {appleAvailable && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                cornerRadius={8}
+                style={{ height: 48, opacity: busy ? 0.6 : 1 }}
+                onPress={() => { if (!busy) handleAppleLogin(); }}
+              />
+            )}
           </View>
 
           <View style={styles.footer}>

@@ -8,7 +8,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vmeste.group",
+      "usesAppleSignIn": true,
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +30,13 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-google-signin/google-signin",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1029398639222-pprhrr68eqdom87jdpaqt30beaaupp79"
+        }
+      ],
+      "expo-apple-authentication",
       "expo-sharing",
       [
         "expo-image-picker",
