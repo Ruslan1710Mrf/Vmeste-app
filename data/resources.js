@@ -12,13 +12,26 @@ function resourceIcon(domain) {
 export const RESOURCES = {
   banks: [
     {
+      id: 'capital-one',
+      name: 'Capital One',
+      description: {
+        ru: 'Часто одобряют первый счёт без сложной кредитной истории. Хороший вариант для первых месяцев в стране.',
+        en: 'Often approves a first account without an extensive credit history. A good option for your first months in the country.',
+      },
+      url: 'https://i.capitalone.com/Jrfw5lz7T',
+      domain: 'capitalone.com',
+      icon: resourceIcon('capitalone.com'),
+      brandColor: '#D03027',
+      fallback: 'C1',
+    },
+    {
       id: 'chase',
       name: 'Chase',
       description: {
         ru: 'Крупный банк с отделениями по всей стране. Удобно открыть checking/savings при наличии SSN или ITIN.',
         en: 'A major bank with branches nationwide. Easy to open a checking/savings account if you have an SSN or ITIN.',
       },
-      url: 'https://www.chase.com/',
+      url: 'https://www.referyourchasecard.com/18a/V4BGD2SWDE',
       domain: 'chase.com',
       icon: resourceIcon('chase.com'),
       brandColor: '#117ACA',
@@ -49,19 +62,6 @@ export const RESOURCES = {
       icon: resourceIcon('wellsfargo.com'),
       brandColor: '#D71E28',
       fallback: 'WF',
-    },
-    {
-      id: 'capital-one',
-      name: 'Capital One',
-      description: {
-        ru: 'Часто одобряют первый счёт без сложной кредитной истории. Хороший вариант для первых месяцев в стране.',
-        en: 'Often approves a first account without an extensive credit history. A good option for your first months in the country.',
-      },
-      url: 'https://www.capitalone.com/',
-      domain: 'capitalone.com',
-      icon: resourceIcon('capitalone.com'),
-      brandColor: '#D03027',
-      fallback: 'C1',
     },
   ],
   transfers: [
