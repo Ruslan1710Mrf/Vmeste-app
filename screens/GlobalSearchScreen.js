@@ -13,6 +13,7 @@ import { JOBS } from '../data/jobs';
 import { MEMBERS } from '../data/members';
 import { memberMatchesQuery, searchUsers } from '../lib/userProfileService';
 import { localize, useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function ResultSection({ title, count, children }) {
   if (!count) return null;
@@ -51,6 +52,7 @@ export default function GlobalSearchScreen({
   authReady,
   blockedUserIds = [],
 }) {
+  const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [query, setQuery] = useState('');
   const [firestoreMembers, setFirestoreMembers] = useState([]);
@@ -139,7 +141,7 @@ export default function GlobalSearchScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 12 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

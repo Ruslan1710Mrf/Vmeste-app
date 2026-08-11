@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { getEventById } from '../data/events';
 import { useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function EventRow({ event, onPress }) {
   const { t } = useI18n();
@@ -32,6 +33,7 @@ export default function MyEventsScreen({
   onOpenEvent,
   onCreateEvent,
 }) {
+  const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const events = registeredEventIds
     .map((id) => getEventById(id, allEvents))
@@ -39,7 +41,7 @@ export default function MyEventsScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

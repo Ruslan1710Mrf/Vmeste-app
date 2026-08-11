@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { fetchUsersByIds } from '../lib/userProfileService';
 import { useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function ConnectionRow({ member, onPress, onMessage }) {
   const { t } = useI18n();
@@ -41,6 +42,7 @@ export default function ConnectionsScreen({
   onOpenMember,
   onMessage,
 }) {
+  const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function ConnectionsScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

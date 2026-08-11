@@ -15,6 +15,7 @@ import { IMMIGRATION_STATUS_OPTIONS } from '../data/profileFields';
 import { getProfileInitial } from '../lib/profileUtils';
 import { useTheme } from '../lib/ThemeContext';
 import { useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const HERO_HEIGHT = 320;
 
@@ -94,6 +95,7 @@ function ImmigrationStatusPicker({ value, onChange, styles }) {
 }
 
 export default function EditProfileScreen({ profile, onBack, onSave }) {
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -171,7 +173,7 @@ export default function EditProfileScreen({ profile, onBack, onSave }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

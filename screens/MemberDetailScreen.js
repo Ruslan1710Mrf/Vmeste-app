@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import MemberOptionsMenu from '../components/MemberOptionsMenu';
 import { useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function MemberPostRow({ post, onPress }) {
   const replyCount = post.replies?.length ?? 0;
@@ -65,12 +66,13 @@ export default function MemberDetailScreen({
   onUnblock,
   onReport,
 }) {
+  const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const [showMenu, setShowMenu] = useState(false);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 8 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

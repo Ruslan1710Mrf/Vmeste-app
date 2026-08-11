@@ -14,6 +14,7 @@ import { useI18n } from '../lib/i18n';
 import { THEME_OPTIONS } from '../lib/theme';
 import { IMMIGRATION_STATUS_UNKNOWN } from '../data/profileFields';
 import { getProfileInitial } from '../lib/profileUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MENU_ITEMS = [
   { id: 'edit', labelKey: 'profile.menu.edit', emoji: '✏️' },
@@ -160,6 +161,7 @@ export default function ProfileScreen({
   checklistDone,
   checklistTotal,
 }) {
+  const insets = useSafeAreaInsets();
   const { colors, preference, setThemePreference } = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => createProfileStyles(colors), [colors]);
@@ -184,7 +186,7 @@ export default function ProfileScreen({
   return (
     <View style={styles.container}>
       {onBack ? (
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
           <Pressable
             style={({ pressed }) => [styles.backButton, pressed && styles.rowPressed]}
             onPress={onBack}

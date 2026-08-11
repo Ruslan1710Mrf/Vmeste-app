@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { IMMIGRATION_SECTIONS } from '../data/immigration';
 import { localize, useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const IMMIGRATION_APPS = [
   {
@@ -140,6 +141,7 @@ function Section({ section, onSelectGuide }) {
 }
 
 export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} }) {
+  const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -168,7 +170,7 @@ export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} 
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Text style={styles.screenTitle}>{t('immigration.title')}</Text>
         <Text style={styles.screenSubtitle}>
           {t('immigration.subtitle')}

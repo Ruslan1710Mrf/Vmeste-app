@@ -25,6 +25,7 @@ import { deleteUserConversations } from '../lib/messageService';
 import { deleteUserAiChats } from '../lib/aiChatService';
 import { LANGUAGES } from '../lib/chatUtils';
 import { useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function confirmSignOut(t) {
   if (Platform.OS === 'web') {
@@ -77,6 +78,7 @@ function SettingRow({ label, description, value, onValueChange }) {
 }
 
 export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, language: currentLanguage, setLanguage } = useI18n();
   const [signingOut, setSigningOut] = useState(false);
@@ -207,7 +209,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

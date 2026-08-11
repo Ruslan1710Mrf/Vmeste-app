@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { JOBS } from '../data/jobs';
 import { localize, useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const JOB_APPS = [
   {
@@ -117,6 +118,7 @@ function JobCard({ job, onPress, isSaved, onToggleSave }) {
 }
 
 export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onRefresh = () => {} }) {
+  const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [query, setQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -145,7 +147,7 @@ export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onR
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Text style={styles.screenTitle}>{t('jobs.title')}</Text>
         <Text style={styles.screenSubtitle}>
           {t('jobs.subtitle', { value: filtered.length })}

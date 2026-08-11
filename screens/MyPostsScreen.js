@@ -6,6 +6,7 @@ import {
   View,
 } from 'react-native';
 import { useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function PostRow({ post, onPress }) {
   const replyCount = post.replies?.length ?? 0;
@@ -30,10 +31,11 @@ function PostRow({ post, onPress }) {
 }
 
 export default function MyPostsScreen({ posts, onBack, onOpenPost, onOpenCreatePost }) {
+  const insets = useSafeAreaInsets();
   const { t } = useI18n();
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

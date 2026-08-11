@@ -207,6 +207,7 @@ function AppContent() {
       setBlockedByMe((prev) => prev.filter((id) => id !== memberId));
       Alert.alert(t('settings.error'), t('app.blockUserError'));
     });
+    reportContent(userId, 'user', memberId, 'blocked_by_user').catch(() => {});
   };
 
   const handleUnblockMember = (memberId) => {

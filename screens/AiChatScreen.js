@@ -17,8 +17,10 @@ import { fetchAiChatMessages, saveAiChatMessage } from '../lib/aiChatService';
 import AiHeaderIcon from '../components/icons/AiHeaderIcon';
 import { useTheme } from '../lib/ThemeContext';
 import { useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AiChatScreen({ userId }) {
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -126,7 +128,7 @@ export default function AiChatScreen({ userId }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 8 + insets.top }]}>
         <View style={styles.headerAvatar}>
           <AiHeaderIcon size={44} />
         </View>

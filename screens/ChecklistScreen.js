@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { CHECKLIST_ITEMS } from '../data/checklist';
 import { useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function ChecklistItem({ item, checked, onToggle, onOpenGuide }) {
   const { t } = useI18n();
@@ -43,6 +44,7 @@ function ChecklistItem({ item, checked, onToggle, onOpenGuide }) {
 }
 
 export default function ChecklistScreen({ checkedIds, onBack, onToggle, onOpenGuide }) {
+  const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const done = checkedIds.length;
   const total = CHECKLIST_ITEMS.length;
@@ -50,7 +52,7 @@ export default function ChecklistScreen({ checkedIds, onBack, onToggle, onOpenGu
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

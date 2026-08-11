@@ -11,8 +11,10 @@ import {
 import { getFirstName } from '../lib/profileUtils';
 import { useI18n } from '../lib/i18n';
 import { isOwnPost } from '../lib/postUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PostDetailScreen({ post, profile, userId, onBack, onAddReply }) {
+  const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const [draft, setDraft] = useState('');
   const replies = post.replies ?? [];
@@ -33,7 +35,7 @@ export default function PostDetailScreen({ post, profile, userId, onBack, onAddR
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 8 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

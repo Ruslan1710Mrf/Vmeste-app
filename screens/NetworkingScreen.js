@@ -13,6 +13,7 @@ import { GROUPS } from '../data/groups';
 import { MEMBERS } from '../data/members';
 import { fetchNetworkUsers } from '../lib/userProfileService';
 import { localize, useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function EventCard({ event, onPress }) {
   const { t } = useI18n();
@@ -82,6 +83,7 @@ export default function NetworkingScreen({
   userId,
   blockedUserIds = [],
 }) {
+  const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [query, setQuery] = useState('');
   const [firestoreMembers, setFirestoreMembers] = useState([]);
@@ -151,7 +153,7 @@ export default function NetworkingScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Text style={styles.screenTitle}>{t('networking.title')}</Text>
         <Text style={styles.screenSubtitle}>
           {t('networking.subtitle')}

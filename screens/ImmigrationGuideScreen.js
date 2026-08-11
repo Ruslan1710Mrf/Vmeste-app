@@ -6,13 +6,15 @@ import {
   View,
 } from 'react-native';
 import { localize, useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ImmigrationGuideScreen({ section, item, onBack }) {
+  const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const steps = localize(item.steps, language) ?? [];
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 8 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

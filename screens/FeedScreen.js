@@ -12,6 +12,7 @@ import { getMemberByAuthorName } from '../data/members';
 import { FEED_CATEGORIES } from '../lib/interestUtils';
 import { useI18n } from '../lib/i18n';
 import { isOwnPost } from '../lib/postUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function PostCard({
   post,
@@ -95,6 +96,7 @@ export default function FeedScreen({
   feedTitle,
   feedSubtitle,
 }) {
+  const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const resolvedBackLabel = backLabel ?? t('feed.backLabel');
   const resolvedFeedTitle = feedTitle ?? t('feed.title');
@@ -136,7 +138,7 @@ export default function FeedScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Pressable
           style={({ pressed }) => [styles.backButton, pressed && styles.backPressed]}
           onPress={onBack}

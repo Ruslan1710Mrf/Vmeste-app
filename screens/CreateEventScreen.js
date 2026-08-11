@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { useTheme } from '../lib/ThemeContext';
 import { useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CreateEventScreen({ onBack, onPublish }) {
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -56,7 +58,7 @@ export default function CreateEventScreen({ onBack, onPublish }) {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: 12 + insets.top }]}>
           <Pressable
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
             onPress={onBack}

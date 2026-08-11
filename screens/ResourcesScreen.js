@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { RESOURCE_CATEGORIES, RESOURCES } from '../data/resources';
 import { localize, useI18n } from '../lib/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function ServiceIcon({ item }) {
   const [iconFailed, setIconFailed] = useState(false);
@@ -61,6 +62,7 @@ function ResourceCard({ item }) {
 }
 
 export default function ResourcesScreen() {
+  const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [activeCategory, setActiveCategory] = useState(RESOURCE_CATEGORIES[0].id);
 
@@ -71,7 +73,7 @@ export default function ResourcesScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
         <Text style={styles.screenTitle}>{t('resources.title')}</Text>
         <Text style={styles.screenSubtitle}>
           {t('resources.subtitle')}
