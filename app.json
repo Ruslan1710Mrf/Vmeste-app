@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "sng-community2",
+    "name": "Vmeste",
     "slug": "sng-community2",
     "scheme": "vmeste",
     "version": "1.0.0",
@@ -13,7 +13,8 @@
       "usesAppleSignIn": true,
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleDisplayName": "Vmeste"
       }
     },
     "android": {
