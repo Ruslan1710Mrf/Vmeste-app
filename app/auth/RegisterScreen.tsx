@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -26,6 +27,7 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const lastNameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
@@ -162,14 +164,39 @@ export default function RegisterScreen() {
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
+            <Pressable style={styles.consentRow} onPress={() => setAgreed(v => !v)}>
+              <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
+                {agreed ? <Text style={styles.checkmark}>✓</Text> : null}
+              </View>
+              <Text style={styles.consentText}>
+                {'Я принимаю '}
+                <Text
+                  style={styles.consentLink}
+                  onPress={() => Linking.openURL('https://veste-app-bffb0.web.app/terms')}
+                >
+                  {'Условия использования'}
+                </Text>
+                {' и '}
+                <Text
+                  style={styles.consentLink}
+                  onPress={() => Linking.openURL('https://veste-app-bffb0.web.app/privacy')}
+                >
+                  {'Политику конфиденциальности'}
+                </Text>
+              </Text>
+            </Pressable>
+            <Text style={styles.zeroToleranceText}>
+              Vmeste не терпит неприемлемый контент и агрессивное поведение. Такой контент удаляется, а нарушители блокируются.
+            </Text>
+
             <Pressable
               style={({ pressed }) => [
                 styles.primaryButton,
-                loading && styles.primaryButtonDisabled,
-                pressed && !loading && styles.primaryButtonPressed,
+                (!agreed || loading) && styles.primaryButtonDisabled,
+                pressed && agreed && !loading && styles.primaryButtonPressed,
               ]}
               onPress={handleRegister}
-              disabled={loading}
+              disabled={!agreed || loading}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />

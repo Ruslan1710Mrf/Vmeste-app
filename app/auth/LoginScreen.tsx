@@ -4,6 +4,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -27,6 +28,7 @@ export default function LoginScreen() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const busy = loading || googleLoading || appleLoading;
 
   useEffect(() => {
@@ -141,14 +143,39 @@ export default function LoginScreen() {
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
+            <Pressable style={styles.consentRow} onPress={() => setAgreed(v => !v)}>
+              <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
+                {agreed ? <Text style={styles.checkmark}>✓</Text> : null}
+              </View>
+              <Text style={styles.consentText}>
+                {'Я принимаю '}
+                <Text
+                  style={styles.consentLink}
+                  onPress={() => Linking.openURL('https://veste-app-bffb0.web.app/terms')}
+                >
+                  {'Условия использования'}
+                </Text>
+                {' и '}
+                <Text
+                  style={styles.consentLink}
+                  onPress={() => Linking.openURL('https://veste-app-bffb0.web.app/privacy')}
+                >
+                  {'Политику конфиденциальности'}
+                </Text>
+              </Text>
+            </Pressable>
+            <Text style={styles.zeroToleranceText}>
+              Vmeste не терпит неприемлемый контент и агрессивное поведение. Такой контент удаляется, а нарушители блокируются.
+            </Text>
+
             <Pressable
               style={({ pressed }) => [
                 styles.primaryButton,
-                busy && styles.primaryButtonDisabled,
-                pressed && !busy && styles.primaryButtonPressed,
+                (!agreed || busy) && styles.primaryButtonDisabled,
+                pressed && agreed && !busy && styles.primaryButtonPressed,
               ]}
               onPress={handleLogin}
-              disabled={busy}
+              disabled={!agreed || busy}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
@@ -171,11 +198,11 @@ export default function LoginScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.googleButton,
-                busy && styles.googleButtonDisabled,
-                pressed && !busy && styles.googleButtonPressed,
+                (!agreed || busy) && styles.googleButtonDisabled,
+                pressed && agreed && !busy && styles.googleButtonPressed,
               ]}
               onPress={handleGoogleLogin}
-              disabled={busy}
+              disabled={!agreed || busy}
             >
               {googleLoading ? (
                 <ActivityIndicator color="#1E293B" />
@@ -189,8 +216,8 @@ export default function LoginScreen() {
                 buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
                 buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
                 cornerRadius={8}
-                style={{ height: 48, opacity: busy ? 0.6 : 1 }}
-                onPress={() => { if (!busy) handleAppleLogin(); }}
+                style={{ height: 48, opacity: (!agreed || busy) ? 0.4 : 1 }}
+                onPress={() => { if (agreed && !busy) handleAppleLogin(); }}
               />
             )}
           </View>

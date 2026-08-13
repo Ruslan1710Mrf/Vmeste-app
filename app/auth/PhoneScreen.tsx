@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -49,6 +50,7 @@ export default function PhoneScreen() {
   const [localNumber, setLocalNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
   const webViewRef = useRef<WebView>(null);
   const pendingRef = useRef<{
@@ -186,14 +188,39 @@ export default function PhoneScreen() {
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
+            <Pressable style={styles.consentRow} onPress={() => setAgreed(v => !v)}>
+              <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
+                {agreed ? <Text style={styles.checkmark}>✓</Text> : null}
+              </View>
+              <Text style={styles.consentText}>
+                {'Я принимаю '}
+                <Text
+                  style={styles.consentLink}
+                  onPress={() => Linking.openURL('https://veste-app-bffb0.web.app/terms')}
+                >
+                  {'Условия использования'}
+                </Text>
+                {' и '}
+                <Text
+                  style={styles.consentLink}
+                  onPress={() => Linking.openURL('https://veste-app-bffb0.web.app/privacy')}
+                >
+                  {'Политику конфиденциальности'}
+                </Text>
+              </Text>
+            </Pressable>
+            <Text style={styles.zeroToleranceText}>
+              Vmeste не терпит неприемлемый контент и агрессивное поведение. Такой контент удаляется, а нарушители блокируются.
+            </Text>
+
             <Pressable
               style={({ pressed }) => [
                 styles.primaryButton,
-                loading && styles.primaryButtonDisabled,
-                pressed && !loading && styles.primaryButtonPressed,
+                (!agreed || loading) && styles.primaryButtonDisabled,
+                pressed && agreed && !loading && styles.primaryButtonPressed,
               ]}
               onPress={sendCode}
-              disabled={loading}
+              disabled={!agreed || loading}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />

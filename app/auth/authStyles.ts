@@ -198,6 +198,48 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#2563EB',
   },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+    flexShrink: 0,
+  },
+  checkboxChecked: {
+    backgroundColor: '#2563EB',
+    borderColor: '#2563EB',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  consentText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 18,
+  },
+  consentLink: {
+    color: '#2563EB',
+    fontWeight: '600',
+  },
+  zeroToleranceText: {
+    fontSize: 11,
+    color: '#94A3B8',
+    lineHeight: 16,
+    marginTop: -4,
+  },
 });
 
 export default styles;
