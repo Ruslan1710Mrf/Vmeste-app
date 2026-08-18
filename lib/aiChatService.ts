@@ -49,11 +49,11 @@ export async function saveAiChatMessage(
 }
 
 export async function deleteUserAiChats(userId: string): Promise<void> {
-  const messagesQuery = query(messagesCollection(userId));
-  const snapshot = await getDocs(messagesQuery);
-  const batch = writeBatch(db);
-  snapshot.docs.forEach((messageDoc) => {
-    batch.delete(messageDoc.ref);
-  });
-  await batch.commit();
+  const snapshot = await getDocs(query(messagesCollection(userId)));
+  const docs = snapshot.docs;
+  for (let i = 0; i < docs.length; i += 500) {
+    const batch = writeBatch(db);
+    docs.slice(i, i + 500).forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
 }

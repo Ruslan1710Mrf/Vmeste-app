@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
   type Timestamp,
 } from 'firebase/firestore';
 import { auth } from './firebase';
@@ -118,7 +119,11 @@ export async function fetchUserProfile(uid: string): Promise<UserProfileDoc | nu
 }
 
 export async function deleteUserProfile(uid: string): Promise<void> {
-  await deleteDoc(profileRef(uid));
+  const privateSnap = await getDocs(collection(db, 'users', uid, 'private'));
+  const batch = writeBatch(db);
+  privateSnap.docs.forEach((d) => batch.delete(d.ref));
+  batch.delete(profileRef(uid));
+  await batch.commit();
 }
 
 export async function fetchUsersByIds(uids: string[]): Promise<MemberProfile[]> {

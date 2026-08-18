@@ -25,6 +25,9 @@ import { deleteUserProfile } from '../lib/userProfileService';
 import { deleteUserPosts } from '../lib/postService';
 import { deleteUserConversations } from '../lib/messageService';
 import { deleteUserAiChats } from '../lib/aiChatService';
+import { deleteUserBlocks } from '../lib/blockService';
+import { deleteUserEvents } from '../lib/eventService';
+import { deleteUserStorageFiles } from '../lib/postImageService';
 import { LANGUAGES } from '../lib/chatUtils';
 import { useI18n } from '../lib/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -174,7 +177,10 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
         deleteUserPosts(uid),
         deleteUserConversations(uid),
         deleteUserAiChats(uid),
+        deleteUserBlocks(uid),
+        deleteUserEvents(uid),
         deleteUserProfile(uid),
+        deleteUserStorageFiles(uid),
       ]);
 
       // Переаутентификация выше могла "протухнуть" за время удаления данных —

@@ -5,6 +5,8 @@ import {
   orderBy,
   query,
   setDoc,
+  where,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from './firestore';
 
@@ -44,6 +46,18 @@ export async function fetchEvents(): Promise<EventRecord[]> {
   const eventsQuery = query(collection(db, 'events'), orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(eventsQuery);
   return snapshot.docs.map((entry) => mapEvent(entry.id, entry.data() as EventDoc));
+}
+
+export async function deleteUserEvents(uid: string): Promise<void> {
+  const q = query(collection(db, 'events'), where('authorId', '==', uid));
+  const snap = await getDocs(q);
+  if (snap.empty) return;
+  const docs = snap.docs;
+  for (let i = 0; i < docs.length; i += 500) {
+    const batch = writeBatch(db);
+    docs.slice(i, i + 500).forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
 }
 
 export async function createEvent(

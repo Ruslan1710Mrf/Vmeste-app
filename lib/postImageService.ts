@@ -145,3 +145,34 @@ export function uploadProfileCover(uid: string, localUri: string): Promise<strin
     (ownerId, extension) => `profiles/${ownerId}/cover.${extension}`,
   );
 }
+
+export async function deleteUserStorageFiles(uid: string): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) return;
+  let token: string;
+  try {
+    token = await user.getIdToken();
+  } catch {
+    return;
+  }
+  const bucket = getBucket();
+  const prefixes = [`profiles/${uid}/`, `posts/${uid}/`];
+  for (const prefix of prefixes) {
+    try {
+      const listUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket}/o?prefix=${encodeURIComponent(prefix)}`;
+      const res = await fetch(listUrl, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) continue;
+      const json = await res.json() as { items?: Array<{ name: string }> };
+      await Promise.all(
+        (json.items ?? []).map((item) =>
+          fetch(
+            `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(item.name)}`,
+            { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } },
+          ).catch(() => {}),
+        ),
+      );
+    } catch {
+      // Best-effort — don't block account deletion if Storage is unavailable
+    }
+  }
+}

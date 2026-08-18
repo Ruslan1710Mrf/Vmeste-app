@@ -165,14 +165,14 @@ export async function deletePost(postId: string): Promise<void> {
 }
 
 export async function deleteUserPosts(uid: string): Promise<void> {
-  const postsQuery = query(
-    collection(db, 'posts'),
-    where('authorId', '==', uid),
-  );
+  const postsQuery = query(collection(db, 'posts'), where('authorId', '==', uid));
   const snapshot = await getDocs(postsQuery);
-  const batch = writeBatch(db);
-  snapshot.docs.forEach((postDoc) => batch.delete(postDoc.ref));
-  await batch.commit();
+  const docs = snapshot.docs;
+  for (let i = 0; i < docs.length; i += 500) {
+    const batch = writeBatch(db);
+    docs.slice(i, i + 500).forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
 }
 
 export async function addReplyToPost(

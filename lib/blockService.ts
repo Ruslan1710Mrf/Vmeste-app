@@ -7,6 +7,7 @@ import {
   serverTimestamp,
   setDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from './firestore';
 
@@ -34,4 +35,12 @@ export async function fetchBlockedByMe(uid: string): Promise<string[]> {
 export async function fetchBlockedMe(uid: string): Promise<string[]> {
   const snap = await getDocs(query(collection(db, 'blocks'), where('blockedId', '==', uid)));
   return snap.docs.map((entry) => entry.data().blockerId as string);
+}
+
+export async function deleteUserBlocks(uid: string): Promise<void> {
+  const snap = await getDocs(query(collection(db, 'blocks'), where('blockerId', '==', uid)));
+  if (snap.empty) return;
+  const batch = writeBatch(db);
+  snap.docs.forEach((d) => batch.delete(d.ref));
+  await batch.commit();
 }
