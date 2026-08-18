@@ -141,7 +141,10 @@ export async function deleteUserConversations(uid: string): Promise<void> {
   for (const convDoc of conversationsSnap.docs) {
     const messagesSnap = await getDocs(collection(db, 'conversations', convDoc.id, 'messages'));
     const batch = writeBatch(db);
-    messagesSnap.docs.forEach((messageDoc) => batch.delete(messageDoc.ref));
+    // Only delete messages authored by this user — rules require fromUid == auth.uid
+    messagesSnap.docs
+      .filter((m) => m.data().fromUid === uid)
+      .forEach((m) => batch.delete(m.ref));
     batch.delete(convDoc.ref);
     await batch.commit();
   }

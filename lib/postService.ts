@@ -7,6 +7,7 @@ import {
   limit,
   orderBy,
   query,
+  where,
   setDoc,
   updateDoc,
   writeBatch,
@@ -166,17 +167,11 @@ export async function deletePost(postId: string): Promise<void> {
 export async function deleteUserPosts(uid: string): Promise<void> {
   const postsQuery = query(
     collection(db, 'posts'),
-    orderBy('createdAt', 'desc'),
-    limit(1000),
+    where('authorId', '==', uid),
   );
   const snapshot = await getDocs(postsQuery);
   const batch = writeBatch(db);
-  snapshot.docs.forEach((postDoc) => {
-    const data = postDoc.data() as PostDoc;
-    if (data.authorId === uid) {
-      batch.delete(postDoc.ref);
-    }
-  });
+  snapshot.docs.forEach((postDoc) => batch.delete(postDoc.ref));
   await batch.commit();
 }
 
