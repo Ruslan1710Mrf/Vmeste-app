@@ -2,6 +2,8 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -320,8 +322,30 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
         <Text style={styles.version}>{t('settings.version')}</Text>
       </ScrollView>
 
-      {showPasswordPrompt && (
-        <View style={styles.modalOverlay}>
+      <Modal
+        visible={showPasswordPrompt}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          if (!deletingAccount) {
+            setShowPasswordPrompt(false);
+            setPasswordInput('');
+          }
+        }}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <Pressable
+            style={{ flex: 1 }}
+            onPress={() => {
+              if (!deletingAccount) {
+                setShowPasswordPrompt(false);
+                setPasswordInput('');
+              }
+            }}
+          />
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{t('settings.enterPassword')}</Text>
             <Text style={styles.modalDescription}>
@@ -335,6 +359,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
               value={passwordInput}
               onChangeText={setPasswordInput}
               editable={!deletingAccount}
+              autoFocus
             />
             <View style={styles.modalButtons}>
               <Pressable
@@ -366,8 +391,8 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
               </Pressable>
             </View>
           </View>
-        </View>
-      )}
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
