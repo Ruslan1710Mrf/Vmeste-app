@@ -72,7 +72,9 @@ service cloud.firestore {
     }
 
     match /aiChats/{userId}/messages/{messageId} {
-      allow read, create: if request.auth != null && request.auth.uid == userId
+      // read не проверяет request.resource.data — он null для read-операций
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId
         && request.resource.data.role in ['user', 'assistant']
         && request.resource.data.content is string
         && request.resource.data.createdAt is string;
