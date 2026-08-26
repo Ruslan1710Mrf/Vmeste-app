@@ -238,6 +238,9 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
       await reauthenticateWithGoogle();
       await finishDeletion();
     } catch (error) {
+      // Пользователь отменил попап Google — тихо игнорируем
+      const code = error?.code ?? '';
+      if (code === 'SIGN_IN_CANCELLED' || code === 'sign_in_cancelled' || code === '12501') return;
       Alert.alert(
         t('settings.error'),
         error instanceof Error ? error.message : t('settings.genericDeleteError'),
@@ -254,6 +257,9 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
       await reauthenticateWithApple();
       await finishDeletion();
     } catch (error) {
+      // Пользователь отменил попап Apple — тихо игнорируем
+      const code = error?.code ?? '';
+      if (code === 'ERR_REQUEST_CANCELED' || code === '1001') return;
       Alert.alert(
         t('settings.error'),
         error instanceof Error ? error.message : t('settings.genericDeleteError'),
