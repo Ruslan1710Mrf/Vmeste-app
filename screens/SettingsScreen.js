@@ -16,9 +16,12 @@ import {
 import { useRouter } from 'expo-router';
 import {
   getCurrentUser,
+  getAuthProvider,
   sendPasswordReset,
   signOut,
   reauthenticateWithPassword,
+  reauthenticateWithGoogle,
+  reauthenticateWithApple,
   deleteCurrentAccount,
 } from '../lib/authService';
 import { deleteUserProfile } from '../lib/userProfileService';
@@ -92,6 +95,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
   const [passwordInput, setPasswordInput] = useState('');
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const accountEmail = getCurrentUser()?.email ?? '';
+  const authProvider = getAuthProvider(); // 'password' | 'google.com' | 'apple.com'
 
   const updateSetting = (key, value) => {
     onUpdateSettings({ ...settings, [key]: value });
@@ -153,80 +157,116 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
     }
   };
 
-  const handleDeleteAccount = async () => {
+  // Общий код удаления данных — используется всеми провайдерами
+  const runDeletionSteps = async (uid) => {
+    const steps = [
+      { label: 'posts', fn: () => deleteUserPosts(uid) },
+      { label: 'conversations', fn: () => deleteUserConversations(uid) },
+      { label: 'aiChats', fn: () => deleteUserAiChats(uid) },
+      { label: 'blocks', fn: () => deleteUserBlocks(uid) },
+      { label: 'events', fn: () => deleteUserEvents(uid) },
+      { label: 'profile', fn: () => deleteUserProfile(uid) },
+      { label: 'storage', fn: () => deleteUserStorageFiles(uid) },
+    ];
+    for (const step of steps) {
+      console.log(`[deleteAccount] ▶ ${step.label}`);
+      try {
+        await step.fn();
+        console.log(`[deleteAccount] ✓ ${step.label}`);
+      } catch (err) {
+        console.error(`[deleteAccount] ✗ FAILED: ${step.label}`, err?.code, err?.message);
+        throw new Error(`Ошибка при удалении [${step.label}]: ${err?.message ?? err}`);
+      }
+    }
+  };
+
+  const finishDeletion = async () => {
+    const uid = getCurrentUser()?.uid;
+    if (!uid) throw new Error('Не удалось определить UID пользователя');
+    await runDeletionSteps(uid);
+    await deleteCurrentAccount();
+    setShowPasswordPrompt(false);
+    setPasswordInput('');
+    Alert.alert(t('settings.accountDeletedTitle'), t('settings.accountDeletedMessage'), [
+      { text: t('settings.ok'), onPress: () => router.replace('/auth/login') },
+    ]);
+  };
+
+  // Удаление для email/password
+  const handleDeleteAccountPassword = async () => {
     if (!passwordInput.trim()) {
       Alert.alert(t('settings.error'), t('settings.passwordRequiredError'));
       return;
     }
-
     setDeletingAccount(true);
     try {
-      // Переаутентифицировать пользователя
       await reauthenticateWithPassword(passwordInput);
-
-      // Получить UID перед удалением
-      const currentUser = getCurrentUser();
-      const uid = currentUser?.uid;
-
-      if (!uid) {
-        throw new Error('Не удалось определить UID пользователя');
-      }
-
-      // Удалить все данные пользователя (последовательно — для точной локализации ошибки)
-      const deletionSteps = [
-        { label: 'posts', fn: () => deleteUserPosts(uid) },
-        { label: 'conversations', fn: () => deleteUserConversations(uid) },
-        { label: 'aiChats', fn: () => deleteUserAiChats(uid) },
-        { label: 'blocks', fn: () => deleteUserBlocks(uid) },
-        { label: 'events', fn: () => deleteUserEvents(uid) },
-        { label: 'profile (users/{uid} + private/contact)', fn: () => deleteUserProfile(uid) },
-        { label: 'storage files', fn: () => deleteUserStorageFiles(uid) },
-      ];
-      for (const step of deletionSteps) {
-        console.log(`[deleteAccount] ▶ starting: ${step.label}`);
+      await finishDeletion();
+      // Для email/password дополнительно реаутентифицируемся перед deleteUser —
+      // на случай если длительное удаление данных исчерпало окно recent-login.
+    } catch (error) {
+      // Если finishDeletion упал с requires-recent-login — пробуем реаутентифицироваться
+      // и удалить аккаунт ещё раз.
+      if (error?.code === 'auth/requires-recent-login') {
         try {
-          await step.fn();
-          console.log(`[deleteAccount] ✓ ok: ${step.label}`);
-        } catch (err) {
-          console.error(
-            `[deleteAccount] ✗ FAILED: ${step.label}`,
-            '\ncode:', err?.code,
-            '\nmessage:', err?.message,
-            '\nfull:', err,
-          );
-          throw new Error(`Ошибка при удалении [${step.label}]: ${err?.message ?? err}`);
+          await reauthenticateWithPassword(passwordInput);
+          await deleteCurrentAccount();
+          setShowPasswordPrompt(false);
+          setPasswordInput('');
+          Alert.alert(t('settings.accountDeletedTitle'), t('settings.accountDeletedMessage'), [
+            { text: t('settings.ok'), onPress: () => router.replace('/auth/login') },
+          ]);
+          return;
+        } catch {
+          // fall through to generic error
         }
       }
-
-      // Переаутентификация выше могла "протухнуть" за время удаления данных —
-      // обновляем сессию прямо перед удалением аккаунта, чтобы не получить
-      // requires-recent-login и не остаться без данных, но с живым аккаунтом.
-      await reauthenticateWithPassword(passwordInput);
-
-      // Удалить аккаунт Firebase
-      await deleteCurrentAccount();
-
-      // Очистить UI и перенаправить
-      setShowPasswordPrompt(false);
-      setPasswordInput('');
-      Alert.alert(t('settings.accountDeletedTitle'), t('settings.accountDeletedMessage'), [
-        {
-          text: t('settings.ok'),
-          onPress: () => {
-            router.replace('/auth/login');
-          },
-        },
-      ]);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : t('settings.genericDeleteError');
-
-      Alert.alert(t('settings.error'), errorMessage);
+      Alert.alert(
+        t('settings.error'),
+        error instanceof Error ? error.message : t('settings.genericDeleteError'),
+      );
       setPasswordInput('');
     } finally {
       setDeletingAccount(false);
+    }
+  };
+
+  // Удаление для Google
+  const handleDeleteAccountGoogle = async () => {
+    setDeletingAccount(true);
+    try {
+      await reauthenticateWithGoogle();
+      await finishDeletion();
+    } catch (error) {
+      Alert.alert(
+        t('settings.error'),
+        error instanceof Error ? error.message : t('settings.genericDeleteError'),
+      );
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
+  // Удаление для Apple
+  const handleDeleteAccountApple = async () => {
+    setDeletingAccount(true);
+    try {
+      await reauthenticateWithApple();
+      await finishDeletion();
+    } catch (error) {
+      Alert.alert(
+        t('settings.error'),
+        error instanceof Error ? error.message : t('settings.genericDeleteError'),
+      );
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
+  const closeDeleteModal = () => {
+    if (!deletingAccount) {
+      setShowPasswordPrompt(false);
+      setPasswordInput('');
     }
   };
 
@@ -347,70 +387,86 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
         visible={showPasswordPrompt}
         transparent
         animationType="slide"
-        onRequestClose={() => {
-          if (!deletingAccount) {
-            setShowPasswordPrompt(false);
-            setPasswordInput('');
-          }
-        }}
+        onRequestClose={closeDeleteModal}
       >
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <Pressable
-            style={{ flex: 1 }}
-            onPress={() => {
-              if (!deletingAccount) {
-                setShowPasswordPrompt(false);
-                setPasswordInput('');
-              }
-            }}
-          />
+          <Pressable style={{ flex: 1 }} onPress={closeDeleteModal} />
+
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t('settings.enterPassword')}</Text>
-            <Text style={styles.modalDescription}>
-              {t('settings.passwordPromptDesc')}
-            </Text>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder={t('settings.passwordPlaceholder')}
-              placeholderTextColor="#94A3B8"
-              secureTextEntry
-              value={passwordInput}
-              onChangeText={setPasswordInput}
-              editable={!deletingAccount}
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.modalButtonCancel,
-                  pressed && styles.backPressed,
-                ]}
-                onPress={() => {
-                  setShowPasswordPrompt(false);
-                  setPasswordInput('');
-                }}
-                disabled={deletingAccount}
-              >
-                <Text style={styles.modalButtonCancelText}>{t('settings.cancel')}</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.modalButtonDelete,
-                  pressed && !deletingAccount && styles.backPressed,
-                ]}
-                onPress={handleDeleteAccount}
-                disabled={deletingAccount}
-              >
-                {deletingAccount ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.modalButtonDeleteText}>{t('settings.delete')}</Text>
-                )}
-              </Pressable>
-            </View>
+            <Text style={styles.modalTitle}>{t('settings.deleteAccount')}</Text>
+
+            {authProvider === 'password' ? (
+              /* ── Email/пароль ── */
+              <>
+                <Text style={styles.modalDescription}>
+                  {t('settings.passwordPromptDesc')}
+                </Text>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder={t('settings.passwordPlaceholder')}
+                  placeholderTextColor="#94A3B8"
+                  secureTextEntry
+                  value={passwordInput}
+                  onChangeText={setPasswordInput}
+                  editable={!deletingAccount}
+                  autoFocus
+                />
+                <View style={styles.modalButtons}>
+                  <Pressable
+                    style={({ pressed }) => [styles.modalButtonCancel, pressed && styles.backPressed]}
+                    onPress={closeDeleteModal}
+                    disabled={deletingAccount}
+                  >
+                    <Text style={styles.modalButtonCancelText}>{t('settings.cancel')}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [styles.modalButtonDelete, pressed && !deletingAccount && styles.backPressed]}
+                    onPress={handleDeleteAccountPassword}
+                    disabled={deletingAccount}
+                  >
+                    {deletingAccount ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.modalButtonDeleteText}>{t('settings.delete')}</Text>
+                    )}
+                  </Pressable>
+                </View>
+              </>
+            ) : (
+              /* ── Google или Apple ── */
+              <>
+                <Text style={styles.modalDescription}>
+                  {authProvider === 'google.com'
+                    ? 'Для удаления аккаунта подтвердите личность через Google.'
+                    : 'Для удаления аккаунта подтвердите личность через Apple.'}
+                </Text>
+                <View style={styles.modalButtons}>
+                  <Pressable
+                    style={({ pressed }) => [styles.modalButtonCancel, pressed && styles.backPressed]}
+                    onPress={closeDeleteModal}
+                    disabled={deletingAccount}
+                  >
+                    <Text style={styles.modalButtonCancelText}>{t('settings.cancel')}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [styles.modalButtonDelete, pressed && !deletingAccount && styles.backPressed]}
+                    onPress={authProvider === 'google.com' ? handleDeleteAccountGoogle : handleDeleteAccountApple}
+                    disabled={deletingAccount}
+                  >
+                    {deletingAccount ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Text style={styles.modalButtonDeleteText}>
+                        {authProvider === 'google.com' ? 'Войти через Google' : 'Войти через Apple'}
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+              </>
+            )}
           </View>
         </KeyboardAvoidingView>
       </Modal>

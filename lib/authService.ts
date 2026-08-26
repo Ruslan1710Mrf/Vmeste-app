@@ -210,6 +210,56 @@ export async function reauthenticateWithPassword(password: string) {
   await reauthenticateWithCredential(user, credential);
 }
 
+export async function reauthenticateWithGoogle(): Promise<void> {
+  if (!GOOGLE_WEB_CLIENT_ID) {
+    throw new Error('Google Sign-In не настроен');
+  }
+  GoogleSignin.configure({ webClientId: GOOGLE_WEB_CLIENT_ID });
+  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  const response = await GoogleSignin.signIn();
+  if (response.type === 'cancelled') {
+    const err = new Error('Вход отменён');
+    Object.assign(err, { code: statusCodes.SIGN_IN_CANCELLED });
+    throw err;
+  }
+  const idToken = response.data?.idToken;
+  if (!idToken) throw new Error('Не удалось получить токен Google');
+  const firebaseCredential = GoogleAuthProvider.credential(idToken);
+  const user = auth.currentUser;
+  if (!user) throw new Error('Пользователь не найден');
+  await reauthenticateWithCredential(user, firebaseCredential);
+}
+
+export async function reauthenticateWithApple(): Promise<void> {
+  const nonceBytes = await Crypto.getRandomBytesAsync(32);
+  const nonce = Array.from(nonceBytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  const hashedNonce = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    nonce,
+  );
+  const appleCredential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+    nonce: hashedNonce,
+  });
+  const { identityToken } = appleCredential;
+  if (!identityToken) throw new Error('Не удалось получить токен Apple');
+  const provider = new OAuthProvider('apple.com');
+  const firebaseCredential = provider.credential({ idToken: identityToken, rawNonce: nonce });
+  const user = auth.currentUser;
+  if (!user) throw new Error('Пользователь не найден');
+  await reauthenticateWithCredential(user, firebaseCredential);
+}
+
+/** Возвращает providerId первого провайдера текущего пользователя. */
+export function getAuthProvider(): string {
+  return auth.currentUser?.providerData?.[0]?.providerId ?? 'password';
+}
+
 export async function deleteCurrentAccount() {
   const user = auth.currentUser;
   if (!user) {
