@@ -1,6 +1,5 @@
 import {
   collection,
-  deleteDoc,
   deleteField,
   doc,
   getDoc,
@@ -119,11 +118,19 @@ export async function fetchUserProfile(uid: string): Promise<UserProfileDoc | nu
 }
 
 export async function deleteUserProfile(uid: string): Promise<void> {
+  console.log(`[deleteUserProfile] reading users/${uid}/private`);
   const privateSnap = await getDocs(collection(db, 'users', uid, 'private'));
+  console.log(`[deleteUserProfile] private docs found: ${privateSnap.size}`);
   const batch = writeBatch(db);
-  privateSnap.docs.forEach((d) => batch.delete(d.ref));
+  privateSnap.docs.forEach((d) => {
+    console.log(`[deleteUserProfile] batch.delete ${d.ref.path}`);
+    batch.delete(d.ref);
+  });
+  console.log(`[deleteUserProfile] batch.delete users/${uid}`);
   batch.delete(profileRef(uid));
+  console.log('[deleteUserProfile] committing batch...');
   await batch.commit();
+  console.log('[deleteUserProfile] batch committed ok');
 }
 
 export async function fetchUsersByIds(uids: string[]): Promise<MemberProfile[]> {

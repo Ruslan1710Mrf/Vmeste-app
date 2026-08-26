@@ -172,16 +172,31 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
         throw new Error('Не удалось определить UID пользователя');
       }
 
-      // Удалить все данные пользователя
-      await Promise.all([
-        deleteUserPosts(uid),
-        deleteUserConversations(uid),
-        deleteUserAiChats(uid),
-        deleteUserBlocks(uid),
-        deleteUserEvents(uid),
-        deleteUserProfile(uid),
-        deleteUserStorageFiles(uid),
-      ]);
+      // Удалить все данные пользователя (последовательно — для точной локализации ошибки)
+      const deletionSteps = [
+        { label: 'posts', fn: () => deleteUserPosts(uid) },
+        { label: 'conversations', fn: () => deleteUserConversations(uid) },
+        { label: 'aiChats', fn: () => deleteUserAiChats(uid) },
+        { label: 'blocks', fn: () => deleteUserBlocks(uid) },
+        { label: 'events', fn: () => deleteUserEvents(uid) },
+        { label: 'profile (users/{uid} + private/contact)', fn: () => deleteUserProfile(uid) },
+        { label: 'storage files', fn: () => deleteUserStorageFiles(uid) },
+      ];
+      for (const step of deletionSteps) {
+        console.log(`[deleteAccount] ▶ starting: ${step.label}`);
+        try {
+          await step.fn();
+          console.log(`[deleteAccount] ✓ ok: ${step.label}`);
+        } catch (err) {
+          console.error(
+            `[deleteAccount] ✗ FAILED: ${step.label}`,
+            '\ncode:', err?.code,
+            '\nmessage:', err?.message,
+            '\nfull:', err,
+          );
+          throw new Error(`Ошибка при удалении [${step.label}]: ${err?.message ?? err}`);
+        }
+      }
 
       // Переаутентификация выше могла "протухнуть" за время удаления данных —
       // обновляем сессию прямо перед удалением аккаунта, чтобы не получить
