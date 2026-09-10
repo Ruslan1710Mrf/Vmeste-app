@@ -7,7 +7,9 @@ import {
   TextInput,
   View,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { containsObjectionableContent } from '../utils/contentFilter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { auth } from '../lib/firebase';
 import {
@@ -84,6 +86,14 @@ export default function ChatScreen({
     const text = draft.trim();
 
     if (!text || !myUid) return;
+
+    if (containsObjectionableContent(text)) {
+      Alert.alert(
+        t('app.objectionableContentTitle'),
+        t('app.objectionableContentError'),
+      );
+      return;
+    }
 
     if (!convId) {
       setSendError(t('chat.chatLoadingError'));

@@ -41,6 +41,7 @@ import {
   saveOnboardingSeen,
 } from './lib/storage';
 import { getOwnPosts, getPostsByAuthorName, isOwnPost } from './lib/postUtils';
+import { containsObjectionableContent } from './utils/contentFilter';
 import {
   addReplyToPost,
   createPost,
@@ -412,6 +413,13 @@ function AppContent() {
   ]);
 
   const handleSaveProfile = async (nextProfile) => {
+    const nameToCheck = nextProfile.name?.trim() ?? '';
+    const bioToCheck = nextProfile.bio?.trim() ?? '';
+    if (containsObjectionableContent(nameToCheck) || containsObjectionableContent(bioToCheck)) {
+      Alert.alert(t('app.objectionableContentTitle'), t('app.objectionableContentError'));
+      return;
+    }
+
     setProfile(nextProfile);
     if (!userId) return;
     try {
@@ -550,6 +558,10 @@ function AppContent() {
   const addPost = async ({ content, category, imageUri }) => {
     const text = content.trim();
     if (!text && !imageUri) return;
+
+    if (text && containsObjectionableContent(text)) {
+      throw new Error(t('app.objectionableContentError'));
+    }
 
     const authorId = auth.currentUser?.uid ?? userId;
     if (!authorId) {
@@ -695,6 +707,11 @@ function AppContent() {
   const addReply = async (postId, reply) => {
     const authorUid = auth.currentUser?.uid ?? userId;
     if (!authorUid) return;
+
+    if (reply.text && containsObjectionableContent(reply.text)) {
+      Alert.alert(t('app.objectionableContentTitle'), t('app.objectionableContentError'));
+      return;
+    }
 
     try {
       const saved = await addReplyToPost(postId, authorUid, {
