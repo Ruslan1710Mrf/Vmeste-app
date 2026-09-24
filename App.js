@@ -560,6 +560,10 @@ function AppContent() {
     if (!text && !imageUri) return;
 
     if (text && containsObjectionableContent(text)) {
+      Alert.alert(
+        t('app.objectionableContentTitle'),
+        t('app.objectionableContentError'),
+      );
       throw new Error(t('app.objectionableContentError'));
     }
 
@@ -604,6 +608,16 @@ function AppContent() {
   const handleUpdatePost = async (input) => {
     if (!editingPost) return;
 
+    // Проверка до try: внутри него catch делает оптимистичное локальное
+    // обновление и проглотил бы ошибку фильтра, пропустив правку в UI.
+    if (containsObjectionableContent(input.content)) {
+      Alert.alert(
+        t('app.objectionableContentTitle'),
+        t('app.objectionableContentError'),
+      );
+      throw new Error(t('app.objectionableContentError'));
+    }
+
     try {
       const updated = await updatePost(editingPost.id, input);
       setPosts((prev) => prev.map((p) => (p.id === editingPost.id ? updated : p)));
@@ -625,6 +639,19 @@ function AppContent() {
     const authorId = auth.currentUser?.uid ?? userId;
     if (!authorId) {
       throw new Error(t('app.signInToCreateEventError'));
+    }
+
+    // Поля проверяем по отдельности: склеенная строка может дать ложное
+    // срабатывание на стыке (нормализация удаляет пробелы).
+    const hasObjectionable = [input.title, input.description, input.venue].some(
+      (field) => containsObjectionableContent(field),
+    );
+    if (hasObjectionable) {
+      Alert.alert(
+        t('app.objectionableContentTitle'),
+        t('app.objectionableContentError'),
+      );
+      throw new Error(t('app.objectionableContentError'));
     }
 
     const host = getFirstName(profile, auth.currentUser);
