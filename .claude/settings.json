@@ -19,7 +19,15 @@
       "Bash(node --check /Users/rus/sng-community2/App.js)",
       "Bash(open ~/Desktop/\"marketing\")",
       "Bash(open /Users/rus/sng-community2/marketing/durov-contest/)",
-      "Bash(ln -sfn /Users/rus/sng-community2/marketing/durov-contest ~/Desktop/\"Материалы для видео \\(проект\\)\")"
+      "Bash(ln -sfn /Users/rus/sng-community2/marketing/durov-contest ~/Desktop/\"Материалы для видео \\(проект\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); a=d['expo']['android']; print\\('versionCode:', a.get\\('versionCode'\\)\\); print\\('package:', a.get\\('package'\\)\\)\")",
+      "Bash(eas credentials *)",
+      "Bash(cp /Users/rus/Downloads/google-services.json /Users/rus/sng-community2/google-services.json && echo \"скопировано\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ],
+    "additionalDirectories": [
+      "/Users/rus/Downloads"
     ]
   },
   "enabledPlugins": {
