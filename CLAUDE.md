@@ -1,1 +1,31 @@
 @AGENTS.md
+
+# Вместе (Vmeste) — памятка
+
+## Стек и идентификаторы
+- Expo SDK 56 (React Native 0.85), Firebase JS SDK 12, Cloud Functions в `functions/`.
+- Firebase-проект: `veste-app-bffb0`.
+- Bundle ID / package: `com.vmeste.group`. App Store ID: `6796509921`.
+- Сборка/отправка:
+  - `eas build --platform ios --profile production`
+  - `eas submit --platform ios --profile production`
+  - (Android — то же с `--platform android`.)
+
+## Почта
+- Расширение `firestore-send-email`, SMTP через Resend: `smtps://resend@smtp.resend.com:465`.
+- API-ключ Resend лежит в секрете `firestore-send-email-SMTP_PASSWORD-uzfa` (НЕ в секрете без суффикса), ссылка на версию — `versions/latest`.
+- Уведомления о жалобах шлёт функция `notifyOnNewReport` на ruslan@vmestegroup.app.
+
+## Инфраструктура
+- AI-ассистент ходит через прокси на Railway (`server/`, `railway.json`).
+- Документы (privacy, support и т.п.) — на Firebase Hosting (`public/`).
+- Контакт: ruslan@vmestegroup.app.
+
+## Статус Apple
+- Было отклонение по guideline 1.2 (нужен фильтр контента). Фильтр сделан — отправлять билд 16.
+
+## Правила работы
+- Перед любыми инструкциями по настройке сначала проверь реальный конфиг (`firebase ext:export`, логи), потом давай шаги.
+- `firebase functions:log` вызывать несколько раз — отдаёт неполные срезы.
+- Время в логах — UTC; у пользователя Central (UTC−5).
+- Общение на русском, кратко.
