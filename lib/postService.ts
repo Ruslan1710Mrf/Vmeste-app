@@ -1,4 +1,5 @@
 import {
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -181,11 +182,6 @@ export async function addReplyToPost(
   input: { author: string; text: string },
 ): Promise<PostReply> {
   const ref = doc(db, 'posts', postId);
-  const snapshot = await getDoc(ref);
-  if (!snapshot.exists()) {
-    throw new Error('Post not found');
-  }
-  const data = snapshot.data() as PostDoc;
   const reply: PostReply = {
     id: String(Date.now()),
     author: input.author,
@@ -193,8 +189,7 @@ export async function addReplyToPost(
     text: input.text,
     createdAt: new Date().toISOString(),
   };
-  await updateDoc(ref, {
-    replies: [...(data.replies ?? []), reply],
-  });
+  // arrayUnion: одновременные комментарии не затирают друг друга.
+  await updateDoc(ref, { replies: arrayUnion(reply) });
   return { ...reply, time: formatPostTime(reply.createdAt) };
 }

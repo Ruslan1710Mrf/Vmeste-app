@@ -221,8 +221,9 @@ function AppContent() {
 
   const handleReportMember = (memberId) => {
     if (!userId || !memberId) return;
-    reportContent(userId, 'user', memberId).catch(() => {});
-    Alert.alert(t('app.thanks'), t('app.reportSentMessage'));
+    reportContent(userId, 'user', memberId)
+      .then(() => Alert.alert(t('app.thanks'), t('app.reportSentMessage')))
+      .catch(() => Alert.alert(t('settings.error'), t('app.reportError')));
   };
 
   useEffect(() => {
@@ -622,13 +623,7 @@ function AppContent() {
       const updated = await updatePost(editingPost.id, input);
       setPosts((prev) => prev.map((p) => (p.id === editingPost.id ? updated : p)));
     } catch {
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === editingPost.id
-            ? { ...p, content: input.content, category: input.category }
-            : p,
-        ),
-      );
+      throw new Error(t('createPost.saveError'));
     }
     closeCreatePost();
   };
@@ -725,19 +720,20 @@ function AppContent() {
     const post = menuPost;
     setMenuPost(null);
     const reporterId = auth.currentUser?.uid ?? userId;
-    if (reporterId) {
-      reportContent(reporterId, 'post', post.id).catch(() => {});
-    }
-    Alert.alert(t('app.thanks'), t('app.reportSentMessage'));
+    if (!reporterId) return;
+    reportContent(reporterId, 'post', post.id)
+      .then(() => Alert.alert(t('app.thanks'), t('app.reportSentMessage')))
+      .catch(() => Alert.alert(t('settings.error'), t('app.reportError')));
   };
 
+  // Возвращает true, если комментарий сохранён — экран очищает поле ввода только тогда.
   const addReply = async (postId, reply) => {
     const authorUid = auth.currentUser?.uid ?? userId;
-    if (!authorUid) return;
+    if (!authorUid) return false;
 
     if (reply.text && containsObjectionableContent(reply.text)) {
       Alert.alert(t('app.objectionableContentTitle'), t('app.objectionableContentError'));
-      return;
+      return false;
     }
 
     try {
@@ -752,14 +748,10 @@ function AppContent() {
             : post,
         ),
       );
+      return true;
     } catch {
-      setPosts((prev) =>
-        prev.map((post) =>
-          post.id === postId
-            ? { ...post, replies: [...(post.replies ?? []), reply] }
-            : post,
-        ),
-      );
+      Alert.alert(t('settings.error'), t('app.replyError'));
+      return false;
     }
   };
 

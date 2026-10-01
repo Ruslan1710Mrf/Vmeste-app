@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { mapAuthError, registerWithEmail } from '../../lib/authService';
+import { containsObjectionableContent } from '../../utils/contentFilter';
 import { useI18n } from '../../lib/i18n';
 import styles from './authStyles';
 import PasswordField from './PasswordField';
@@ -45,6 +46,10 @@ export default function RegisterScreen() {
     }
     if (password !== confirmPassword) {
       setError(t('auth.errors.passwordMismatch'));
+      return;
+    }
+    if (containsObjectionableContent(name) || containsObjectionableContent(lastName)) {
+      setError(t('app.objectionableContentError'));
       return;
     }
     setLoading(true);
