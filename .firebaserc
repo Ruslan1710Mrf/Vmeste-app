@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "veste-app-bffb0"
+  },
+  "targets": {},
+  "etags": {
+    "veste-app-bffb0": {
+      "extensionInstances": {
+        "firestore-send-email": "91ca10d186bf7a311abdc87593f7c736b5dcfd8b37857564b44dbed8c7919605"
+      }
+    }
   }
 }

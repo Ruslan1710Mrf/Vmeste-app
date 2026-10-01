@@ -14,6 +14,10 @@
 ## Почта
 - Расширение `firestore-send-email`, SMTP через Resend: `smtps://resend@smtp.resend.com:465`.
 - API-ключ Resend лежит в секрете `firestore-send-email-SMTP_PASSWORD-uzfa` (НЕ в секрете без суффикса), ссылка на версию — `versions/latest`.
+- **При смене ключа SMTP добавить новую версию секрета НЕДОСТАТОЧНО.** Ревизия Cloud Function прибивается к конкретному номеру версии в момент деплоя и `versions/latest` в рантайме не перечитывает. После добавления версии обязательно переразвернуть расширение:
+  `firebase ext:export && firebase deploy --only extensions --project veste-app-bffb0`
+  Симптомы, если забыть: `535 Authentication credentials invalid` — ревизия читает старый ключ; либо `could not start successfully` вместе с `Secret Version ... is in DISABLED state` — старую версию отключили, и контейнер вообще не стартует.
+- Расширение триггерится на запись документа в `mail`. Накопившуюся очередь неудачных писем оно само не перебирает — после починки ключа нужен новый триггер (новая жалоба/регистрация).
 - Уведомления о жалобах шлёт функция `notifyOnNewReport` на ruslan@vmestegroup.app.
 
 ## Инфраструктура
