@@ -32,12 +32,12 @@ const JOB_APPS = [
     fallback: 'in',
   },
   {
-    id: 'bazar',
-    name: 'Bazar',
-    url: 'https://www.bazar.club/',
-    icon: 'https://www.google.com/s2/favicons?domain=bazar.club&sz=128',
-    bg: '#7C3AED',
-    fallback: 'B',
+    id: 'ziprecruiter',
+    name: 'ZipRecruiter',
+    url: 'https://www.ziprecruiter.com/',
+    icon: 'https://www.google.com/s2/favicons?domain=ziprecruiter.com&sz=128',
+    bg: '#4A8F2E',
+    fallback: 'ZR',
   },
   {
     id: 'linkedin',

@@ -20,6 +20,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { DEV_MODE_SKIP_AUTH } from './devMode';
 import { auth } from './firebase';
+import { containsObjectionableContent } from '../utils/contentFilter';
 import {
   createUserProfile,
   fetchUserProfile,
@@ -44,6 +45,14 @@ export function shouldRequireLogin() {
 
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
 
+// Имя из Google/Apple тоже проходит фильтр: заблокировать вход нельзя, поэтому
+// недопустимое имя заменяем нейтральным — пользователь сможет сменить его в профиле.
+function safeDisplayName(displayName: string | null | undefined): string {
+  const name = displayName?.trim() ?? '';
+  if (!name || containsObjectionableContent(name)) return 'Пользователь';
+  return name;
+}
+
 async function ensureOAuthUserProfile(user: User) {
   let profile: UserProfileDoc | null = null;
   try {
@@ -56,7 +65,7 @@ async function ensureOAuthUserProfile(user: User) {
     try {
       await createUserProfile(user.uid, {
         uid: user.uid,
-        name: user.displayName?.trim() || 'Пользователь',
+        name: safeDisplayName(user.displayName),
         email: user.email ?? '',
         city: '',
         interests: [],

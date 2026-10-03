@@ -29,10 +29,26 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.authorId == request.auth.uid;
       allow update: if request.auth != null
-        && resource.data.authorId == request.auth.uid
-        && request.resource.data.authorId == resource.data.authorId;
+        && (
+          (resource.data.get('authorId', null) == request.auth.uid
+            && request.resource.data.authorId == resource.data.authorId)
+          || isAppendingOwnReply()
+        );
       allow delete: if request.auth != null
         && resource.data.authorId == request.auth.uid;
+
+      // Любой вошедший пользователь может добавить ровно один свой комментарий
+      // в конец replies, не трогая остальные поля и чужие комментарии.
+      function isAppendingOwnReply() {
+        let before = resource.data.get('replies', []);
+        let after = request.resource.data.replies;
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replies'])
+          && after is list
+          && after.size() == before.size() + 1
+          && after[0:before.size()] == before
+          && after[before.size()].authorId == request.auth.uid
+          && after[before.size()].text is string;
+      }
     }
 
     match /blocks/{blockId} {
@@ -110,8 +126,10 @@ service cloud.firestore {
           && !exists(/databases/$(database)/documents/blocks/$(get(/databases/$(database)/documents/conversations/$(convId)).data.participants[0] + '_' + get(/databases/$(database)/documents/conversations/$(convId)).data.participants[1]))
           && !exists(/databases/$(database)/documents/blocks/$(get(/databases/$(database)/documents/conversations/$(convId)).data.participants[1] + '_' + get(/databases/$(database)/documents/conversations/$(convId)).data.participants[0]));
         allow update: if false;
+        // Удаление чата стирает его у обоих участников, поэтому участник может
+        // удалять и сообщения собеседника.
         allow delete: if request.auth != null
-          && resource.data.fromUid == request.auth.uid;
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participants;
       }
     }
 

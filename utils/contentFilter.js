@@ -8,7 +8,9 @@
  *      (catches spaced-out words like "х у й" and substitutions like "ху@")
  *   2. Two separate checks: Russian (Cyrillic roots) and English (Latin roots),
  *      because converting all Latin → Cyrillic would break English detection.
- *   3. Substring match on the normalised, space-free string.
+ *   3. Substring match on the normalised, space-free string. Short roots that
+ *      occur inside ordinary words ("рубля", "хачапури", "cocktail") are
+ *      matched per word instead (BANNED_RU_WORDS / BANNED_EN_WORDS).
  *   4. cleanContent() masks matched words in the original text with ***.
  */
 
@@ -28,38 +30,63 @@ const BANNED_RU = [
   'уеб', 'заеб', 'наеб', 'выеб', 'поеб',
   // Compound: еблан, ебло (не встречаются в нормальных словах)
   'еблан', 'ебло',
-  // Блядь / бляд
-  'блядь', 'бляд', 'бля',
+  // Блядь / бляд ("бля" отдельно — в BANNED_RU_WORDS: "рубля", "корабля")
+  'блядь', 'бляд',
   // Мудак
   'мудак', 'мудил', 'мудо',
-  // Прочий мат
-  'залупа', 'гандон', 'шлюх', 'сука', 'сучка', 'хуесос',
+  // Прочий мат ("сука" — в BANNED_RU_WORDS: фамилия "Сукасян", "сукно")
+  'залупа', 'гандон', 'шлюх', 'хуесос',
   // долбоёб и все фонетические варианты: далбаёб/далбаеб/долбаеб/далбоеб
   // ё-варианты ловятся через корень 'ёб' выше; е-варианты через 'лбаеб'/'лбоеб'
   'долбоёб', 'долбоеб', 'лбаеб', 'лбоеб',
   'пиздюк', 'ёпт',
   // Слуры — ЛГБТК
   'пидор', 'пидар',
-  // Hate speech / этнические оскорбления
-  'чурка', 'чурбан', 'хачик', 'хач',
+  // Hate speech / этнические оскорбления ("хач" — в BANNED_RU_WORDS: "хачапури", "Хачатурян")
+  'чурка', 'чурбан',
 ];
+
+/**
+ * Короткие корни, которые как подстрока дают ложные срабатывания внутри
+ * обычных слов и фамилий. Проверяются по отдельным словам.
+ */
+const BANNED_RU_WORDS = [
+  // "ебать", "ебаный": е-формы как подстрока ловят "дебаты", "хлебать"
+  /^еб(?!ург)/, // "Ебург" — Екатеринбург
+  /^бля/,
+  /^сук(а|и|е|у|ой|ам|ами|ах|ин.*)$/,
+  /^сучк/,
+  /^хач(и|ик.*|ей|ам|ами|ах)?$/,
+];
+
+/**
+ * Обычные слова, внутри которых встречается запрещённый корень:
+ * "страхую", "застрахуйте" содержат "хую"/"хуй".
+ */
+const ALLOWED_RU_ROOTS = ['страху'];
 
 /** English profanity and slurs — match as substrings after normalisation. */
 const BANNED_EN = [
   'fuck', 'fuk', 'fck',
-  'shit', 'sht',
+  'shit',
   'bitch', 'btch',
-  'cunt',
   'pussy',
-  'cock',
-  // nigger/nigga — после схлопывания двойной g → нормализуется в niger/niga
-  'niger', 'niga',
-  'faggot',
+  // Двойные буквы схлопываются нормализацией: faggot → fagot, asshole → ashole
+  'fagot',
   'whore',
   'slut',
-  'asshole', 'arsehole',
+  'ashole', 'arsehole',
   'bastard',
   'dickhead',
+];
+
+/** English roots checked per word: "Scunthorpe", "cocktail", "Nigeria", "ashtray". */
+const BANNED_EN_WORDS = [
+  /^sht$/,
+  /^cunt/,
+  /^cock(s|sucker.*)?$/,
+  // nigger/nigga — после схлопывания двойной g → niger/niga
+  /^nig(er|a)s?$/,
 ];
 
 // ─── Normalisation ────────────────────────────────────────────────────────────
@@ -133,8 +160,21 @@ function normaliseEn(text) {
 export function containsObjectionableContent(text) {
   if (!text || typeof text !== 'string') return false;
 
-  const normRu = normaliseRu(text);
-  const normEn = normaliseEn(text);
+  // Слова-исключения убираем до склейки, иначе корень найдётся и в склеенной строке.
+  const tokens = text
+    .split(/\s+/)
+    .filter((token) => !ALLOWED_RU_ROOTS.some((root) => normaliseRu(token).includes(root)));
+
+  for (const token of tokens) {
+    const wordRu = normaliseRu(token);
+    const wordEn = normaliseEn(token);
+    if (BANNED_RU_WORDS.some((pattern) => pattern.test(wordRu))) return true;
+    if (BANNED_EN_WORDS.some((pattern) => pattern.test(wordEn))) return true;
+  }
+
+  const joined = tokens.join(' ');
+  const normRu = normaliseRu(joined);
+  const normEn = normaliseEn(joined);
 
   for (const word of BANNED_RU) {
     if (normRu.includes(word)) return true;

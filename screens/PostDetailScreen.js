@@ -21,16 +21,16 @@ export default function PostDetailScreen({ post, profile, userId, onBack, onAddR
   const cleanName = (post.author || '').replace(/\s*\(вы\)\s*$/, '');
   const displayName = isOwnPost(post, userId) ? `${cleanName} (вы)` : cleanName;
 
-  const handleReply = () => {
+  const handleReply = async () => {
     const text = draft.trim();
     if (!text) return;
-    onAddReply(post.id, {
+    const saved = await onAddReply(post.id, {
       id: String(Date.now()),
       author: getFirstName(profile),
       text,
       time: t('postDetail.justNow'),
     });
-    setDraft('');
+    if (saved) setDraft('');
   };
 
   return (

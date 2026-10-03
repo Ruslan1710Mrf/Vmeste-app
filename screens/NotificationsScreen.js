@@ -70,18 +70,23 @@ export default function NotificationsScreen({ onBack, onAction, readIds, onMarkR
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          {NOTIFICATIONS.map((item, index) => (
-            <View key={item.id}>
-              <NotificationRow
-                item={item}
-                isRead={readIds.includes(item.id)}
-                onPress={handlePress}
-              />
-              {index < NOTIFICATIONS.length - 1 && <View style={styles.divider} />}
-            </View>
-          ))}
-        </View>
+        {NOTIFICATIONS.length === 0 && (
+          <Text style={styles.emptyText}>{t('notifications.empty')}</Text>
+        )}
+        {NOTIFICATIONS.length > 0 && (
+          <View style={styles.card}>
+            {NOTIFICATIONS.map((item, index) => (
+              <View key={item.id}>
+                <NotificationRow
+                  item={item}
+                  isRead={readIds.includes(item.id)}
+                  onPress={handlePress}
+                />
+                {index < NOTIFICATIONS.length - 1 && <View style={styles.divider} />}
+              </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -89,6 +94,7 @@ export default function NotificationsScreen({ onBack, onAction, readIds, onMarkR
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  emptyText: { textAlign: 'center', color: '#64748B', fontSize: 15, marginTop: 48 },
   header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16 },
   backButton: {
     flexDirection: 'row',
