@@ -123,12 +123,16 @@ export function subscribeToConversations(
   });
 }
 
+// Сообщения удаляются до документа чата: правила проверяют участников по нему.
 export async function deleteConversation(convId: string): Promise<void> {
   const messagesSnap = await getDocs(collection(db, 'conversations', convId, 'messages'));
-  const batch = writeBatch(db);
-  messagesSnap.docs.forEach((messageDoc) => batch.delete(messageDoc.ref));
-  batch.delete(doc(db, 'conversations', convId));
-  await batch.commit();
+  const refs = messagesSnap.docs.map((messageDoc) => messageDoc.ref);
+  for (let i = 0; i < refs.length; i += 500) {
+    const batch = writeBatch(db);
+    refs.slice(i, i + 500).forEach((ref) => batch.delete(ref));
+    await batch.commit();
+  }
+  await deleteDoc(doc(db, 'conversations', convId));
 }
 
 export async function deleteUserConversations(uid: string): Promise<void> {
@@ -139,14 +143,7 @@ export async function deleteUserConversations(uid: string): Promise<void> {
   const conversationsSnap = await getDocs(conversationsQuery);
 
   for (const convDoc of conversationsSnap.docs) {
-    const messagesSnap = await getDocs(collection(db, 'conversations', convDoc.id, 'messages'));
-    const batch = writeBatch(db);
-    // Only delete messages authored by this user — rules require fromUid == auth.uid
-    messagesSnap.docs
-      .filter((m) => m.data().fromUid === uid)
-      .forEach((m) => batch.delete(m.ref));
-    batch.delete(convDoc.ref);
-    await batch.commit();
+    await deleteConversation(convDoc.id);
   }
 }
 

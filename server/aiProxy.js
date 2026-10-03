@@ -10,6 +10,8 @@ const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-4-6';
 const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+const HISTORY_LIMIT = 20;
+const MESSAGE_MAX_CHARS = 4000;
 const rateLimitStore = new Map();
 
 function loadEnvLocal() {
@@ -137,7 +139,13 @@ app.post('/api/ai-chat', verifyToken, async (req, res) => {
     return;
   }
 
-  const messages = req.body?.messages ?? [];
+  const rawMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];
+  const valid = rawMessages
+    .filter((msg) => (msg?.role === 'user' || msg?.role === 'assistant') && typeof msg.content === 'string')
+    .map((msg) => ({ role: msg.role, content: msg.content.slice(0, MESSAGE_MAX_CHARS) }))
+    .slice(-HISTORY_LIMIT);
+  const firstUser = valid.findIndex((msg) => msg.role === 'user');
+  const messages = firstUser === -1 ? [] : valid.slice(firstUser);
   if (!messages.length) {
     res.status(400).json({ error: 'Пустая история сообщений.' });
     return;

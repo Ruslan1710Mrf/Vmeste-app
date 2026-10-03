@@ -951,7 +951,15 @@ function AppContent() {
   const selectedMember = selectedMemberId
     ? (getMemberById(selectedMemberId) ?? firestoreMember)
     : null;
-  const selectedPost = selectedPostId ? getPostById(selectedPostId, posts) : null;
+  // Комментарии заблокированных (и заблокировавших) пользователей скрываем так же, как их посты.
+  const withoutHiddenReplies = (post) =>
+    post && {
+      ...post,
+      replies: (post.replies ?? []).filter((reply) => !hiddenUserIds.has(reply.authorId)),
+    };
+  const selectedPost = selectedPostId
+    ? withoutHiddenReplies(getPostById(selectedPostId, posts))
+    : null;
   const chatMember = chatMemberProfile;
 
   useEffect(() => {
@@ -1041,7 +1049,9 @@ function AppContent() {
   const connectionsCount = connectedIds.length;
   const messagesCount = conversations.filter((conv) => conv.lastMessage?.trim()).length;
   const ownPosts = getOwnPosts(posts, auth.currentUser?.uid ?? userId ?? 'guest');
-  const visiblePosts = posts.filter((post) => !hiddenUserIds.has(post.authorId));
+  const visiblePosts = posts
+    .filter((post) => !hiddenUserIds.has(post.authorId))
+    .map(withoutHiddenReplies);
   const postsCount = ownPosts.length;
   const eventsCount = registeredEventIds.length;
   const unreadCount = NOTIFICATIONS.filter(

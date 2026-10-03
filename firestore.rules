@@ -126,8 +126,10 @@ service cloud.firestore {
           && !exists(/databases/$(database)/documents/blocks/$(get(/databases/$(database)/documents/conversations/$(convId)).data.participants[0] + '_' + get(/databases/$(database)/documents/conversations/$(convId)).data.participants[1]))
           && !exists(/databases/$(database)/documents/blocks/$(get(/databases/$(database)/documents/conversations/$(convId)).data.participants[1] + '_' + get(/databases/$(database)/documents/conversations/$(convId)).data.participants[0]));
         allow update: if false;
+        // Удаление чата стирает его у обоих участников, поэтому участник может
+        // удалять и сообщения собеседника.
         allow delete: if request.auth != null
-          && resource.data.fromUid == request.auth.uid;
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(convId)).data.participants;
       }
     }
 
