@@ -35,7 +35,7 @@
 > Hello, and thank you for the review. We have implemented a method for filtering objectionable content, which was the outstanding requirement. All user-generated content is now automatically screened before publishing — posts, post edits, comments, direct messages, event listings, and profile name/bio. Content containing profanity, slurs, or hate speech is rejected and never published, and the user is shown a message. This is included in build 17. Our Terms of Use also state the zero-tolerance policy, the automated filtering, and our commitment to act on reports within 24 hours. The attached screen recording, captured on a physical device, demonstrates: the Terms of Use / EULA presented before registration and login; the mechanism for users to flag/report objectionable content; the mechanism for users to block abusive users; the content filter rejecting a post that contains objectionable language. Demo account (Email/Password sign-in): Email: r17m89gr@gmail.com, Password: [пароль у Руслана]. Thank you.
 
 ### Прочие хвосты
-- Railway присылал письма — проверить, что хотят (вероятно, оплата).
+- Railway (аккаунт на rm01profi@gmail.com): 28.09 проекты были на паузе за неоплату (карта не проходила с 18.09). Оплачено 02.10, $5, квитанция #2198-7744, карта …5818; оплачен период до 18.10. Следующее списание ~18.10 — проверить, что пройдёт.
 - Проверить в Firebase Authentication аккаунты после 18.08 — нет ли неподтверждённых/запертых.
 - Outlook ruslan@vmestegroup.app: включена переадресация на GoDaddy Conversations (customer-support@...mail.conversations.godaddy.com) — Руслан её сознательно не включал, проверить/выключить.
 - Firebase Extensions закрываются 31.03.2027 → до февраля 2027 заменить `firestore-send-email` своей Cloud Function с Resend API.
@@ -69,3 +69,12 @@
 - `firebase functions:log` вызывать несколько раз — отдаёт неполные срезы.
 - Время в логах — UTC; у Руслана Central (UTC−5).
 - Пароли и ключи в репозиторий не писать.
+
+## Проверка перед сдачей (обязательно)
+Не говорить «готово», пока сам не проверил. Первый вариант не сдавать.
+- Любая правка кода → бандл собирается без ошибок: `npx expo export --platform ios --output-dir /tmp/vmeste-check` (тестов в проекте нет, это минимум).
+- Правка экрана/UI → запустить в iOS Simulator и приложить скриншот того, что изменилось (на iPhone, и для модалок — на iPad, ревьюер Apple на iPad).
+- Правка фильтра (`utils/contentFilter.js`) → прогнать через node: мат блокируется, обычные слова (русские и английские) не блокируются.
+- Правка `firestore.rules` / `functions/` → показать дифф и что именно изменится для пользователя; деплой делает Руслан.
+- В отчёте писать, что проверено и чем, и что проверить не удалось (например, только на реальном устройстве/TestFlight).
+- Если Руслан поправил результат — предложить дописать правило сюда, чтобы не повторялось.
