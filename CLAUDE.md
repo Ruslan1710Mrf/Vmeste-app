@@ -20,19 +20,19 @@
 - Документы на Firebase Hosting обновлены: `terms.html` (zero tolerance, автофильтр, реакция на жалобы за 24 ч), `child-safety.html` (убрано «автоматического сканирования нет»), `privacy.html`. Контакт везде ruslan@vmestegroup.app (support@vmeste.app был мёртвый — заменён).
 - Удаление аккаунта работает для email, Google, Apple (проверено на билде 13).
 - Билд 16 = фильтр + рабочий email поддержки, залит в App Store Connect.
-- **Решение 02.10.2026: Apple — в самом конце.** Сначала исправляем ошибки (ветка `fix/review-bugs`), полная перепроверка, новый билд (17) с исправлениями, тест в TestFlight — и отправляем его вместо 16.
+- **Решение 02.10.2026: Apple — в самом конце.** Сначала исправляем ошибки (ветка `fix/review-bugs`), полная перепроверка, новый билд (18) с исправлениями, тест в TestFlight — и отправляем его вместо 16.
 - Демо-аккаунт для ревьюера: r17m89gr@gmail.com, вход через Email/Password (не Google/Apple), подтверждён, вписан в App Review Information. Пароль — у Руслана, в репозиторий не писать.
 
 ### Осталось до отправки Apple (по порядку)
-0. Выкатить правила Firestore и удалить функцию `sendVerificationEmail` (деплой делает Руслан — у Claude он заблокирован); слить `fix/review-bugs` в main; собрать билд 17.
-1. TestFlight билд 17 на iPhone: фильтр блокирует мат в посте; Terms открывается с экрана входа; фото профиля грузится; email поддержки правильный.
+0. Выкатить правила Firestore и удалить функцию `sendVerificationEmail` (деплой делает Руслан — у Claude он заблокирован); слить `fix/review-bugs` в main; собрать билд 17. → Сделано 07.10: правила выкачены, функция удалена, собран билд 18 (номер 17 был занят), EAS build 581b3292.
+1. TestFlight билд 18 на iPhone: фильтр блокирует мат в посте; Terms открывается с экрана входа; фото профиля грузится; email поддержки правильный.
 2. Опционально: вид на iPad (`supportsTablet: false`, но ревьюер на iPad) — модалки.
 3. Видео на iPhone: экран входа → открыть Terms ДО входа → Report на посте → Block пользователя → попытка поста с матом отклонена.
-4. App Store Connect: привязать новый билд (17) к версии 1.0; видео в Notes App Review Information; Reply ревьюеру (текст ниже); «Повторно отправить на проверку».
+4. App Store Connect: привязать новый билд (18) к версии 1.0; видео в Notes App Review Information; Reply ревьюеру (текст ниже); «Повторно отправить на проверку».
 
 Текст ответа Apple (отправить с видео):
 
-> Hello, and thank you for the review. We have implemented a method for filtering objectionable content, which was the outstanding requirement. All user-generated content is now automatically screened before publishing — posts, post edits, comments, direct messages, event listings, and profile name/bio. Content containing profanity, slurs, or hate speech is rejected and never published, and the user is shown a message. This is included in build 17. Our Terms of Use also state the zero-tolerance policy, the automated filtering, and our commitment to act on reports within 24 hours. The attached screen recording, captured on a physical device, demonstrates: the Terms of Use / EULA presented before registration and login; the mechanism for users to flag/report objectionable content; the mechanism for users to block abusive users; the content filter rejecting a post that contains objectionable language. Demo account (Email/Password sign-in): Email: r17m89gr@gmail.com, Password: [пароль у Руслана]. Thank you.
+> Hello, and thank you for the review. We have implemented a method for filtering objectionable content, which was the outstanding requirement. All user-generated content is now automatically screened before publishing — posts, post edits, comments, direct messages, event listings, and profile name/bio. Content containing profanity, slurs, or hate speech is rejected and never published, and the user is shown a message. This is included in build 18. Our Terms of Use also state the zero-tolerance policy, the automated filtering, and our commitment to act on reports within 24 hours. The attached screen recording, captured on a physical device, demonstrates: the Terms of Use / EULA presented before registration and login; the mechanism for users to flag/report objectionable content; the mechanism for users to block abusive users; the content filter rejecting a post that contains objectionable language. Demo account (Email/Password sign-in): Email: r17m89gr@gmail.com, Password: [пароль у Руслана]. Thank you.
 
 ### Прочие хвосты
 - Railway (аккаунт на rm01profi@gmail.com): 28.09 проекты были на паузе за неоплату (карта не проходила с 18.09). Оплачено 02.10, $5, квитанция #2198-7744, карта …5818; оплачен период до 18.10. Следующее списание ~18.10 — проверить, что пройдёт.
