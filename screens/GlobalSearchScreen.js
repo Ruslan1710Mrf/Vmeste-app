@@ -13,9 +13,11 @@ import { JOBS } from '../data/jobs';
 import { MEMBERS } from '../data/members';
 import { memberMatchesQuery, searchUsers } from '../lib/userProfileService';
 import { localize, useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function ResultSection({ title, count, children }) {
+  const styles = useStyles();
   if (!count) return null;
   return (
     <View style={styles.section}>
@@ -26,6 +28,7 @@ function ResultSection({ title, count, children }) {
 }
 
 function ResultRow({ emoji, title, subtitle, onPress }) {
+  const styles = useStyles();
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
@@ -52,6 +55,8 @@ export default function GlobalSearchScreen({
   authReady,
   blockedUserIds = [],
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [query, setQuery] = useState('');
@@ -151,7 +156,7 @@ export default function GlobalSearchScreen({
         <TextInput
           style={styles.input}
           placeholder={t('search.placeholder')}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={setQuery}
           autoFocus
@@ -196,7 +201,7 @@ export default function GlobalSearchScreen({
                 <ResultRow
                   key={post.id}
                   emoji="📝"
-                  title={post.author}
+                  title={(post.author || '').replace(/\s*\(вы\)\s*$/, '')}
                   subtitle={post.content.slice(0, 80)}
                   onPress={() => onOpenPost(post.id)}
                 />
@@ -233,56 +238,63 @@ export default function GlobalSearchScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  backButton: { padding: 8 },
-  backPressed: { opacity: 0.6 },
-  backIcon: { fontSize: 22, color: '#2563EB' },
-  input: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#1E293B',
-  },
-  list: { paddingHorizontal: 24, paddingBottom: 24 },
-  hint: { fontSize: 15, color: '#94A3B8', textAlign: 'center', marginTop: 40 },
-  empty: { fontSize: 15, color: '#94A3B8', textAlign: 'center', marginTop: 40 },
-  count: { fontSize: 14, color: '#64748B', marginBottom: 16 },
-  section: { marginBottom: 20 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  rowPressed: { opacity: 0.9 },
-  rowEmoji: { fontSize: 22, marginRight: 12 },
-  rowContent: { flex: 1 },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: '#1E293B' },
-  rowSubtitle: { fontSize: 13, color: '#64748B', marginTop: 2 },
-  rowArrow: { fontSize: 20, color: '#CBD5E1', marginLeft: 8 },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 12,
+      gap: 8,
+    },
+    backButton: { padding: 8 },
+    backPressed: { opacity: 0.6 },
+    backIcon: { fontSize: 22, color: colors.accent },
+    input: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: colors.text,
+    },
+    list: { paddingHorizontal: 24, paddingBottom: 24 },
+    hint: { fontSize: 15, color: colors.textMuted, textAlign: 'center', marginTop: 40 },
+    empty: { fontSize: 15, color: colors.textMuted, textAlign: 'center', marginTop: 40 },
+    count: { fontSize: 14, color: colors.textSecondary, marginBottom: 16 },
+    section: { marginBottom: 20 },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 8,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    rowPressed: { opacity: 0.9 },
+    rowEmoji: { fontSize: 22, marginRight: 12 },
+    rowContent: { flex: 1 },
+    rowTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
+    rowSubtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+    rowArrow: { fontSize: 20, color: colors.textMuted, marginLeft: 8 },
+  });
+}
