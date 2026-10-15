@@ -81,6 +81,7 @@ export default function MessagesScreen({
   onBack,
   backLabel,
   onOpenChat,
+  onFindPeople,
   userId,
   connectedIds = [],
   blockedUserIds = [],
@@ -213,6 +214,14 @@ export default function MessagesScreen({
                 ? t('messages.signInToMessage')
                 : t('messages.addFriendsToStart')}
             </Text>
+            {myUid && onFindPeople ? (
+              <Pressable
+                style={({ pressed }) => [styles.findPeopleButton, pressed && styles.backPressed]}
+                onPress={onFindPeople}
+              >
+                <Text style={styles.findPeopleText}>{t('messages.findPeople')}</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : (
           <View style={styles.card}>
@@ -324,5 +333,13 @@ function createStyles(colors) {
       lineHeight: 22,
       paddingHorizontal: 32,
     },
+    findPeopleButton: {
+      marginTop: 20,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 12,
+      backgroundColor: colors.accent,
+    },
+    findPeopleText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
   });
 }

@@ -1215,6 +1215,7 @@ function AppContent() {
             onBack={profileReturnTab ? closeProfileView : () => setProfileView(null)}
             backLabel={getProfileBackLabel()}
             onOpenChat={openChat}
+            onFindPeople={() => handleNavigate('networking')}
             userId={userId}
             connectedIds={connectedIds}
             blockedUserIds={Array.from(hiddenUserIds)}
