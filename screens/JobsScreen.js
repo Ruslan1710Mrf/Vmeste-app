@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { JOBS } from '../data/jobs';
 import { localize, useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const JOB_APPS = [
@@ -50,6 +51,7 @@ const JOB_APPS = [
 ];
 
 function JobAppIcon({ app }) {
+  const styles = useStyles();
   const [iconFailed, setIconFailed] = useState(false);
 
   return (
@@ -77,6 +79,7 @@ function JobAppIcon({ app }) {
 }
 
 function JobCard({ job, onPress, isSaved, onToggleSave }) {
+  const styles = useStyles();
   const { language } = useI18n();
   const handleOpen = () => {
     if (job.applyUrl) {
@@ -118,6 +121,8 @@ function JobCard({ job, onPress, isSaved, onToggleSave }) {
 }
 
 export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onRefresh = () => {} }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [query, setQuery] = useState('');
@@ -155,7 +160,7 @@ export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onR
         <TextInput
           style={styles.searchInput}
           placeholder={t('jobs.searchPlaceholder')}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={setQuery}
         />
@@ -192,169 +197,177 @@ export default function JobsScreen({ onSelectJob, savedJobIds, onToggleSave, onR
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  screenTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#EAB308',
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  screenSubtitle: {
-    fontSize: 15,
-    color: '#64748B',
-    marginBottom: 16,
-  },
-  searchInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#1E293B',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-    marginBottom: 12,
-  },
-  appsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  appItem: {
-    alignItems: 'center',
-    width: 72,
-  },
-  appItemPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.95 }],
-  },
-  appIcon: {
-    width: 60,
-    height: 60,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    marginBottom: 6,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  appIconImage: {
-    width: 60,
-    height: 60,
-  },
-  appIconFallback: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  appName: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    lineHeight: 14,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    gap: 12,
-  },
-  empty: {
-    textAlign: 'center',
-    fontSize: 15,
-    color: '#94A3B8',
-    marginTop: 32,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardPressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.99 }],
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  cardBody: {
-    flex: 1,
-    marginRight: 8,
-  },
-  saveButton: {
-    padding: 4,
-  },
-  savePressed: {
-    opacity: 0.6,
-  },
-  saveIcon: {
-    fontSize: 22,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 4,
-  },
-  company: {
-    fontSize: 15,
-    color: '#64748B',
-  },
-  meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  cityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cityIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  city: {
-    fontSize: 14,
-    color: '#475569',
-    fontWeight: '500',
-  },
-  salaryBadge: {
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  salary: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#059669',
-  },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    header: {
+      paddingHorizontal: 24,
+      paddingTop: 16,
+      paddingBottom: 16,
+    },
+    screenTitle: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: '#EAB308',
+      letterSpacing: -0.5,
+      marginBottom: 6,
+    },
+    screenSubtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      marginBottom: 16,
+    },
+    searchInput: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 15,
+      color: colors.text,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 1,
+      marginBottom: 12,
+    },
+    appsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
+    appItem: {
+      alignItems: 'center',
+      width: 72,
+    },
+    appItemPressed: {
+      opacity: 0.7,
+      transform: [{ scale: 0.95 }],
+    },
+    appIcon: {
+      width: 60,
+      height: 60,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      marginBottom: 6,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    appIconImage: {
+      width: 60,
+      height: 60,
+    },
+    appIconFallback: {
+      fontSize: 20,
+      fontWeight: '700',
+    },
+    appName: {
+      fontSize: 11,
+      fontWeight: '500',
+      color: '#FFFFFF',
+      textAlign: 'center',
+      lineHeight: 14,
+    },
+    list: {
+      flex: 1,
+    },
+    listContent: {
+      paddingHorizontal: 24,
+      paddingBottom: 16,
+      gap: 12,
+    },
+    empty: {
+      textAlign: 'center',
+      fontSize: 15,
+      color: colors.textMuted,
+      marginTop: 32,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    cardPressed: {
+      opacity: 0.92,
+      transform: [{ scale: 0.99 }],
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    cardBody: {
+      flex: 1,
+      marginRight: 8,
+    },
+    saveButton: {
+      padding: 4,
+    },
+    savePressed: {
+      opacity: 0.6,
+    },
+    saveIcon: {
+      fontSize: 22,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    company: {
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    meta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    cityRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    cityIcon: {
+      fontSize: 14,
+      marginRight: 4,
+    },
+    city: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    salaryBadge: {
+      backgroundColor: '#ECFDF5',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    salary: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#059669',
+    },
+  });
+}

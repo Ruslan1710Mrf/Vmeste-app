@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -10,10 +10,13 @@ import {
 } from 'react-native';
 import { getFirstName } from '../lib/profileUtils';
 import { useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { isOwnPost } from '../lib/postUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function PostDetailScreen({ post, profile, userId, onBack, onAddReply }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const [draft, setDraft] = useState('');
@@ -85,7 +88,7 @@ export default function PostDetailScreen({ post, profile, userId, onBack, onAddR
           <TextInput
             style={styles.composeInput}
             placeholder={t('postDetail.commentPlaceholder')}
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.textMuted}
             value={draft}
             onChangeText={setDraft}
             multiline
@@ -107,103 +110,110 @@ export default function PostDetailScreen({ post, profile, userId, onBack, onAddR
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 8 },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingRight: 12,
-  },
-  backPressed: { opacity: 0.6 },
-  backIcon: { fontSize: 20, color: '#2563EB', marginRight: 4 },
-  backLabel: { fontSize: 16, fontWeight: '500', color: '#2563EB' },
-  content: { paddingHorizontal: 24, paddingBottom: 32 },
-  postCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  postHeader: { flexDirection: 'row', marginBottom: 14 },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarText: { fontSize: 18, fontWeight: '600', color: '#2563EB' },
-  author: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
-  meta: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
-  postContent: { fontSize: 16, lineHeight: 24, color: '#475569', marginBottom: 12 },
-  postImage: {
-    width: '100%',
-    height: 240,
-    borderRadius: 12,
-    marginBottom: 12,
-    backgroundColor: '#F1F5F9',
-  },
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  categoryText: { fontSize: 12, fontWeight: '500', color: '#64748B' },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 12,
-  },
-  empty: { fontSize: 14, color: '#94A3B8', marginBottom: 20 },
-  reply: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-  },
-  replyAuthor: { fontSize: 14, fontWeight: '600', color: '#1E293B', marginBottom: 4 },
-  replyText: { fontSize: 14, lineHeight: 20, color: '#475569', marginBottom: 6 },
-  replyTime: { fontSize: 12, color: '#94A3B8' },
-  compose: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 12,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  composeInput: {
-    fontSize: 15,
-    color: '#1E293B',
-    minHeight: 50,
-    marginBottom: 12,
-    textAlignVertical: 'top',
-  },
-  sendButton: {
-    backgroundColor: '#2563EB',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-    alignSelf: 'flex-end',
-    paddingHorizontal: 20,
-  },
-  sendDisabled: { backgroundColor: '#CBD5E1' },
-  sendPressed: { opacity: 0.9 },
-  sendText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 8 },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      paddingVertical: 6,
+      paddingRight: 12,
+    },
+    backPressed: { opacity: 0.6 },
+    backIcon: { fontSize: 20, color: '#2563EB', marginRight: 4 },
+    backLabel: { fontSize: 16, fontWeight: '500', color: '#2563EB' },
+    content: { paddingHorizontal: 24, paddingBottom: 32 },
+    postCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 24,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    postHeader: { flexDirection: 'row', marginBottom: 14 },
+    avatar: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: '#EFF6FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    avatarText: { fontSize: 18, fontWeight: '600', color: '#2563EB' },
+    author: { fontSize: 16, fontWeight: '600', color: colors.text },
+    meta: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    postContent: { fontSize: 16, lineHeight: 24, color: colors.textSecondary, marginBottom: 12 },
+    postImage: {
+      width: '100%',
+      height: 240,
+      borderRadius: 12,
+      marginBottom: 12,
+      backgroundColor: colors.surfaceMuted,
+    },
+    categoryBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: colors.surfaceMuted,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    categoryText: { fontSize: 12, fontWeight: '500', color: colors.textSecondary },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    empty: { fontSize: 14, color: colors.textMuted, marginBottom: 20 },
+    reply: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 10,
+    },
+    replyAuthor: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 4 },
+    replyText: { fontSize: 14, lineHeight: 20, color: colors.textSecondary, marginBottom: 6 },
+    replyTime: { fontSize: 12, color: colors.textMuted },
+    compose: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginTop: 12,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    composeInput: {
+      fontSize: 15,
+      color: colors.text,
+      minHeight: 50,
+      marginBottom: 12,
+      textAlignVertical: 'top',
+    },
+    sendButton: {
+      backgroundColor: '#2563EB',
+      borderRadius: 10,
+      paddingVertical: 10,
+      alignItems: 'center',
+      alignSelf: 'flex-end',
+      paddingHorizontal: 20,
+    },
+    sendDisabled: { backgroundColor: colors.border },
+    sendPressed: { opacity: 0.9 },
+    sendText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
+  });
+}

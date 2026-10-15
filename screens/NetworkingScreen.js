@@ -13,9 +13,11 @@ import { GROUPS } from '../data/groups';
 import { MEMBERS } from '../data/members';
 import { fetchNetworkUsers } from '../lib/userProfileService';
 import { localize, useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function EventCard({ event, onPress }) {
+  const styles = useStyles();
   const { t } = useI18n();
   return (
     <Pressable
@@ -35,6 +37,7 @@ function EventCard({ event, onPress }) {
 }
 
 function GroupRow({ group }) {
+  const styles = useStyles();
   const { t, language } = useI18n();
   return (
     <Pressable
@@ -53,6 +56,7 @@ function GroupRow({ group }) {
 }
 
 function MemberCard({ member, onPress, isConnected }) {
+  const styles = useStyles();
   const { t } = useI18n();
   return (
     <Pressable
@@ -83,6 +87,8 @@ export default function NetworkingScreen({
   userId,
   blockedUserIds = [],
 }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [query, setQuery] = useState('');
@@ -161,7 +167,7 @@ export default function NetworkingScreen({
         <TextInput
           style={styles.searchInput}
           placeholder={t('networking.searchPlaceholder')}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={setQuery}
         />
@@ -226,230 +232,238 @@ export default function NetworkingScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 20,
-  },
-  screenTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#EC4899',
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  screenSubtitle: {
-    fontSize: 15,
-    color: '#64748B',
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  searchInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#1E293B',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  empty: {
-    textAlign: 'center',
-    fontSize: 15,
-    color: '#94A3B8',
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#EA580C',
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  createEventLink: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#7C3AED',
-    marginBottom: 12,
-  },
-  eventsList: {
-    gap: 12,
-    marginBottom: 24,
-  },
-  eventCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  eventDateBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F3E8FF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  eventDate: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#7C3AED',
-  },
-  eventTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 10,
-  },
-  eventMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  eventCity: {
-    fontSize: 14,
-    color: '#64748B',
-  },
-  eventAttendees: {
-    fontSize: 13,
-    color: '#94A3B8',
-  },
-  groupsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginBottom: 24,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  groupRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-  },
-  rowPressed: {
-    backgroundColor: '#F8FAFC',
-  },
-  groupInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  groupName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 2,
-  },
-  groupMeta: {
-    fontSize: 13,
-    color: '#94A3B8',
-  },
-  joinButton: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#7C3AED',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginHorizontal: 18,
-  },
-  membersList: {
-    gap: 10,
-  },
-  memberCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F3E8FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  avatarText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#7C3AED',
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  memberRole: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 2,
-  },
-  memberCity: {
-    fontSize: 13,
-    color: '#94A3B8',
-    marginTop: 2,
-  },
-  connectButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F3E8FF',
-    textAlign: 'center',
-    lineHeight: 34,
-    fontSize: 22,
-    fontWeight: '400',
-    color: '#7C3AED',
-    overflow: 'hidden',
-  },
-  connectedButton: {
-    backgroundColor: '#DCFCE7',
-    color: '#059669',
-    lineHeight: 36,
-    fontSize: 18,
-  },
-  cardPressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.99 }],
-  },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    header: {
+      paddingHorizontal: 24,
+      paddingTop: 16,
+      paddingBottom: 20,
+    },
+    screenTitle: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: '#EC4899',
+      letterSpacing: -0.5,
+      marginBottom: 6,
+    },
+    screenSubtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+      marginBottom: 16,
+    },
+    searchInput: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 15,
+      color: colors.text,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    empty: {
+      textAlign: 'center',
+      fontSize: 15,
+      color: colors.textMuted,
+      marginTop: 24,
+      marginBottom: 16,
+    },
+    list: {
+      flex: 1,
+    },
+    listContent: {
+      paddingHorizontal: 24,
+      paddingBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.accent,
+      marginBottom: 12,
+      marginTop: 8,
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    createEventLink: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#7C3AED',
+      marginBottom: 12,
+    },
+    eventsList: {
+      gap: 12,
+      marginBottom: 24,
+    },
+    eventCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 18,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    eventDateBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#F3E8FF',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      marginBottom: 10,
+    },
+    eventDate: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#7C3AED',
+    },
+    eventTitle: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 10,
+    },
+    eventMeta: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    eventCity: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    eventAttendees: {
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    groupsCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      marginBottom: 24,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    groupRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+    },
+    rowPressed: {
+      backgroundColor: colors.surfaceSecondary,
+    },
+    groupInfo: {
+      flex: 1,
+      marginRight: 12,
+    },
+    groupName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    groupMeta: {
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    joinButton: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#7C3AED',
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginHorizontal: 18,
+    },
+    membersList: {
+      gap: 10,
+    },
+    memberCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: '#F3E8FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+    },
+    avatarText: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: '#7C3AED',
+    },
+    memberInfo: {
+      flex: 1,
+    },
+    memberName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    memberRole: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    memberCity: {
+      fontSize: 13,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    connectButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: '#F3E8FF',
+      textAlign: 'center',
+      lineHeight: 34,
+      fontSize: 22,
+      fontWeight: '400',
+      color: '#7C3AED',
+      overflow: 'hidden',
+    },
+    connectedButton: {
+      backgroundColor: '#DCFCE7',
+      color: '#059669',
+      lineHeight: 36,
+      fontSize: 18,
+    },
+    cardPressed: {
+      opacity: 0.92,
+      transform: [{ scale: 0.99 }],
+    },
+  });
+}

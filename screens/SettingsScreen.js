@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -33,6 +33,7 @@ import { deleteUserEvents } from '../lib/eventService';
 import { deleteUserStorageFiles } from '../lib/postImageService';
 import { LANGUAGES } from '../lib/chatUtils';
 import { useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function confirmSignOut(t) {
@@ -51,6 +52,7 @@ function confirmSignOut(t) {
 }
 
 function LanguageOption({ language, selected, onSelect }) {
+  const styles = useStyles();
   return (
     <Pressable
       style={({ pressed }) => [
@@ -69,6 +71,7 @@ function LanguageOption({ language, selected, onSelect }) {
 }
 
 function SettingRow({ label, description, value, onValueChange }) {
+  const styles = useStyles();
   return (
     <View style={styles.row}>
       <View style={styles.rowText}>
@@ -86,6 +89,8 @@ function SettingRow({ label, description, value, onValueChange }) {
 }
 
 export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t, language: currentLanguage, setLanguage } = useI18n();
@@ -413,7 +418,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder={t('settings.passwordPlaceholder')}
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor={colors.textMuted}
                   secureTextEntry
                   value={passwordInput}
                   onChangeText={setPasswordInput}
@@ -480,201 +485,208 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16 },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginBottom: 16,
-    paddingVertical: 6,
-    paddingRight: 12,
-  },
-  backPressed: { opacity: 0.6 },
-  backIcon: { fontSize: 20, color: '#EA580C', marginRight: 4 },
-  backLabel: { fontSize: 16, fontWeight: '500', color: '#EA580C' },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0F172A',
-    letterSpacing: -0.5,
-  },
-  list: { paddingHorizontal: 24, paddingBottom: 24 },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#94A3B8',
-    marginBottom: 10,
-    marginTop: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginBottom: 16,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-  },
-  rowText: { flex: 1, marginRight: 12 },
-  rowLabel: { fontSize: 16, color: '#1E293B' },
-  rowDesc: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 18 },
-  langSectionTitle: {
-    fontSize: 16,
-    color: '#1E293B',
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  langOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-  },
-  langOptionSelected: {
-    backgroundColor: '#FFF7ED',
-  },
-  langOptionLabel: {
-    fontSize: 16,
-    color: '#1E293B',
-  },
-  langOptionLabelSelected: {
-    fontWeight: '600',
-    color: '#EA580C',
-  },
-  langCheck: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#EA580C',
-  },
-  accountRow: {
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-  },
-  accountEmail: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 4,
-  },
-  actionRow: {
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  actionText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#2563EB',
-  },
-  signOutRow: {
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  signOutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#EF4444',
-  },
-  deleteAccountRow: {
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  deleteAccountText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#DC2626',
-  },
-  version: {
-    textAlign: 'center',
-    fontSize: 13,
-    color: '#CBD5E1',
-    marginTop: 16,
-  },
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 8,
-  },
-  modalDescription: {
-    fontSize: 14,
-    color: '#64748B',
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  passwordInput: {
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#0F172A',
-    marginBottom: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalButtonCancel: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-  },
-  modalButtonCancelText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  modalButtonDelete: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#DC2626',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalButtonDeleteText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16 },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      marginBottom: 16,
+      paddingVertical: 6,
+      paddingRight: 12,
+    },
+    backPressed: { opacity: 0.6 },
+    backIcon: { fontSize: 20, color: colors.accent, marginRight: 4 },
+    backLabel: { fontSize: 16, fontWeight: '500', color: colors.accent },
+    screenTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+      letterSpacing: -0.5,
+    },
+    list: { paddingHorizontal: 24, paddingBottom: 24 },
+    sectionLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textMuted,
+      marginBottom: 10,
+      marginTop: 8,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      marginBottom: 16,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+    },
+    rowText: { flex: 1, marginRight: 12 },
+    rowLabel: { fontSize: 16, color: colors.text },
+    rowDesc: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    divider: { height: 1, backgroundColor: colors.border, marginHorizontal: 18 },
+    langSectionTitle: {
+      fontSize: 16,
+      color: colors.text,
+      paddingHorizontal: 18,
+      paddingTop: 16,
+      paddingBottom: 8,
+    },
+    langOption: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+    },
+    langOptionSelected: {
+      backgroundColor: colors.accentSoft,
+    },
+    langOptionLabel: {
+      fontSize: 16,
+      color: colors.text,
+    },
+    langOptionLabelSelected: {
+      fontWeight: '600',
+      color: colors.accent,
+    },
+    langCheck: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.accent,
+    },
+    accountRow: {
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+    },
+    accountEmail: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    actionRow: {
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    actionText: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: '#2563EB',
+    },
+    signOutRow: {
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    signOutText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#EF4444',
+    },
+    deleteAccountRow: {
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    deleteAccountText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#DC2626',
+    },
+    version: {
+      textAlign: 'center',
+      fontSize: 13,
+      color: colors.textMuted,
+      marginTop: 16,
+    },
+    modalOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.5)',
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      paddingHorizontal: 24,
+      paddingTop: 24,
+      paddingBottom: 32,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    modalDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 16,
+      lineHeight: 20,
+    },
+    passwordInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: colors.text,
+      marginBottom: 20,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    modalButtonCancel: {
+      flex: 1,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+    },
+    modalButtonCancelText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    modalButtonDelete: {
+      flex: 1,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 12,
+      backgroundColor: '#DC2626',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modalButtonDeleteText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
+  });
+}

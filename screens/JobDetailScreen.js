@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Alert,
   Linking,
@@ -9,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { localize, useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function getJobShareMessage(job, language) {
@@ -20,6 +22,7 @@ function getJobShareMessage(job, language) {
 }
 
 export default function JobDetailScreen({ job, onBack, isSaved, onToggleSave }) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const handleShare = async () => {
@@ -125,163 +128,171 @@ export default function JobDetailScreen({ job, onBack, isSaved, onToggleSave }) 
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  iconButton: { padding: 8 },
-  actionIcon: { fontSize: 22, color: '#2563EB', fontWeight: '600' },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-  },
-  backPressed: {
-    opacity: 0.6,
-  },
-  backIcon: {
-    fontSize: 20,
-    color: '#2563EB',
-    marginRight: 4,
-  },
-  backLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#2563EB',
-  },
-  saveButton: {
-    padding: 8,
-  },
-  saveIcon: {
-    fontSize: 24,
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  titleBlock: {
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0F172A',
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  company: {
-    fontSize: 17,
-    color: '#64748B',
-    marginBottom: 12,
-  },
-  badges: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  typeBadge: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  typeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#2563EB',
-  },
-  posted: {
-    fontSize: 13,
-    color: '#94A3B8',
-  },
-  infoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 24,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  infoLabel: {
-    fontSize: 15,
-    color: '#64748B',
-  },
-  infoValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
-  salary: {
-    color: '#059669',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginVertical: 14,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 10,
-  },
-  body: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: '#475569',
-    marginBottom: 24,
-  },
-  requirements: {
-    gap: 10,
-    marginBottom: 32,
-  },
-  requirementRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  bullet: {
-    fontSize: 15,
-    color: '#2563EB',
-    marginRight: 8,
-    lineHeight: 22,
-  },
-  requirementText: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#475569',
-  },
-  applyButton: {
-    backgroundColor: '#2563EB',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  applyPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.99 }],
-  },
-  applyText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingTop: 8,
+      paddingBottom: 8,
+    },
+    headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    iconButton: { padding: 8 },
+    actionIcon: { fontSize: 22, color: '#2563EB', fontWeight: '600' },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 6,
+      paddingRight: 12,
+    },
+    backPressed: {
+      opacity: 0.6,
+    },
+    backIcon: {
+      fontSize: 20,
+      color: '#2563EB',
+      marginRight: 4,
+    },
+    backLabel: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: '#2563EB',
+    },
+    saveButton: {
+      padding: 8,
+    },
+    saveIcon: {
+      fontSize: 24,
+    },
+    content: {
+      paddingHorizontal: 24,
+      paddingBottom: 32,
+    },
+    titleBlock: {
+      marginBottom: 20,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+      letterSpacing: -0.5,
+      marginBottom: 6,
+    },
+    company: {
+      fontSize: 17,
+      color: colors.textSecondary,
+      marginBottom: 12,
+    },
+    badges: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    typeBadge: {
+      backgroundColor: '#EFF6FF',
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+      borderRadius: 8,
+    },
+    typeText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#2563EB',
+    },
+    posted: {
+      fontSize: 13,
+      color: colors.textMuted,
+    },
+    infoCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 18,
+      marginBottom: 24,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    infoLabel: {
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    infoValue: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    salary: {
+      color: '#059669',
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 14,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 10,
+    },
+    body: {
+      fontSize: 15,
+      lineHeight: 24,
+      color: colors.textSecondary,
+      marginBottom: 24,
+    },
+    requirements: {
+      gap: 10,
+      marginBottom: 32,
+    },
+    requirementRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    bullet: {
+      fontSize: 15,
+      color: '#2563EB',
+      marginRight: 8,
+      lineHeight: 22,
+    },
+    requirementText: {
+      flex: 1,
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSecondary,
+    },
+    applyButton: {
+      backgroundColor: '#2563EB',
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    applyPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.99 }],
+    },
+    applyText: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
+  });
+}

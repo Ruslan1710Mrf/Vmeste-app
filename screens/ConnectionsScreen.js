@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -9,9 +9,11 @@ import {
 } from 'react-native';
 import { fetchUsersByIds } from '../lib/userProfileService';
 import { useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function ConnectionRow({ member, onPress, onMessage }) {
+  const styles = useStyles();
   const { t } = useI18n();
   return (
     <Pressable
@@ -42,6 +44,7 @@ export default function ConnectionsScreen({
   onOpenMember,
   onMessage,
 }) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const [connections, setConnections] = useState([]);
@@ -109,73 +112,80 @@ export default function ConnectionsScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16 },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginBottom: 16,
-    paddingVertical: 6,
-    paddingRight: 12,
-  },
-  backPressed: { opacity: 0.6 },
-  backIcon: { fontSize: 20, color: '#EA580C', marginRight: 4 },
-  backLabel: { fontSize: 16, fontWeight: '500', color: '#EA580C' },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0F172A',
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  screenSubtitle: { fontSize: 15, color: '#64748B' },
-  list: { paddingHorizontal: 24, paddingBottom: 16, flexGrow: 1 },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  row: { flexDirection: 'row', alignItems: 'center', padding: 16 },
-  rowPressed: { backgroundColor: '#F8FAFC' },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F3E8FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  avatarText: { fontSize: 18, fontWeight: '600', color: '#7C3AED' },
-  content: { flex: 1 },
-  name: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
-  role: { fontSize: 14, color: '#64748B', marginTop: 2 },
-  city: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
-  msgButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF7ED',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  msgPressed: { opacity: 0.7 },
-  msgIcon: { fontSize: 18 },
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 16 },
-  empty: { alignItems: 'center', paddingTop: 60 },
-  emptyEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyTitle: { fontSize: 20, fontWeight: '600', color: '#1E293B', marginBottom: 8 },
-  emptyText: {
-    fontSize: 15,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 32,
-  },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 16 },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      marginBottom: 16,
+      paddingVertical: 6,
+      paddingRight: 12,
+    },
+    backPressed: { opacity: 0.6 },
+    backIcon: { fontSize: 20, color: colors.accent, marginRight: 4 },
+    backLabel: { fontSize: 16, fontWeight: '500', color: colors.accent },
+    screenTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+      letterSpacing: -0.5,
+      marginBottom: 6,
+    },
+    screenSubtitle: { fontSize: 15, color: colors.textSecondary },
+    list: { paddingHorizontal: 24, paddingBottom: 16, flexGrow: 1 },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    row: { flexDirection: 'row', alignItems: 'center', padding: 16 },
+    rowPressed: { backgroundColor: colors.surfaceSecondary },
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: '#F3E8FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+    },
+    avatarText: { fontSize: 18, fontWeight: '600', color: '#7C3AED' },
+    content: { flex: 1 },
+    name: { fontSize: 16, fontWeight: '600', color: colors.text },
+    role: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
+    city: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    msgButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.accentSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    msgPressed: { opacity: 0.7 },
+    msgIcon: { fontSize: 18 },
+    divider: { height: 1, backgroundColor: colors.border, marginHorizontal: 16 },
+    empty: { alignItems: 'center', paddingTop: 60 },
+    emptyEmoji: { fontSize: 48, marginBottom: 16 },
+    emptyTitle: { fontSize: 20, fontWeight: '600', color: colors.text, marginBottom: 8 },
+    emptyText: {
+      fontSize: 15,
+      color: colors.textMuted,
+      textAlign: 'center',
+      lineHeight: 22,
+      paddingHorizontal: 32,
+    },
+  });
+}

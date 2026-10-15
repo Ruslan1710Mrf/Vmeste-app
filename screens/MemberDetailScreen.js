@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -8,9 +8,11 @@ import {
 } from 'react-native';
 import MemberOptionsMenu from '../components/MemberOptionsMenu';
 import { useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function MemberPostRow({ post, onPress }) {
+  const styles = useStyles();
   const replyCount = post.replies?.length ?? 0;
 
   return (
@@ -33,6 +35,7 @@ function MemberPostRow({ post, onPress }) {
 }
 
 function MutualConnectionRow({ member, onPress }) {
+  const styles = useStyles();
   const { t } = useI18n();
   return (
     <Pressable
@@ -66,6 +69,7 @@ export default function MemberDetailScreen({
   onUnblock,
   onReport,
 }) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const [showMenu, setShowMenu] = useState(false);
@@ -221,193 +225,200 @@ export default function MemberDetailScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  menuDots: {
-    fontSize: 18,
-    color: '#64748B',
-    letterSpacing: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingRight: 12,
-  },
-  backPressed: { opacity: 0.6 },
-  backIcon: { fontSize: 20, color: '#7C3AED', marginRight: 4 },
-  backLabel: { fontSize: 16, fontWeight: '500', color: '#7C3AED' },
-  content: { paddingHorizontal: 24, paddingBottom: 32 },
-  profileCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 28,
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#F3E8FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  avatarText: { fontSize: 32, fontWeight: '700', color: '#7C3AED' },
-  name: { fontSize: 24, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
-  role: { fontSize: 15, color: '#64748B', marginBottom: 4 },
-  city: { fontSize: 14, color: '#94A3B8' },
-  section: { marginTop: 28 },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 10,
-  },
-  bio: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: '#475569',
-    marginBottom: 24,
-  },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
-  tag: {
-    backgroundColor: '#F3E8FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  tagText: { fontSize: 13, fontWeight: '500', color: '#7C3AED' },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 8,
-  },
-  actionButton: {
-    flex: 1,
-  },
-  connectButton: {
-    backgroundColor: '#7C3AED',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  buttonPressed: { opacity: 0.9 },
-  connectText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
-  messageButton: {
-    backgroundColor: '#7C3AED',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  messageButtonOutline: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#7C3AED',
-  },
-  messageText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
-  messageTextOutline: { fontSize: 15, fontWeight: '600', color: '#7C3AED' },
-  successBanner: {
-    backgroundColor: '#F3E8FF',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  successText: { fontSize: 16, fontWeight: '600', color: '#7C3AED' },
-  blockedBanner: {
-    backgroundColor: '#FEE2E2',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  blockedText: { fontSize: 16, fontWeight: '600', color: '#EF4444' },
-  actions: { gap: 12, marginBottom: 8 },
-  mutualCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  mutualRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-  },
-  mutualAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F3E8FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  mutualAvatarText: { fontSize: 16, fontWeight: '600', color: '#7C3AED' },
-  mutualInfo: { flex: 1 },
-  mutualName: { fontSize: 15, fontWeight: '600', color: '#1E293B' },
-  mutualRole: { fontSize: 13, color: '#64748B', marginTop: 2 },
-  mutualArrow: { fontSize: 20, color: '#94A3B8' },
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 14 },
-  postsList: { gap: 12 },
-  postCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  postHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  postCategory: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#7C3AED',
-    backgroundColor: '#F3E8FF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  postTime: { fontSize: 13, color: '#94A3B8' },
-  postContent: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  postMeta: { fontSize: 13, color: '#64748B' },
-  emptyPosts: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyPostsText: { fontSize: 15, color: '#94A3B8' },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingTop: 8,
+      paddingBottom: 8,
+    },
+    menuDots: {
+      fontSize: 18,
+      color: colors.textSecondary,
+      letterSpacing: 1,
+      paddingHorizontal: 8,
+      paddingVertical: 6,
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      paddingVertical: 6,
+      paddingRight: 12,
+    },
+    backPressed: { opacity: 0.6 },
+    backIcon: { fontSize: 20, color: '#7C3AED', marginRight: 4 },
+    backLabel: { fontSize: 16, fontWeight: '500', color: '#7C3AED' },
+    content: { paddingHorizontal: 24, paddingBottom: 32 },
+    profileCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      padding: 28,
+      alignItems: 'center',
+      marginBottom: 24,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    avatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: '#F3E8FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    avatarText: { fontSize: 32, fontWeight: '700', color: '#7C3AED' },
+    name: { fontSize: 24, fontWeight: '700', color: colors.text, marginBottom: 4 },
+    role: { fontSize: 15, color: colors.textSecondary, marginBottom: 4 },
+    city: { fontSize: 14, color: colors.textMuted },
+    section: { marginTop: 28 },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 10,
+    },
+    bio: {
+      fontSize: 15,
+      lineHeight: 24,
+      color: colors.textSecondary,
+      marginBottom: 24,
+    },
+    tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
+    tag: {
+      backgroundColor: '#F3E8FF',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    tagText: { fontSize: 13, fontWeight: '500', color: '#7C3AED' },
+    actionRow: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 8,
+    },
+    actionButton: {
+      flex: 1,
+    },
+    connectButton: {
+      backgroundColor: '#7C3AED',
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    buttonPressed: { opacity: 0.9 },
+    connectText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+    messageButton: {
+      backgroundColor: '#7C3AED',
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    messageButtonOutline: {
+      backgroundColor: colors.surface,
+      borderWidth: 1.5,
+      borderColor: '#7C3AED',
+    },
+    messageText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+    messageTextOutline: { fontSize: 15, fontWeight: '600', color: '#7C3AED' },
+    successBanner: {
+      backgroundColor: '#F3E8FF',
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    successText: { fontSize: 16, fontWeight: '600', color: '#7C3AED' },
+    blockedBanner: {
+      backgroundColor: '#FEE2E2',
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    blockedText: { fontSize: 16, fontWeight: '600', color: '#EF4444' },
+    actions: { gap: 12, marginBottom: 8 },
+    mutualCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    mutualRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 14,
+    },
+    mutualAvatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#F3E8FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    mutualAvatarText: { fontSize: 16, fontWeight: '600', color: '#7C3AED' },
+    mutualInfo: { flex: 1 },
+    mutualName: { fontSize: 15, fontWeight: '600', color: colors.text },
+    mutualRole: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+    mutualArrow: { fontSize: 20, color: colors.textMuted },
+    divider: { height: 1, backgroundColor: colors.border, marginHorizontal: 14 },
+    postsList: { gap: 12 },
+    postCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    postHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    postCategory: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#7C3AED',
+      backgroundColor: '#F3E8FF',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      overflow: 'hidden',
+    },
+    postTime: { fontSize: 13, color: colors.textMuted },
+    postContent: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.text,
+      marginBottom: 8,
+    },
+    postMeta: { fontSize: 13, color: colors.textSecondary },
+    emptyPosts: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 24,
+      alignItems: 'center',
+    },
+    emptyPostsText: { fontSize: 15, color: colors.textMuted },
+  });
+}

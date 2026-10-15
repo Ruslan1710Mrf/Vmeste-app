@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { IMMIGRATION_SECTIONS } from '../data/immigration';
 import { localize, useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const IMMIGRATION_APPS = [
@@ -50,6 +51,7 @@ const IMMIGRATION_APPS = [
 ];
 
 function ImmigrationAppIcon({ app }) {
+  const styles = useStyles();
   const [iconFailed, setIconFailed] = useState(false);
 
   return (
@@ -77,6 +79,7 @@ function ImmigrationAppIcon({ app }) {
 }
 
 function ResourceItem({ item, isLink, accentColor, onSelectGuide }) {
+  const styles = useStyles();
   const { t, language } = useI18n();
   const content = (
     <>
@@ -112,6 +115,7 @@ function ResourceItem({ item, isLink, accentColor, onSelectGuide }) {
 }
 
 function Section({ section, onSelectGuide }) {
+  const styles = useStyles();
   const { language } = useI18n();
   const isLinks = section.id === 'links';
 
@@ -141,6 +145,8 @@ function Section({ section, onSelectGuide }) {
 }
 
 export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} }) {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [query, setQuery] = useState('');
@@ -178,7 +184,7 @@ export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} 
         <TextInput
           style={styles.searchInput}
           placeholder={t('immigration.searchPlaceholder')}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={setQuery}
         />
@@ -209,108 +215,115 @@ export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} 
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 20 },
-  screenTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#22C55E',
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  screenSubtitle: {
-    fontSize: 15,
-    color: '#64748B',
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  searchInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#1E293B',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-    marginBottom: 12,
-  },
-  appsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  appItem: {
-    alignItems: 'center',
-    width: 72,
-  },
-  appItemPressed: {
-    opacity: 0.7,
-    transform: [{ scale: 0.95 }],
-  },
-  appIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 13,
-    marginBottom: 6,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  appIconImage: {
-    width: 60,
-    height: 60,
-  },
-  appIconFallback: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  appName: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    lineHeight: 14,
-  },
-  empty: { textAlign: 'center', fontSize: 15, color: '#94A3B8', marginTop: 32 },
-  list: { flex: 1 },
-  listContent: { paddingHorizontal: 24, paddingBottom: 16, gap: 24 },
-  section: { gap: 12 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  sectionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionEmoji: { fontSize: 18 },
-  sectionTitle: { fontSize: 20, fontWeight: '600', color: '#22C55E' },
-  sectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderLeftWidth: 4,
-    paddingVertical: 4,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  item: { paddingHorizontal: 20, paddingVertical: 14 },
-  itemPressed: { backgroundColor: '#F8FAFC' },
-  itemTitle: { fontSize: 16, fontWeight: '600', color: '#1E293B', marginBottom: 4 },
-  itemDescription: { fontSize: 14, lineHeight: 20, color: '#64748B' },
-  linkHint: { marginTop: 8, fontSize: 14, fontWeight: '600' },
-  divider: { height: 1, backgroundColor: '#F1F5F9', marginHorizontal: 20 },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 20 },
+    screenTitle: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: '#22C55E',
+      letterSpacing: -0.5,
+      marginBottom: 6,
+    },
+    screenSubtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+      marginBottom: 16,
+    },
+    searchInput: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 15,
+      color: colors.text,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.04,
+      shadowRadius: 4,
+      elevation: 1,
+      marginBottom: 12,
+    },
+    appsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
+    appItem: {
+      alignItems: 'center',
+      width: 72,
+    },
+    appItemPressed: {
+      opacity: 0.7,
+      transform: [{ scale: 0.95 }],
+    },
+    appIcon: {
+      width: 60,
+      height: 60,
+      borderRadius: 13,
+      marginBottom: 6,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.12,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    appIconImage: {
+      width: 60,
+      height: 60,
+    },
+    appIconFallback: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    appName: {
+      fontSize: 11,
+      fontWeight: '500',
+      color: '#FFFFFF',
+      textAlign: 'center',
+      lineHeight: 14,
+    },
+    empty: { textAlign: 'center', fontSize: 15, color: colors.textMuted, marginTop: 32 },
+    list: { flex: 1 },
+    listContent: { paddingHorizontal: 24, paddingBottom: 16, gap: 24 },
+    section: { gap: 12 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    sectionIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sectionEmoji: { fontSize: 18 },
+    sectionTitle: { fontSize: 20, fontWeight: '600', color: '#22C55E' },
+    sectionCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderLeftWidth: 4,
+      paddingVertical: 4,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    item: { paddingHorizontal: 20, paddingVertical: 14 },
+    itemPressed: { backgroundColor: colors.surfaceSecondary },
+    itemTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 4 },
+    itemDescription: { fontSize: 14, lineHeight: 20, color: colors.textSecondary },
+    linkHint: { marginTop: 8, fontSize: 14, fontWeight: '600' },
+    divider: { height: 1, backgroundColor: colors.border, marginHorizontal: 20 },
+  });
+}

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -7,9 +8,11 @@ import {
 } from 'react-native';
 import { getJobById } from '../data/jobs';
 import { localize, useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function SavedJobCard({ job, onPress, onRemove }) {
+  const styles = useStyles();
   const { language } = useI18n();
   return (
     <Pressable
@@ -41,6 +44,7 @@ function SavedJobCard({ job, onPress, onRemove }) {
 }
 
 export default function SavedJobsScreen({ savedJobIds, onBack, onSelectJob, onToggleSave }) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const jobs = savedJobIds.map(getJobById).filter(Boolean);
@@ -88,129 +92,137 @@ export default function SavedJobsScreen({ savedJobIds, onBack, onSelectJob, onTo
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginBottom: 16,
-    paddingVertical: 6,
-    paddingRight: 12,
-  },
-  backPressed: {
-    opacity: 0.6,
-  },
-  backIcon: {
-    fontSize: 20,
-    color: '#EA580C',
-    marginRight: 4,
-  },
-  backLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#EA580C',
-  },
-  screenTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#0F172A',
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  screenSubtitle: {
-    fontSize: 15,
-    color: '#64748B',
-  },
-  listContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    gap: 12,
-    flexGrow: 1,
-  },
-  empty: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 60,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 32,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardPressed: {
-    opacity: 0.92,
-  },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  cardInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 2,
-  },
-  company: {
-    fontSize: 14,
-    color: '#64748B',
-  },
-  removeButton: {
-    padding: 4,
-  },
-  removePressed: {
-    opacity: 0.6,
-  },
-  removeIcon: {
-    fontSize: 20,
-  },
-  meta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  city: {
-    fontSize: 14,
-    color: '#475569',
-  },
-  salary: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#059669',
-  },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    header: {
+      paddingHorizontal: 24,
+      paddingTop: 16,
+      paddingBottom: 16,
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      marginBottom: 16,
+      paddingVertical: 6,
+      paddingRight: 12,
+    },
+    backPressed: {
+      opacity: 0.6,
+    },
+    backIcon: {
+      fontSize: 20,
+      color: colors.accent,
+      marginRight: 4,
+    },
+    backLabel: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: colors.accent,
+    },
+    screenTitle: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: colors.text,
+      letterSpacing: -0.5,
+      marginBottom: 6,
+    },
+    screenSubtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    listContent: {
+      paddingHorizontal: 24,
+      paddingBottom: 16,
+      gap: 12,
+      flexGrow: 1,
+    },
+    empty: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: 60,
+    },
+    emptyEmoji: {
+      fontSize: 48,
+      marginBottom: 16,
+    },
+    emptyTitle: {
+      fontSize: 20,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 8,
+    },
+    emptyText: {
+      fontSize: 15,
+      color: colors.textMuted,
+      textAlign: 'center',
+      lineHeight: 22,
+      paddingHorizontal: 32,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 18,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    cardPressed: {
+      opacity: 0.92,
+    },
+    cardTop: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    cardInfo: {
+      flex: 1,
+      marginRight: 12,
+    },
+    title: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 2,
+    },
+    company: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    removeButton: {
+      padding: 4,
+    },
+    removePressed: {
+      opacity: 0.6,
+    },
+    removeIcon: {
+      fontSize: 20,
+    },
+    meta: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    city: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    salary: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#059669',
+    },
+  });
+}

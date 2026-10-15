@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { RESOURCE_CATEGORIES, RESOURCES } from '../data/resources';
 import { localize, useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function ServiceIcon({ item }) {
+  const styles = useStyles();
   const [iconFailed, setIconFailed] = useState(false);
 
   return (
@@ -37,6 +39,7 @@ function ServiceIcon({ item }) {
 }
 
 function ResourceCard({ item }) {
+  const styles = useStyles();
   const { t, language } = useI18n();
   const openUrl = () => {
     Linking.openURL(item.url).catch(() => {});
@@ -62,6 +65,7 @@ function ResourceCard({ item }) {
 }
 
 export default function ResourcesScreen() {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
   const [activeCategory, setActiveCategory] = useState(RESOURCE_CATEGORIES[0].id);
@@ -112,121 +116,129 @@ export default function ResourcesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  screenTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#059669',
-    letterSpacing: -0.5,
-    marginBottom: 6,
-  },
-  screenSubtitle: {
-    fontSize: 15,
-    color: '#64748B',
-    lineHeight: 22,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    gap: 8,
-  },
-  tabChip: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  tabChipActive: {
-    backgroundColor: '#ECFDF5',
-  },
-  tabChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  tabChipTextActive: {
-    color: '#059669',
-  },
-  list: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-    gap: 12,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 14,
-  },
-  serviceIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-    overflow: 'hidden',
-  },
-  serviceIconImage: {
-    width: 56,
-    height: 56,
-  },
-  serviceIconFallback: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  cardContent: {
-    flex: 1,
-    paddingTop: 2,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 6,
-  },
-  cardDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#475569',
-  },
-  cardButton: {
-    backgroundColor: '#059669',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  cardButtonPressed: {
-    opacity: 0.9,
-  },
-  cardButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    header: {
+      paddingHorizontal: 24,
+      paddingTop: 16,
+      paddingBottom: 12,
+    },
+    screenTitle: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: '#059669',
+      letterSpacing: -0.5,
+      marginBottom: 6,
+    },
+    screenSubtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      lineHeight: 22,
+    },
+    tabsRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 24,
+      paddingBottom: 16,
+      gap: 8,
+    },
+    tabChip: {
+      flex: 1,
+      height: 44,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 4,
+    },
+    tabChipActive: {
+      backgroundColor: '#ECFDF5',
+    },
+    tabChipText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+    tabChipTextActive: {
+      color: '#059669',
+    },
+    list: {
+      paddingHorizontal: 24,
+      paddingBottom: 24,
+      gap: 12,
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 16,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    cardTop: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 14,
+    },
+    serviceIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+      overflow: 'hidden',
+    },
+    serviceIconImage: {
+      width: 56,
+      height: 56,
+    },
+    serviceIconFallback: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    cardContent: {
+      flex: 1,
+      paddingTop: 2,
+    },
+    cardTitle: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 6,
+    },
+    cardDescription: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+    },
+    cardButton: {
+      backgroundColor: '#059669',
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+    },
+    cardButtonPressed: {
+      opacity: 0.9,
+    },
+    cardButtonText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
+  });
+}

@@ -11,6 +11,7 @@ import {
 import { getMemberByAuthorName } from '../data/members';
 import { FEED_CATEGORIES } from '../lib/interestUtils';
 import { useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { isOwnPost } from '../lib/postUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -24,6 +25,7 @@ function PostCard({
   onOpenAuthor,
   onOpenMenu,
 }) {
+  const styles = useStyles();
   const { t } = useI18n();
   const replyCount = post.replies?.length ?? 0;
   const likes = post.likes + (isLiked ? 1 : 0);
@@ -96,6 +98,7 @@ export default function FeedScreen({
   feedTitle,
   feedSubtitle,
 }) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const resolvedBackLabel = backLabel ?? t('feed.backLabel');
@@ -205,100 +208,107 @@ export default function FeedScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-    paddingVertical: 6,
-    paddingRight: 12,
-  },
-  backPressed: { opacity: 0.6 },
-  backIcon: { fontSize: 20, color: '#2563EB', marginRight: 4 },
-  backLabel: { fontSize: 16, fontWeight: '500', color: '#2563EB' },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0F172A',
-    letterSpacing: -0.5,
-    marginBottom: 4,
-  },
-  screenSubtitle: { fontSize: 15, color: '#64748B' },
-  list: { paddingHorizontal: 24, paddingBottom: 16, gap: 12 },
-  filtersScroll: { marginHorizontal: -24, marginBottom: 12 },
-  filters: { paddingHorizontal: 24, gap: 8 },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  filterChipActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
-  filterText: { fontSize: 13, fontWeight: '500', color: '#64748B' },
-  filterTextActive: { color: '#FFFFFF' },
-  composeButton: {
-    backgroundColor: '#2563EB',
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  composeButtonPressed: { opacity: 0.9 },
-  composeButtonText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardPressed: { opacity: 0.95 },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  authorPressable: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', marginRight: 8 },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarText: { fontSize: 16, fontWeight: '600', color: '#2563EB' },
-  authorInfo: { flex: 1 },
-  author: { fontSize: 15, fontWeight: '600', color: '#1E293B' },
-  meta: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
-  categoryBadge: {
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  categoryText: { fontSize: 11, fontWeight: '500', color: '#64748B' },
-  menuButton: { paddingHorizontal: 6, paddingVertical: 4, marginLeft: 6 },
-  menuText: { fontSize: 16, color: '#94A3B8', letterSpacing: 1 },
-  content: { fontSize: 15, lineHeight: 22, color: '#475569', marginBottom: 14 },
-  postImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    marginBottom: 14,
-    backgroundColor: '#F1F5F9',
-  },
-  actions: { flexDirection: 'row', gap: 20 },
-  action: { paddingVertical: 4 },
-  actionPressed: { opacity: 0.6 },
-  actionText: { fontSize: 14, color: '#64748B' },
-  empty: { alignItems: 'center', paddingVertical: 40 },
-  emptyEmoji: { fontSize: 40, marginBottom: 12 },
-  emptyTitle: { fontSize: 17, fontWeight: '600', color: '#1E293B', marginBottom: 6 },
-  emptyText: { fontSize: 14, color: '#94A3B8', textAlign: 'center' },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      marginBottom: 12,
+      paddingVertical: 6,
+      paddingRight: 12,
+    },
+    backPressed: { opacity: 0.6 },
+    backIcon: { fontSize: 20, color: '#2563EB', marginRight: 4 },
+    backLabel: { fontSize: 16, fontWeight: '500', color: '#2563EB' },
+    screenTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+      letterSpacing: -0.5,
+      marginBottom: 4,
+    },
+    screenSubtitle: { fontSize: 15, color: colors.textSecondary },
+    list: { paddingHorizontal: 24, paddingBottom: 16, gap: 12 },
+    filtersScroll: { marginHorizontal: -24, marginBottom: 12 },
+    filters: { paddingHorizontal: 24, gap: 8 },
+    filterChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    filterChipActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
+    filterText: { fontSize: 13, fontWeight: '500', color: colors.textSecondary },
+    filterTextActive: { color: '#FFFFFF' },
+    composeButton: {
+      backgroundColor: '#2563EB',
+      borderRadius: 14,
+      paddingVertical: 14,
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    composeButtonPressed: { opacity: 0.9 },
+    composeButtonText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+    card: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 18,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    cardPressed: { opacity: 0.95 },
+    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
+    authorPressable: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', marginRight: 8 },
+    avatar: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: '#EFF6FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    avatarText: { fontSize: 16, fontWeight: '600', color: '#2563EB' },
+    authorInfo: { flex: 1 },
+    author: { fontSize: 15, fontWeight: '600', color: colors.text },
+    meta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    categoryBadge: {
+      backgroundColor: colors.surfaceMuted,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    categoryText: { fontSize: 11, fontWeight: '500', color: colors.textSecondary },
+    menuButton: { paddingHorizontal: 6, paddingVertical: 4, marginLeft: 6 },
+    menuText: { fontSize: 16, color: colors.textMuted, letterSpacing: 1 },
+    content: { fontSize: 15, lineHeight: 22, color: colors.textSecondary, marginBottom: 14 },
+    postImage: {
+      width: '100%',
+      height: 200,
+      borderRadius: 12,
+      marginBottom: 14,
+      backgroundColor: colors.surfaceMuted,
+    },
+    actions: { flexDirection: 'row', gap: 20 },
+    action: { paddingVertical: 4 },
+    actionPressed: { opacity: 0.6 },
+    actionText: { fontSize: 14, color: colors.textSecondary },
+    empty: { alignItems: 'center', paddingVertical: 40 },
+    emptyEmoji: { fontSize: 40, marginBottom: 12 },
+    emptyTitle: { fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 6 },
+    emptyText: { fontSize: 14, color: colors.textMuted, textAlign: 'center' },
+  });
+}

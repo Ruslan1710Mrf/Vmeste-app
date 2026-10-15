@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Linking,
   Platform,
@@ -8,9 +9,11 @@ import {
   View,
 } from 'react-native';
 import { useI18n } from '../lib/i18n';
+import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function EventDetailScreen({ event, onBack, isRegistered, onRegister }) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const openMap = () => {
@@ -105,156 +108,164 @@ export default function EventDetailScreen({ event, onBack, isRegistered, onRegis
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingRight: 12,
-  },
-  backPressed: {
-    opacity: 0.6,
-  },
-  backIcon: {
-    fontSize: 20,
-    color: '#7C3AED',
-    marginRight: 4,
-  },
-  backLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#7C3AED',
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  dateBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F3E8FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginBottom: 14,
-  },
-  dateText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#7C3AED',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0F172A',
-    letterSpacing: -0.5,
-    marginBottom: 8,
-  },
-  host: {
-    fontSize: 15,
-    color: '#64748B',
-    marginBottom: 20,
-  },
-  infoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 24,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  infoLabel: {
-    fontSize: 15,
-    color: '#64748B',
-  },
-  infoValue: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1E293B',
-    textAlign: 'right',
-  },
-  venue: {
-    fontWeight: '500',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginVertical: 14,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 10,
-  },
-  body: {
-    fontSize: 15,
-    lineHeight: 24,
-    color: '#475569',
-    marginBottom: 24,
-  },
-  agenda: {
-    gap: 10,
-    marginBottom: 32,
-  },
-  agendaRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  bullet: {
-    fontSize: 15,
-    color: '#7C3AED',
-    marginRight: 8,
-    lineHeight: 22,
-  },
-  agendaText: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#475569',
-  },
-  registerButton: {
-    backgroundColor: '#7C3AED',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  buttonPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.99 }],
-  },
-  registerText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  successBanner: {
-    backgroundColor: '#F3E8FF',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  successText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#7C3AED',
-  },
-});
+function useStyles() {
+  const { colors } = useTheme();
+  return useMemo(() => createStyles(colors), [colors]);
+}
+
+function createStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.background,
+      flex: 1,
+    },
+    header: {
+      paddingHorizontal: 24,
+      paddingTop: 8,
+      paddingBottom: 8,
+    },
+    backButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      paddingVertical: 6,
+      paddingRight: 12,
+    },
+    backPressed: {
+      opacity: 0.6,
+    },
+    backIcon: {
+      fontSize: 20,
+      color: '#7C3AED',
+      marginRight: 4,
+    },
+    backLabel: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: '#7C3AED',
+    },
+    content: {
+      paddingHorizontal: 24,
+      paddingBottom: 32,
+    },
+    dateBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#F3E8FF',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      marginBottom: 14,
+    },
+    dateText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#7C3AED',
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+      letterSpacing: -0.5,
+      marginBottom: 8,
+    },
+    host: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      marginBottom: 20,
+    },
+    infoCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      padding: 18,
+      marginBottom: 24,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: 12,
+    },
+    infoLabel: {
+      fontSize: 15,
+      color: colors.textSecondary,
+    },
+    infoValue: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.text,
+      textAlign: 'right',
+    },
+    venue: {
+      fontWeight: '500',
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 14,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 10,
+    },
+    body: {
+      fontSize: 15,
+      lineHeight: 24,
+      color: colors.textSecondary,
+      marginBottom: 24,
+    },
+    agenda: {
+      gap: 10,
+      marginBottom: 32,
+    },
+    agendaRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    bullet: {
+      fontSize: 15,
+      color: '#7C3AED',
+      marginRight: 8,
+      lineHeight: 22,
+    },
+    agendaText: {
+      flex: 1,
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSecondary,
+    },
+    registerButton: {
+      backgroundColor: '#7C3AED',
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    buttonPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.99 }],
+    },
+    registerText: {
+      fontSize: 17,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
+    successBanner: {
+      backgroundColor: '#F3E8FF',
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
+    successText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#7C3AED',
+    },
+  });
+}
