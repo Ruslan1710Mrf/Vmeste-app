@@ -10,6 +10,7 @@
   - `eas build --platform ios --profile production`
   - `eas submit --platform ios --profile production`
   - (Android — то же с `--platform android`.)
+- Xcode 27 установлен (13.10.2026), но системный `xcode-select` смотрит на CommandLineTools (sudo-пароль не прошёл). Для симулятора и локальных сборок — `export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` перед командами, sudo не нужен.
 
 ## Статус и задачи
 
