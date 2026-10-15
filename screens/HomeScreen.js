@@ -299,10 +299,6 @@ export default function HomeScreen({
       onOpenMember(post.authorId);
       return;
     }
-    if (post.author?.includes('(вы)')) {
-      onOpenOwnProfile?.();
-      return;
-    }
     const member = getMemberByAuthorName(post.author);
     if (member) onOpenMember(member.id);
   };
