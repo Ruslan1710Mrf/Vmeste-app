@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +15,7 @@ import { auth } from '../lib/firebase';
 import { formatChatTime } from '../lib/chatUtils';
 import { sendImmigrationChat } from '../lib/claudeApi';
 import { fetchAiChatMessages, saveAiChatMessage } from '../lib/aiChatService';
+import { loadAiConsent, saveAiConsent } from '../lib/storage';
 import AiHeaderIcon from '../components/icons/AiHeaderIcon';
 import { useTheme } from '../lib/ThemeContext';
 import { useI18n } from '../lib/i18n';
@@ -79,6 +81,7 @@ export default function AiChatScreen({ userId }) {
     }
   };
 
+  // Перед первым вопросом спрашиваем согласие на отправку текста в Anthropic.
   const sendMessage = async (text) => {
     const trimmed = text.trim();
     if (!trimmed || sending) return;
@@ -87,6 +90,24 @@ export default function AiChatScreen({ userId }) {
       return;
     }
 
+    if (await loadAiConsent(chatUserId)) {
+      void sendToAi(trimmed);
+      return;
+    }
+
+    Alert.alert(t('aiChat.consentTitle'), t('aiChat.consentMessage'), [
+      { text: t('aiChat.consentCancel'), style: 'cancel' },
+      {
+        text: t('aiChat.consentAgree'),
+        onPress: async () => {
+          await saveAiConsent(chatUserId);
+          void sendToAi(trimmed);
+        },
+      },
+    ]);
+  };
+
+  const sendToAi = async (trimmed) => {
     setError('');
     setSending(true);
     setDraft('');
