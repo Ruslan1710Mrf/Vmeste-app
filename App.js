@@ -669,6 +669,24 @@ function AppContent() {
     setShowCreatePost(true);
   };
 
+  const handleBlockPostAuthor = () => {
+    if (!menuPost?.authorId) return;
+    const authorId = menuPost.authorId;
+    setMenuPost(null);
+    Alert.alert(
+      t('postMenu.blockAuthorConfirmTitle'),
+      t('postMenu.blockAuthorConfirmMessage'),
+      [
+        { text: t('postMenu.cancel'), style: 'cancel' },
+        {
+          text: t('postMenu.blockAuthor'),
+          style: 'destructive',
+          onPress: () => handleBlockMember(authorId),
+        },
+      ],
+    );
+  };
+
   const handleDeletePost = () => {
     if (!menuPost) return;
     const post = menuPost;
@@ -1470,6 +1488,12 @@ function AppContent() {
         onEdit={handleEditPost}
         onDelete={handleDeletePost}
         onReport={handleReportPost}
+        isOwn={menuPost ? isOwnPost(menuPost, currentAuthorId) : false}
+        onBlockAuthor={
+          menuPost?.authorId && !isOwnPost(menuPost, currentAuthorId)
+            ? handleBlockPostAuthor
+            : undefined
+        }
       />
       <ProfileSetupSheet
         profile={profile}

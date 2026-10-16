@@ -15,6 +15,8 @@ export default function PostOptionsMenu({
   onEdit,
   onDelete,
   onReport,
+  isOwn,
+  onBlockAuthor,
 }) {
   const { colors } = useTheme();
   const { t } = useI18n();
@@ -24,27 +26,47 @@ export default function PostOptionsMenu({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <Pressable
-            style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
-            onPress={onEdit}
-          >
-            <Text style={styles.optionText}>{t('postMenu.editPost')}</Text>
-          </Pressable>
-          <View style={styles.divider} />
-          <Pressable
-            style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
-            onPress={onDelete}
-          >
-            <Text style={[styles.optionText, styles.destructive]}>{t('postMenu.deletePost')}</Text>
-          </Pressable>
-          <View style={styles.divider} />
-          <Pressable
-            style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
-            onPress={onReport}
-          >
-            <Text style={styles.optionText}>{t('postMenu.report')}</Text>
-          </Pressable>
-          <View style={styles.divider} />
+          {isOwn ? (
+            <>
+              <Pressable
+                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+                onPress={onEdit}
+              >
+                <Text style={styles.optionText}>{t('postMenu.editPost')}</Text>
+              </Pressable>
+              <View style={styles.divider} />
+              <Pressable
+                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+                onPress={onDelete}
+              >
+                <Text style={[styles.optionText, styles.destructive]}>{t('postMenu.deletePost')}</Text>
+              </Pressable>
+              <View style={styles.divider} />
+            </>
+          ) : (
+            <>
+              <Pressable
+                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+                onPress={onReport}
+              >
+                <Text style={styles.optionText}>{t('postMenu.report')}</Text>
+              </Pressable>
+              <View style={styles.divider} />
+              {onBlockAuthor ? (
+                <>
+                  <Pressable
+                    style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
+                    onPress={onBlockAuthor}
+                  >
+                    <Text style={[styles.optionText, styles.destructive]}>
+                      {t('postMenu.blockAuthor')}
+                    </Text>
+                  </Pressable>
+                  <View style={styles.divider} />
+                </>
+              ) : null}
+            </>
+          )}
           <Pressable
             style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}
             onPress={onClose}
