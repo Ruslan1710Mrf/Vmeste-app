@@ -147,7 +147,9 @@ export default function AiChatScreen({ userId }) {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+      // App оборачивает экраны в SafeAreaView: экран начинается на insets.top ниже
+      // верха, и без этого смещения поле ввода уходит под клавиатуру.
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
     >
       <View style={[styles.header, { paddingTop: 8 + insets.top }]}>
         <View style={styles.headerAvatar}>
@@ -214,14 +216,11 @@ export default function AiChatScreen({ userId }) {
                     msg.role === 'user' ? styles.bubbleMe : styles.bubbleThem,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.bubbleText,
-                      msg.role === 'user' && styles.bubbleTextMe,
-                    ]}
-                  >
-                    {msg.content}
-                  </Text>
+                  {msg.role === 'assistant' ? (
+                    <AssistantText text={msg.content} styles={styles} />
+                  ) : (
+                    <Text style={[styles.bubbleText, styles.bubbleTextMe]}>{msg.content}</Text>
+                  )}
                 </View>
                 {msg.createdAt ? (
                   <Text style={styles.messageTime}>{formatChatTime(msg.createdAt)}</Text>
@@ -264,6 +263,59 @@ export default function AiChatScreen({ userId }) {
         </Pressable>
       </View>
     </KeyboardAvoidingView>
+  );
+}
+
+// Ответы AI приходят в Markdown. Показываем заголовки и **жирный** как текст
+// со стилем, «---» как разделитель, «- » как пункт списка — без внешних библиотек.
+function renderInline(line, styles, keyPrefix) {
+  return line.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') && part.length > 4 ? (
+      <Text key={`${keyPrefix}-${i}`} style={styles.bold}>
+        {part.slice(2, -2)}
+      </Text>
+    ) : (
+      part
+    ),
+  );
+}
+
+function AssistantText({ text, styles }) {
+  const lines = (text || '').split('\n');
+  return (
+    <View>
+      {lines.map((raw, i) => {
+        const line = raw.trimEnd();
+        if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
+          return <View key={i} style={styles.mdDivider} />;
+        }
+        const heading = line.match(/^\s*#{1,6}\s+(.*)$/);
+        if (heading) {
+          return (
+            <Text key={i} style={[styles.bubbleText, styles.mdHeading]}>
+              {renderInline(heading[1].replace(/\*\*/g, ''), styles, i)}
+            </Text>
+          );
+        }
+        const bullet = line.match(/^(\s*)[-*•]\s+(.*)$/);
+        if (bullet) {
+          return (
+            <Text key={i} style={styles.bubbleText}>
+              {'•  '}
+              {renderInline(bullet[2], styles, i)}
+            </Text>
+          );
+        }
+        if (!line.trim()) {
+          return <View key={i} style={styles.mdSpacer} />;
+        }
+        return (
+          <Text key={i} style={styles.bubbleText}>
+            {renderInline(line, styles, i)}
+          </Text>
+        );
+      })}
+    </View>
   );
 }
 
@@ -403,6 +455,14 @@ function createStyles(colors) {
       lineHeight: 22,
       color: colors.text,
     },
+    bold: { fontWeight: '700' },
+    mdHeading: { fontWeight: '700', fontSize: 16, marginTop: 4 },
+    mdDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+      marginVertical: 8,
+    },
+    mdSpacer: { height: 6 },
     bubbleTextMe: {
       color: '#FFFFFF',
     },
