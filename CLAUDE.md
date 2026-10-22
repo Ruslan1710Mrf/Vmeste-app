@@ -62,6 +62,7 @@
 ## Инфраструктура и деньги
 - Биллинг Firebase отключался 21.09 (неоплата), восстановлен 30.09.
 - AI-ассистент ходит через прокси на Railway (`server/`, `railway.json`, Hobby $5/мес). Проверено: отвечает.
+- **21.10.2026 утечка env на Railway** (их инцидент безопасности). В env лежали ANTHROPIC_API_KEY и ключ Firebase Admin (сервисный аккаунт firebase-adminsdk-fbsvc). Аккаунт fbsvc удалён (восстановим 30 дней, если понадобится). Прокси переделан (eb56f38): Firebase только по FIREBASE_PROJECT_ID, приватный ключ не нужен. В Railway Variables оставить FIREBASE_PROJECT_ID=veste-app-bffb0 и новый ANTHROPIC_API_KEY; FIREBASE_CLIENT_EMAIL и FIREBASE_PRIVATE_KEY удалить — но только после деплоя нового кода. Системные App Engine / Compute default аккаунты НЕ удалять — на них работают Cloud Functions.
 - Документы (privacy, terms, support и т.п.) — на Firebase Hosting (`public/`).
 - Контакт: ruslan@vmestegroup.app.
 
