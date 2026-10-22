@@ -34,16 +34,15 @@ function loadEnvLocal() {
 
 loadEnvLocal();
 
-// Firebase Admin — инициализируется через env vars, заданные на Railway
+// Firebase Admin нужен только для verifyIdToken, а он проверяет токены по
+// публичным сертификатам Google — достаточно projectId, приватный ключ не нужен.
+// Ключ сервисного аккаунта не храним: после утечки env на Railway (21.10.2026)
+// его удалили, чтобы на сервере не лежал секрет с полным доступом к базе.
 if (!admin.apps.length) {
   const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
-  if (projectId && clientEmail && privateKey) {
-    admin.initializeApp({
-      credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
-    });
+  if (projectId) {
+    admin.initializeApp({ projectId });
   } else {
     // В dev без переменных — Firebase Admin не инициализирован,
     // middleware пропустит проверку токена (see verifyToken below)
