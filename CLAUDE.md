@@ -83,3 +83,45 @@
 - Правка `firestore.rules` / `functions/` → показать дифф и что именно изменится для пользователя; деплой делает Руслан.
 - В отчёте писать, что проверено и чем, и что проверить не удалось (например, только на реальном устройстве/TestFlight).
 - Если Руслан поправил результат — предложить дописать правило сюда, чтобы не повторялось.
+
+## ПЕРЕДАЧА / HANDOFF (02.11.2026)
+Статус на момент передачи (можно продолжать в другом инструменте):
+
+СДЕЛАНО:
+- Все правки под Apple готовы и в main (последний коммит e04e562, всё на GitHub).
+- Билд 21 собран (EAS cd6c38b6) и загружен в TestFlight. App Version 1.0.0 (21).
+- AI перенесён с Railway в Cloud Function `aiChat` (us-central1). Приложение → https://us-central1-veste-app-bffb0.cloudfunctions.net/aiChat (lib/claudeApi.js). server/aiProxy.js оставлен только для локального dev.
+
+БЛОКЕР (чинить первым): AI в приложении отвечает «Не удалось получить ответ».
+Причина из логов `firebase functions:log --only aiChat`: Anthropic → `invalid x-api-key`.
+Значение ANTHROPIC_API_KEY в Secret Manager невалидно (вероятно лишний символ при вводе).
+Полное значение существующего ключа посмотреть нельзя. ЧИНИТЬ ТАК:
+  1. console.anthropic.com под ruslanmrf17101989@gmail.com (НЕ vmestegroup — тот аккаунт
+     создался случайно, пустой). Create Key → имя vmeste-firebase-2 → Expires: Never →
+     Scope: Default → скопировать sk-ant-…
+  2. firebase functions:secrets:set ANTHROPIC_API_KEY --project veste-app-bffb0
+     (вставить аккуратно, без пробелов/переноса; на вопрос про версию y)
+  3. firebase deploy --only functions --project veste-app-bffb0
+  4. Проверить в приложении (AI tab). Если опять invalid — заложить ключ через веб
+     Google Secret Manager (console.cloud.google.com → Secret Manager → ANTHROPIC_API_KEY
+     → Add new version) и передеплоить.
+Аккаунт ruslanmrf17101989@gmail.com — бесплатный тариф Anthropic; на пробных кредитах AI
+отвечал утром 02.11. Для реальных пользователей до публикации купить credits $20.
+В Anthropic НЕ удалять ключ vmeste-firebase-2 — на нём работает приложение.
+
+ОСТАЛОСЬ ДО APPLE (после починки ключа):
+1. TestFlight билд 21 на iPhone: AI отвечает + окно согласия; мат в посте; Terms с входа;
+   жалоба; «Заблокировать автора»; тёмная/светлая тема.
+2. Видео на iPhone (сценарий): экран входа → Условия использования → вход демо-аккаунтом
+   r17m89gr@gmail.com → чужой пост ⋯ Пожаловаться → ⋯ Заблокировать автора (посты пропали)
+   → новый пост с матом → «Недопустимый контент».
+3. App Store Connect: версия 1.0 → Сборка = 21; видео в App Review Information; Reply
+   ревьюеру (текст в этом файле выше, поменять «build 20» → «build 21»); «Повторно отправить».
+
+ОТЛОЖЕНО (не блокирует Apple):
+- Railway закрыть (не нужен, −$5/мес).
+- Аккаунт Anthropic ruslan@vmestegroup.app создался случайно и пуст — можно удалить.
+- Купить credits Anthropic $20 до публикации.
+- Новая иконка + редизайн по макету design/stitch-v3 — обновлением 1.1.
+- Старый ключ Anthropic (до 21.10, обслуживал Railway) в списке Default не виден; если
+  найдётся в другом workspace/аккаунте — удалить.
