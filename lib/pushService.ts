@@ -11,7 +11,8 @@ import { db } from './firebase';
 
 export type PushData =
   | { type: 'message'; fromUid: string; convId: string }
-  | { type: 'comment'; postId: string };
+  | { type: 'comment'; postId: string }
+  | { type: 'event'; eventId: string };
 
 let currentToken: string | null = null;
 // Пользователь выключил «Push-уведомления» в настройках: сами не спрашиваем.
@@ -120,11 +121,20 @@ export async function setPushEnabled(uid: string, enabled: boolean): Promise<voi
 }
 
 /** Локальная настройка после загрузки состояния: синхронизируем с сервером. */
-export function applyPushPreference(uid: string, enabled: boolean) {
-  optedOut = !enabled;
-  if (!enabled) {
-    setPushEnabled(uid, false).catch((err) => console.warn('[push] preference sync failed', err));
+export function applyPushPreference(uid: string, prefs: { enabled: boolean; events: boolean }) {
+  optedOut = !prefs.enabled;
+  if (!prefs.enabled || !prefs.events) {
+    setDoc(
+      pushRef(uid),
+      { enabled: prefs.enabled, events: prefs.events, updatedAt: serverTimestamp() },
+      { merge: true },
+    ).catch((err) => console.warn('[push] preference sync failed', err));
   }
+}
+
+/** Переключатель «Напоминания о событиях». */
+export async function setEventReminders(uid: string, enabled: boolean): Promise<void> {
+  await setDoc(pushRef(uid), { events: enabled, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 /** Перед выходом из аккаунта: это устройство больше не получает его пуши. */

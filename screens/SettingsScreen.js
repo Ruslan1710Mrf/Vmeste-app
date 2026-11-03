@@ -30,8 +30,8 @@ import { deleteUserConversations } from '../lib/messageService';
 import { deleteUserAiChats } from '../lib/aiChatService';
 import { deleteUserBlocks } from '../lib/blockService';
 import { deleteUserNotifications } from '../lib/notificationService';
-import { requestPushPermission, setPushEnabled, unregisterPushToken } from '../lib/pushService';
-import { deleteUserEvents } from '../lib/eventService';
+import { requestPushPermission, setEventReminders, setPushEnabled, unregisterPushToken } from '../lib/pushService';
+import { deleteUserAttendance, deleteUserEvents } from '../lib/eventService';
 import { deleteUserStorageFiles } from '../lib/postImageService';
 import { LANGUAGES } from '../lib/chatUtils';
 import { useI18n } from '../lib/i18n';
@@ -121,6 +121,17 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
     }
   };
 
+  const handleEventRemindersToggle = async (value) => {
+    updateSetting('eventReminders', value);
+    const uid = getCurrentUser()?.uid;
+    if (!uid) return;
+    try {
+      await setEventReminders(uid, value);
+    } catch (err) {
+      console.warn('[settings] event reminders toggle failed', err);
+    }
+  };
+
   const handleSignOut = async () => {
     const confirmed = await confirmSignOut(t);
     if (!confirmed) return;
@@ -188,6 +199,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
       { label: 'blocks', fn: () => deleteUserBlocks(uid) },
       { label: 'notifications', fn: () => deleteUserNotifications(uid) },
       { label: 'events', fn: () => deleteUserEvents(uid) },
+      { label: 'attendance', fn: () => deleteUserAttendance(uid) },
       { label: 'profile', fn: () => deleteUserProfile(uid) },
       { label: 'storage', fn: () => deleteUserStorageFiles(uid) },
     ];
@@ -332,7 +344,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
           <SettingRow
             label={t('settings.eventRemindersTitle')}
             value={settings.eventReminders}
-            onValueChange={(value) => updateSetting('eventReminders', value)}
+            onValueChange={handleEventRemindersToggle}
           />
         </View>
 

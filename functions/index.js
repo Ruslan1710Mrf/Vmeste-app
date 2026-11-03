@@ -297,14 +297,16 @@ async function isBlockedEitherWay(uidA, uidB) {
  * @param {string} uid Recipient user id.
  * @param {{title: string, body: string, data: Object}} message Push content.
  * @param {string} [cooldownKey] Skip if this key was pushed recently.
+ * @param {string} [prefKey] Per-type switch in the push doc (e.g. events).
  * @return {Promise<void>}
  */
-async function sendPushToUser(uid, message, cooldownKey) {
+async function sendPushToUser(uid, message, cooldownKey, prefKey) {
   const ref = getFirestore().doc("users/" + uid + "/private/push");
   const snap = await ref.get();
   const push = snap.exists ? snap.data() : null;
   const tokens = push && Array.isArray(push.tokens) ? push.tokens : [];
   if (tokens.length === 0 || push.enabled === false) return;
+  if (prefKey && push[prefKey] === false) return;
 
   if (cooldownKey) {
     const last = push.cooldowns && push.cooldowns[cooldownKey];
@@ -435,6 +437,103 @@ exports.pushOnNewReply = functions.firestore
           });
         } catch (err) {
           logger.error("pushOnNewReply failed", {postId: postId,
+            error: err.message});
+        }
+      }
+    });
+
+// ---------------------------------------------------------------------------
+// События: участники и напоминания.
+// Запись: events/{eventId}/attendees/{uid} (создаёт сам пользователь).
+// Время начала: events/{eventId}.startsAt — есть, если приложение разобрало
+// дату. Напоминания: за сутки и за час, флаги reminders.h24 / reminders.h1.
+// ---------------------------------------------------------------------------
+const HOUR_MS = 60 * 60 * 1000;
+
+exports.countEventAttendees = functions.firestore
+    .document("events/{eventId}/attendees/{uid}")
+    .onWrite(async (change, context) => {
+      const delta = !change.before.exists && change.after.exists ? 1 :
+        change.before.exists && !change.after.exists ? -1 : 0;
+      if (delta === 0) return;
+      try {
+        await getFirestore().doc("events/" + context.params.eventId)
+            .update({attendees: FieldValue.increment(delta)});
+      } catch (err) {
+        // Событие уже удалено — считать нечего.
+        logger.info("countEventAttendees skipped", {
+          eventId: context.params.eventId, error: err.message});
+      }
+    });
+
+exports.cleanupEventAttendees = functions.firestore
+    .document("events/{eventId}")
+    .onDelete(async (snap) => {
+      try {
+        await getFirestore().recursiveDelete(snap.ref.collection("attendees"));
+      } catch (err) {
+        logger.error("cleanupEventAttendees failed", {path: snap.ref.path,
+          error: err.message});
+      }
+    });
+
+/**
+ * Human-readable "time left" for a reminder body.
+ * @param {number} msLeft Milliseconds until the start.
+ * @return {string} Text like "через 3 ч" or "через 40 мин".
+ */
+function timeLeftText(msLeft) {
+  if (msLeft >= 90 * 60 * 1000) {
+    return "через " + Math.round(msLeft / HOUR_MS) + " ч";
+  }
+  return "через " + Math.max(1, Math.round(msLeft / 60000)) + " мин";
+}
+
+exports.sendEventReminders = functions.pubsub
+    .schedule("every 15 minutes")
+    .onRun(async () => {
+      const db = getFirestore();
+      const now = Date.now();
+      const snap = await db.collection("events")
+          .where("startsAt", ">", new Date(now))
+          .where("startsAt", "<=", new Date(now + 24 * HOUR_MS))
+          .get();
+
+      for (const eventDoc of snap.docs) {
+        const event = eventDoc.data() || {};
+        const reminders = event.reminders || {};
+        const msLeft = event.startsAt.toMillis() - now;
+        const stage = msLeft <= HOUR_MS ?
+          (reminders.h1 ? null : "h1") :
+          (reminders.h24 ? null : "h24");
+        if (!stage) continue;
+
+        try {
+          // Флаги ставим до рассылки: лучше пропустить напоминание при
+          // сбое, чем прислать его дважды.
+          const flags = {"reminders.h1": stage === "h1" || !!reminders.h1,
+            "reminders.h24": true};
+          await eventDoc.ref.update(flags);
+
+          const attendees = await eventDoc.ref.collection("attendees").get();
+          const title = pushPreview(event.title, "Событие");
+          const venue = pushPreview(event.venue, "");
+          const body = "Начало " + timeLeftText(msLeft) +
+            (venue ? " · " + venue : "");
+          for (const attendee of attendees.docs) {
+            const uid = attendee.id;
+            if (event.authorId && uid !== event.authorId &&
+              await isBlockedEitherWay(uid, event.authorId)) continue;
+            await sendPushToUser(uid, {
+              title: "Напоминание: " + title,
+              body: body,
+              data: {type: "event", eventId: eventDoc.id},
+            }, null, "events");
+          }
+          logger.info("Event reminders sent", {eventId: eventDoc.id,
+            stage: stage, attendees: attendees.size});
+        } catch (err) {
+          logger.error("sendEventReminders failed", {eventId: eventDoc.id,
             error: err.message});
         }
       }

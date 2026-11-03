@@ -90,6 +90,23 @@ service cloud.firestore {
         && request.resource.data.authorId == resource.data.authorId;
       allow delete: if request.auth != null
         && resource.data.authorId == request.auth.uid;
+
+      // Запись на событие: только свою, только на существующее событие.
+      // Чужие записи не видны; счётчик attendees ведёт Cloud Function.
+      match /attendees/{attendeeId} {
+        allow read, delete: if request.auth != null && request.auth.uid == attendeeId;
+        allow create: if request.auth != null
+          && request.auth.uid == attendeeId
+          && request.resource.data.uid == attendeeId
+          && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+          && exists(/databases/$(database)/documents/events/$(eventId));
+        allow update: if false;
+      }
+    }
+
+    // Поиск своих записей по всем событиям (удаление аккаунта).
+    match /{path=**}/attendees/{attendeeId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
     match /meta/{docId} {

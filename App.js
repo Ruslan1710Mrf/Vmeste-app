@@ -18,7 +18,7 @@ import { updateDisplayName } from './lib/authService';
 import { blockUser, unblockUser, fetchBlockedByMe, fetchBlockedMe } from './lib/blockService';
 import { reportContent } from './lib/reportService';
 import { DEFAULT_SETTINGS } from './lib/chatUtils';
-import { createEvent, fetchEvents } from './lib/eventService';
+import { createEvent, fetchEvents, registerForEvent } from './lib/eventService';
 import { subscribeToConversations } from './lib/messageService';
 import { DEV_MODE_SKIP_AUTH } from './lib/devMode';
 import { auth } from './lib/firebase';
@@ -543,6 +543,11 @@ function AppContent() {
     setRegisteredEventIds((prev) =>
       prev.includes(id) ? prev : [...prev, id],
     );
+    const uid = auth.currentUser?.uid ?? userId;
+    if (!uid) return;
+    registerForEvent(id, uid)
+      .then(() => requestPushPermission(uid))
+      .catch((err) => console.warn('[events] register failed', err));
   };
 
   const toggleChecklistItem = (id) => {
@@ -1016,13 +1021,18 @@ function AppContent() {
       setSelectedChatMemberId(data.fromUid);
     } else if (data.type === 'comment' && data.postId) {
       openPostFromNotification(data.postId);
+    } else if (data.type === 'event' && data.eventId) {
+      setSelectedEventId(data.eventId);
     }
   };
 
   useEffect(() => {
     if (!hydrated || !userId) return;
-    applyPushPreference(userId, settings.pushEnabled !== false);
-  }, [hydrated, userId, settings.pushEnabled]);
+    applyPushPreference(userId, {
+      enabled: settings.pushEnabled !== false,
+      events: settings.eventReminders !== false,
+    });
+  }, [hydrated, userId, settings.pushEnabled, settings.eventReminders]);
 
   useEffect(() => {
     if (!hydrated) return undefined;
