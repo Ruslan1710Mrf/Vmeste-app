@@ -109,9 +109,7 @@ const {getAuth} = require("firebase-admin/auth");
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const AI_MODEL = "claude-sonnet-4-6";
-const AI_SYSTEM_PROMPT =
-  "Ты универсальный помощник. Отвечай чётко и по делу на языке " +
-  "пользователя. Помогай с любыми вопросами без ограничений.";
+const {AI_SYSTEM_PROMPT} = require("./aiSystemPrompt");
 const AI_RATE_LIMIT_MAX = 20;
 const AI_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const AI_HISTORY_LIMIT = 20;
