@@ -29,6 +29,8 @@ import { deleteUserPosts } from '../lib/postService';
 import { deleteUserConversations } from '../lib/messageService';
 import { deleteUserAiChats } from '../lib/aiChatService';
 import { deleteUserBlocks } from '../lib/blockService';
+import { deleteUserNotifications } from '../lib/notificationService';
+import { requestPushPermission, setPushEnabled, unregisterPushToken } from '../lib/pushService';
 import { deleteUserEvents } from '../lib/eventService';
 import { deleteUserStorageFiles } from '../lib/postImageService';
 import { LANGUAGES } from '../lib/chatUtils';
@@ -106,12 +108,27 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
     onUpdateSettings({ ...settings, [key]: value });
   };
 
+  // Переключатель влияет на сервер: Cloud Functions не шлют пуши при enabled: false.
+  const handlePushToggle = async (value) => {
+    updateSetting('pushEnabled', value);
+    const uid = getCurrentUser()?.uid;
+    if (!uid) return;
+    try {
+      await setPushEnabled(uid, value);
+      if (value) await requestPushPermission(uid, { force: true });
+    } catch (err) {
+      console.warn('[settings] push toggle failed', err);
+    }
+  };
+
   const handleSignOut = async () => {
     const confirmed = await confirmSignOut(t);
     if (!confirmed) return;
 
     setSigningOut(true);
     try {
+      const uid = getCurrentUser()?.uid;
+      if (uid) await unregisterPushToken(uid);
       await signOut();
       router.replace('/auth/login');
     } catch {
@@ -169,6 +186,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
       { label: 'conversations', fn: () => deleteUserConversations(uid) },
       { label: 'aiChats', fn: () => deleteUserAiChats(uid) },
       { label: 'blocks', fn: () => deleteUserBlocks(uid) },
+      { label: 'notifications', fn: () => deleteUserNotifications(uid) },
       { label: 'events', fn: () => deleteUserEvents(uid) },
       { label: 'profile', fn: () => deleteUserProfile(uid) },
       { label: 'storage', fn: () => deleteUserStorageFiles(uid) },
@@ -301,7 +319,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
             label={t('settings.pushTitle')}
             description={t('settings.pushDesc')}
             value={settings.pushEnabled}
-            onValueChange={(value) => updateSetting('pushEnabled', value)}
+            onValueChange={handlePushToggle}
           />
           <View style={styles.divider} />
           <SettingRow

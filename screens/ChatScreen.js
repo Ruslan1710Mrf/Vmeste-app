@@ -12,6 +12,7 @@ import {
 import { containsObjectionableContent } from '../utils/contentFilter';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { auth } from '../lib/firebase';
+import { requestPushPermission, setActiveConversation } from '../lib/pushService';
 import {
   ensureConversation,
   sendMessage,
@@ -80,6 +81,12 @@ export default function ChatScreen({
     return () => unsub();
   }, [member.id, myUid, myName, member.name]);
 
+  // Пока чат открыт, пуши из него не показываем баннером.
+  useEffect(() => {
+    setActiveConversation(convId);
+    return () => setActiveConversation(null);
+  }, [convId]);
+
   useEffect(() => {
     if (!messages.length) return;
     scrollRef.current?.scrollToEnd({ animated: true });
@@ -109,6 +116,8 @@ export default function ChatScreen({
 
     try {
       await sendMessage(convId, myUid, text);
+      // Разрешение на пуши просим в момент действия: человек ждёт ответа.
+      requestPushPermission(myUid);
     } catch {
       setDraft(previousDraft);
       setSendError(t('chat.sendMessageError'));

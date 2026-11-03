@@ -250,3 +250,192 @@ exports.aiChat = onRequest(
       }
     },
 );
+
+// ---------------------------------------------------------------------------
+// Push-уведомления (Expo Push API).
+// Токены устройств: users/{uid}/private/push → {tokens: [...], enabled}.
+// Лента в приложении: users/{uid}/notifications/{id} (пишет только сервер).
+// ---------------------------------------------------------------------------
+const {FieldValue} = require("firebase-admin/firestore");
+const {containsObjectionableContent} = require("./contentFilter");
+
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+const PUSH_BODY_MAX_CHARS = 120;
+// Серия сообщений в одном чате — один пуш в минуту, а не на каждое.
+const MESSAGE_PUSH_COOLDOWN_MS = 60 * 1000;
+
+/**
+ * Shortens text for a push body and hides objectionable content.
+ * @param {*} text Raw user text.
+ * @param {string} fallback Text to show when the original must be hidden.
+ * @return {string} Safe preview.
+ */
+function pushPreview(text, fallback) {
+  const value = typeof text === "string" ? text.trim() : "";
+  if (!value || containsObjectionableContent(value)) return fallback;
+  if (value.length <= PUSH_BODY_MAX_CHARS) return value;
+  return value.slice(0, PUSH_BODY_MAX_CHARS - 1) + "…";
+}
+
+/**
+ * Says whether either user blocked the other.
+ * @param {string} uidA First user id.
+ * @param {string} uidB Second user id.
+ * @return {Promise<boolean>} True when a block exists in any direction.
+ */
+async function isBlockedEitherWay(uidA, uidB) {
+  const db = getFirestore();
+  const [ab, ba] = await Promise.all([
+    db.doc("blocks/" + uidA + "_" + uidB).get(),
+    db.doc("blocks/" + uidB + "_" + uidA).get(),
+  ]);
+  return ab.exists || ba.exists;
+}
+
+/**
+ * Sends one push to every device of the user and drops dead tokens.
+ * @param {string} uid Recipient user id.
+ * @param {{title: string, body: string, data: Object}} message Push content.
+ * @param {string} [cooldownKey] Skip if this key was pushed recently.
+ * @return {Promise<void>}
+ */
+async function sendPushToUser(uid, message, cooldownKey) {
+  const ref = getFirestore().doc("users/" + uid + "/private/push");
+  const snap = await ref.get();
+  const push = snap.exists ? snap.data() : null;
+  const tokens = push && Array.isArray(push.tokens) ? push.tokens : [];
+  if (tokens.length === 0 || push.enabled === false) return;
+
+  if (cooldownKey) {
+    const last = push.cooldowns && push.cooldowns[cooldownKey];
+    const lastMs = last && typeof last.toMillis === "function" ?
+      last.toMillis() : 0;
+    if (Date.now() - lastMs < MESSAGE_PUSH_COOLDOWN_MS) return;
+    await ref.set({cooldowns: {[cooldownKey]: FieldValue.serverTimestamp()}},
+        {merge: true});
+  }
+
+  const payload = tokens.map((token) => ({
+    to: token,
+    title: message.title,
+    body: message.body,
+    data: message.data,
+    sound: "default",
+    channelId: "default",
+  }));
+
+  let tickets = [];
+  try {
+    const response = await fetch(EXPO_PUSH_URL, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const json = await response.json();
+    if (!response.ok) {
+      logger.error("Expo push request failed", {uid: uid, status:
+        response.status, errors: json.errors});
+      return;
+    }
+    tickets = Array.isArray(json.data) ? json.data : [];
+  } catch (err) {
+    logger.error("Expo push request threw", {uid: uid, error: err.message});
+    return;
+  }
+
+  const deadTokens = tickets
+      .map((ticket, index) => (ticket.status === "error" &&
+        ticket.details && ticket.details.error === "DeviceNotRegistered") ?
+        tokens[index] : null)
+      .filter(Boolean);
+  if (deadTokens.length > 0) {
+    await ref.update({tokens: FieldValue.arrayRemove(...deadTokens)});
+  }
+  const otherErrors = tickets.filter((ticket) => ticket.status === "error" &&
+    !(ticket.details && ticket.details.error === "DeviceNotRegistered"));
+  if (otherErrors.length > 0) {
+    logger.warn("Expo push tickets with errors", {uid: uid,
+      errors: otherErrors.map((ticket) => ticket.message)});
+  }
+}
+
+exports.pushOnNewMessage = functions.firestore
+    .document("conversations/{convId}/messages/{messageId}")
+    .onCreate(async (snap, context) => {
+      const convId = context.params.convId;
+      const message = snap.data() || {};
+      const fromUid = message.fromUid;
+      if (!fromUid) return;
+
+      const convSnap = await getFirestore().doc("conversations/" + convId)
+          .get();
+      if (!convSnap.exists) return;
+      const conv = convSnap.data() || {};
+      const participants = Array.isArray(conv.participants) ?
+        conv.participants : [];
+      const toUid = participants.find((uid) => uid !== fromUid);
+      if (!toUid) return;
+      if (await isBlockedEitherWay(fromUid, toUid)) return;
+
+      const names = conv.participantNames || {};
+      const fromName = pushPreview(names[fromUid], "Vmeste");
+      try {
+        await sendPushToUser(toUid, {
+          title: fromName,
+          body: pushPreview(message.text, "Новое сообщение"),
+          data: {type: "message", fromUid: fromUid, convId: convId},
+        }, "conv_" + convId);
+      } catch (err) {
+        logger.error("pushOnNewMessage failed", {convId: convId,
+          error: err.message});
+      }
+    });
+
+exports.pushOnNewReply = functions.firestore
+    .document("posts/{postId}")
+    .onUpdate(async (change, context) => {
+      const postId = context.params.postId;
+      const before = change.before.data() || {};
+      const after = change.after.data() || {};
+      const oldReplies = Array.isArray(before.replies) ? before.replies : [];
+      const newReplies = Array.isArray(after.replies) ? after.replies : [];
+      // Лайки и правки поста тоже обновляют документ — реагируем только
+      // на добавленные комментарии.
+      if (newReplies.length <= oldReplies.length) return;
+
+      const postAuthorId = after.authorId;
+      if (!postAuthorId) return;
+      const added = newReplies.slice(oldReplies.length)
+          .filter((reply) => reply && reply.authorId &&
+            reply.authorId !== postAuthorId);
+
+      for (const reply of added) {
+        try {
+          if (await isBlockedEitherWay(reply.authorId, postAuthorId)) continue;
+          const fromName = pushPreview(reply.author, "Участник");
+          const body = pushPreview(reply.text, "Новый комментарий");
+          await getFirestore()
+              .collection("users/" + postAuthorId + "/notifications")
+              .add({
+                type: "comment",
+                postId: postId,
+                fromUid: reply.authorId,
+                fromName: fromName,
+                text: body,
+                read: false,
+                createdAt: FieldValue.serverTimestamp(),
+              });
+          await sendPushToUser(postAuthorId, {
+            title: fromName + " прокомментировал(а) ваш пост",
+            body: body,
+            data: {type: "comment", postId: postId},
+          });
+        } catch (err) {
+          logger.error("pushOnNewReply failed", {postId: postId,
+            error: err.message});
+        }
+      }
+    });
