@@ -88,7 +88,7 @@ function SettingRow({ label, description, value, onValueChange }) {
   );
 }
 
-export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
+export default function SettingsScreen({ onBack, settings, onUpdateSettings, onOpenBlockedUsers }) {
   const { colors } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -333,6 +333,11 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
           ))}
         </View>
 
+        <View style={styles.card}>
+          <Pressable style={styles.actionRow} onPress={onOpenBlockedUsers} accessibilityRole="button">
+            <Text style={styles.actionText}>{t('blockedUsers.title')} →</Text>
+          </Pressable>
+        </View>
         <Text style={styles.sectionLabel}>{t('settings.account')}</Text>
         <View style={styles.card}>
           {accountEmail ? (
