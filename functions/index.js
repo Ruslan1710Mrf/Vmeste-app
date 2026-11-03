@@ -372,6 +372,8 @@ exports.pushOnNewMessage = functions.firestore
       const message = snap.data() || {};
       const fromUid = message.fromUid;
       if (!fromUid) return;
+      // Сообщение с нарушением удалит moderateMessage — не уведомляем.
+      if (containsObjectionableContent(message.text)) return;
 
       const convSnap = await getFirestore().doc("conversations/" + convId)
           .get();
@@ -413,7 +415,10 @@ exports.pushOnNewReply = functions.firestore
       if (!postAuthorId) return;
       const added = newReplies.slice(oldReplies.length)
           .filter((reply) => reply && reply.authorId &&
-            reply.authorId !== postAuthorId);
+            reply.authorId !== postAuthorId &&
+            // Такой комментарий вырежет moderatePost — не уведомляем.
+            !containsObjectionableContent(reply.text) &&
+            !containsObjectionableContent(reply.author));
 
       for (const reply of added) {
         try {
