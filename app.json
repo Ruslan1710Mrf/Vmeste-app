@@ -48,6 +48,13 @@
         {
           "photosPermission": "Vmeste запросит доступ к фото, чтобы вы могли добавить их в пост или профиль."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#2563EB"
+        }
       ]
     ],
     "extra": {
