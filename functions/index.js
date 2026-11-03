@@ -5,6 +5,9 @@ const logger = require("firebase-functions/logger");
 
 initializeApp();
 
+// Серверная модерация (вторая линия после фильтра в приложении).
+Object.assign(exports, require("./moderation"));
+
 const MODERATION_EMAIL = "ruslan@vmestegroup.app";
 
 /**

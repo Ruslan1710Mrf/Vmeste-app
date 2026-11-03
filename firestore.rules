@@ -163,5 +163,10 @@ service cloud.firestore {
     match /mail/{docId} {
       allow read, write: if false;
     }
+
+    // Журнал серверной модерации — только Firebase Console (Admin SDK).
+    match /moderationLog/{docId} {
+      allow read, write: if false;
+    }
   }
 }
