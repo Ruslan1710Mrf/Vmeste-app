@@ -66,6 +66,7 @@ import FeedScreen from './screens/FeedScreen';
 import GlobalSearchScreen from './screens/GlobalSearchScreen';
 import HelpScreen from './screens/HelpScreen';
 import HomeScreen from './screens/HomeScreen';
+import OverviewScreen from './screens/OverviewScreen';
 import AiChatScreen from './screens/AiChatScreen';
 import ImmigrationScreen from './screens/ImmigrationScreen';
 import ImmigrationGuideScreen from './screens/ImmigrationGuideScreen';
@@ -98,7 +99,7 @@ import {
 } from './lib/notificationService';
 import { uploadPostImage, uploadProfilePhoto, uploadProfileCover } from './lib/postImageService';
 
-const VALID_TABS = ['home', 'jobs', 'resources', 'immigration', 'ai', 'networking', 'profile'];
+const VALID_TABS = ['home', 'jobs', 'overview', 'resources', 'immigration', 'ai', 'networking', 'profile'];
 
 const VALID_PROFILE_VIEWS = new Set([
   'saved',
@@ -1122,6 +1123,10 @@ function AppContent() {
         }
         return true;
       }
+      if (['resources', 'immigration', 'networking'].includes(tab)) {
+        setTab('overview');
+        return true;
+      }
       return false;
     });
 
@@ -1472,6 +1477,7 @@ function AppContent() {
       return (
         <HomeScreen
           profile={profile}
+          blockedUserIds={Array.from(hiddenUserIds)}
           posts={visiblePosts}
           userId={userId}
           onOpenFeed={() => setShowFeed(true)}
@@ -1500,8 +1506,11 @@ function AppContent() {
         />
       );
     }
+    if (tab === 'overview') {
+      return <OverviewScreen onNavigate={handleTabChange} />;
+    }
     if (tab === 'resources') {
-      return <ResourcesScreen />;
+      return <ResourcesScreen onBack={() => handleTabChange('overview')} />;
     }
     if (tab === 'ai') {
       return <AiChatScreen userId={userId} />;
@@ -1509,6 +1518,7 @@ function AppContent() {
     if (tab === 'networking') {
       return (
         <NetworkingScreen
+          onBack={() => handleTabChange('overview')}
           events={events}
           onSelectEvent={openEvent}
           onSelectMember={openMember}
@@ -1523,7 +1533,7 @@ function AppContent() {
       return renderProfileContent();
     }
     if (tab === 'immigration') {
-      return <ImmigrationScreen onSelectGuide={openGuide} onRefresh={() => {}} />;
+      return <ImmigrationScreen onBack={() => handleTabChange('overview')} onSelectGuide={openGuide} onRefresh={() => {}} />;
     }
     return null;
   };
@@ -1555,7 +1565,7 @@ function AppContent() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['left', 'right']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar style={colors.statusBar} />
       <View style={styles.content}>{renderContent()}</View>
       <TabBar active={tab} onChange={handleTabChange} />
@@ -1585,7 +1595,7 @@ function AppContent() {
         animationType="slide"
         onRequestClose={closeNotifications}
       >
-        <SafeAreaView style={[styles.notificationsOverlay, { backgroundColor: colors.background }]}>
+        <SafeAreaView edges={['left', 'right', 'bottom']} style={[styles.notificationsOverlay, { backgroundColor: colors.background }]}>
           <NotificationsScreen
             onBack={closeNotifications}
             backLabel={t('backLabel.home')}
