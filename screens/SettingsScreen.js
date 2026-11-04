@@ -333,13 +333,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings, onO
             value={settings.pushEnabled}
             onValueChange={handlePushToggle}
           />
-          <View style={styles.divider} />
-          <SettingRow
-            label={t('settings.emailDigestTitle')}
-            description={t('settings.emailDigestDesc')}
-            value={settings.emailDigest}
-            onValueChange={(value) => updateSetting('emailDigest', value)}
-          />
+          {/* «Email-дайджест» скрыт: рассылки нет. Вернуть, когда появится. */}
           <View style={styles.divider} />
           <SettingRow
             label={t('settings.eventRemindersTitle')}
