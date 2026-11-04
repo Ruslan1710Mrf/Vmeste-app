@@ -101,6 +101,7 @@ export default function CreatePostScreen({ post, onBack, onPublish }) {
           contentContainerStyle={styles.body}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="interactive"
         >
           <Text style={styles.label}>{t('createPost.textLabel')}</Text>
           <TextInput
@@ -168,6 +169,8 @@ export default function CreatePostScreen({ post, onBack, onPublish }) {
             })}
           </View>
 
+        </ScrollView>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]} >
           <Pressable
             style={({ pressed }) => [
               styles.publishButton,
@@ -187,7 +190,7 @@ export default function CreatePostScreen({ post, onBack, onPublish }) {
           </Pressable>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -235,6 +238,7 @@ function createStyles(colors) {
       fontWeight: '600',
       color: colors.text,
     },
+    footer: { paddingHorizontal: 20, paddingTop: 8, backgroundColor: colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
     publishButton: {
       backgroundColor: '#2563EB',
       borderRadius: 10,
@@ -242,7 +246,7 @@ function createStyles(colors) {
       paddingHorizontal: 14,
       minWidth: 88,
       alignItems: 'center',
-      marginTop: 16,
+      marginTop: 0,
     },
     publishButtonDisabled: {
       backgroundColor: colors.border,

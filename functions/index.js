@@ -544,3 +544,241 @@ exports.sendEventReminders = functions.pubsub
         }
       }
     });
+// Заявки с сайта vmestegroup.app (public/index.html, форма #contact-form).
+// Браузер шлёт только поля формы; получатель письма и его текст задаются
+// здесь, на сервере. Заявка → websiteInquiries, письмо → mail → расширение
+// firestore-send-email → Resend → ruslan@vmestegroup.app.
+// ---------------------------------------------------------------------------
+const crypto = require("crypto");
+// FieldValue уже объявлен выше (блок push-уведомлений).
+
+const INQUIRY_EMAIL = "ruslan@vmestegroup.app";
+const INQUIRY_ALLOWED_ORIGINS = [
+  "https://vmestegroup.app",
+  "https://www.vmestegroup.app",
+  "https://veste-app-bffb0.web.app",
+  "https://veste-app-bffb0.firebaseapp.com",
+  "http://127.0.0.1:5000",
+  "http://127.0.0.1:5002",
+  "http://localhost:5000",
+  "http://localhost:5002",
+];
+const INQUIRY_SERVICES = {
+  website: "Создание сайта",
+  design: "Дизайн и фото",
+  automation: "AI-автоматизация",
+  sheets: "Excel и Google Sheets",
+  other: "Другая задача",
+};
+const INQUIRY_WINDOW_MS = 60 * 60 * 1000;
+const INQUIRY_LIMITS = {ip: 5, email: 3};
+const INQUIRY_DAILY_LIMIT = 100;
+const INQUIRY_EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
+
+/**
+ * Returns a trimmed string, or "" when the value is not a string.
+ * @param {*} value Raw request field.
+ * @return {string} Trimmed text.
+ */
+function inquiryText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * Validates the form body and returns clean fields, or null if invalid.
+ * @param {*} body Parsed JSON body.
+ * @return {?Object} Clean inquiry fields.
+ */
+function parseInquiry(body) {
+  if (!body || typeof body !== "object") return null;
+  const name = inquiryText(body.name);
+  const email = inquiryText(body.email).toLowerCase();
+  const service = inquiryText(body.service);
+  const message = inquiryText(body.message);
+  if (!name || name.length > 100) return null;
+  if (email.length > 254 || !INQUIRY_EMAIL_RE.test(email)) return null;
+  if (!Object.prototype.hasOwnProperty.call(INQUIRY_SERVICES, service)) {
+    return null;
+  }
+  if (message.length < 10 || message.length > 4000) return null;
+  if (body.consent !== true) return null;
+  return {name, email, service, message};
+}
+
+/**
+ * Loads (or creates once) the random salt used to hash IPs and emails, so
+ * the stored counter ids cannot be reversed by brute-forcing IPv4 space.
+ * @param {!Object} db Firestore instance.
+ * @return {!Promise<string>} Salt.
+ */
+async function inquirySalt(db) {
+  const ref = db.collection("websiteRateLimits").doc("_salt");
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists && snap.get("value")) return snap.get("value");
+    const value = crypto.randomBytes(32).toString("hex");
+    tx.set(ref, {value});
+    return value;
+  });
+}
+
+/**
+ * Counts this request against the hourly IP/email limits and the daily cap.
+ * @param {!Object} db Firestore instance.
+ * @param {!Object<string, string>} hashes Hashed ip and email.
+ * @return {!Promise<boolean>} True when a limit is exceeded.
+ */
+async function isInquiryRateLimited(db, hashes) {
+  const now = Date.now();
+  const day = new Date(now).toISOString().slice(0, 10);
+  const counters = [
+    {ref: db.collection("websiteRateLimits").doc("ip_" + hashes.ip),
+      max: INQUIRY_LIMITS.ip, windowMs: INQUIRY_WINDOW_MS},
+    {ref: db.collection("websiteRateLimits").doc("email_" + hashes.email),
+      max: INQUIRY_LIMITS.email, windowMs: INQUIRY_WINDOW_MS},
+    {ref: db.collection("websiteRateLimits").doc("day_" + day),
+      max: INQUIRY_DAILY_LIMIT, windowMs: 24 * 60 * 60 * 1000},
+  ];
+  return db.runTransaction(async (tx) => {
+    const snaps = await Promise.all(counters.map((c) => tx.get(c.ref)));
+    const next = counters.map((c, i) => {
+      const data = snaps[i].exists ? snaps[i].data() : null;
+      const fresh = !data || now - data.windowStart >= c.windowMs;
+      return {c, count: fresh ? 1 : data.count + 1,
+        windowStart: fresh ? now : data.windowStart};
+    });
+    if (next.some((n) => n.count > n.c.max)) return true;
+    for (const n of next) {
+      tx.set(n.c.ref, {count: n.count, windowStart: n.windowStart});
+    }
+    return false;
+  });
+}
+
+exports.submitWebsiteInquiry = onRequest(
+    {
+      region: "us-central1",
+      maxInstances: 3,
+      timeoutSeconds: 30,
+      memory: "256MiB",
+    },
+    async (req, res) => {
+      const origin = req.get("origin");
+      if (!origin || !INQUIRY_ALLOWED_ORIGINS.includes(origin)) {
+        res.status(403).json({ok: false, error: "origin"});
+        return;
+      }
+      res.set("Access-Control-Allow-Origin", origin);
+      res.set("Vary", "Origin");
+      res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+      res.set("Access-Control-Allow-Headers", "Content-Type");
+      if (req.method === "OPTIONS") {
+        res.status(204).send("");
+        return;
+      }
+      if (req.method !== "POST") {
+        res.status(405).json({ok: false, error: "method"});
+        return;
+      }
+
+      const body = req.body || {};
+      // Ловушка для ботов: людям поле не видно. Отвечаем «принято», чтобы
+      // бот не понял, что его отсеяли.
+      if (inquiryText(body.company_url)) {
+        res.json({ok: true});
+        return;
+      }
+      const inquiry = parseInquiry(body);
+      if (!inquiry) {
+        res.status(400).json({ok: false, error: "invalid"});
+        return;
+      }
+
+      const db = getFirestore();
+      try {
+        const ip = (req.get("x-forwarded-for") || "").split(",")[0].trim() ||
+          req.ip || "unknown";
+        const salt = await inquirySalt(db);
+        const hash = (value) => crypto.createHash("sha256")
+            .update(salt + ":" + value).digest("hex");
+        if (await isInquiryRateLimited(db,
+            {ip: hash(ip), email: hash(inquiry.email)})) {
+          res.status(429).json({ok: false, error: "rate-limit"});
+          return;
+        }
+
+        const inquiryRef = db.collection("websiteInquiries").doc();
+        const serviceLabel = INQUIRY_SERVICES[inquiry.service];
+        const consoleUrl = "https://console.firebase.google.com/project/" +
+          "veste-app-bffb0/firestore/data/~2FwebsiteInquiries~2F" +
+          inquiryRef.id;
+        const rows = [
+          ["Имя", inquiry.name],
+          ["Email", inquiry.email],
+          ["Услуга", serviceLabel],
+        ].map((pair) => [
+          "<tr>",
+          "<td style=\"padding:6px 16px 6px 0;color:#64748B;\">",
+          escapeHtml(pair[0]),
+          "</td>",
+          "<td style=\"padding:6px 0;font-weight:600;\">",
+          escapeHtml(pair[1]),
+          "</td>",
+          "</tr>",
+        ].join("")).join("");
+        const html = [
+          "<div style=\"font-family:sans-serif;max-width:560px;\">",
+          "<h2 style=\"margin-bottom:8px;\">Новая заявка с сайта</h2>",
+          "<table style=\"border-collapse:collapse;font-size:14px;\">",
+          rows,
+          "</table>",
+          "<p style=\"white-space:pre-wrap;margin-top:16px;\">",
+          escapeHtml(inquiry.message),
+          "</p>",
+          "<p style=\"margin-top:20px;\">",
+          "<a href=\"" + consoleUrl + "\">Открыть в Firebase Console</a>",
+          "</p>",
+          "<p style=\"color:#64748B;font-size:13px;\">",
+          "Ответить клиенту — кнопкой «Ответить» в почте.",
+          "</p>",
+          "</div>",
+        ].join("");
+        const text = [
+          "Новая заявка с сайта",
+          "Имя: " + inquiry.name,
+          "Email: " + inquiry.email,
+          "Услуга: " + serviceLabel,
+          "",
+          inquiry.message,
+          "",
+          consoleUrl,
+        ].join("\n");
+        // Перевод строки в теме письма недопустим — режем на всякий случай.
+        const subject = ("Заявка с сайта: " + serviceLabel + " — " +
+          inquiry.name).replace(/[\r\n]+/g, " ").slice(0, 150);
+
+        const batch = db.batch();
+        batch.set(inquiryRef, {
+          name: inquiry.name,
+          email: inquiry.email,
+          service: inquiry.service,
+          message: inquiry.message,
+          consent: true,
+          origin: origin,
+          status: "new",
+          createdAt: FieldValue.serverTimestamp(),
+        });
+        batch.set(db.collection("mail").doc(), {
+          to: [INQUIRY_EMAIL],
+          replyTo: inquiry.email,
+          message: {subject, html, text},
+        });
+        await batch.commit();
+        logger.info("Website inquiry stored", {inquiryId: inquiryRef.id});
+        res.json({ok: true});
+      } catch (err) {
+        logger.error("submitWebsiteInquiry failed", {error: err.message});
+        res.status(500).json({ok: false, error: "server"});
+      }
+    },
+);

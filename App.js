@@ -82,6 +82,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import ResourcesScreen from './screens/ResourcesScreen';
 import SavedJobsScreen from './screens/SavedJobsScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import BlockedUsersScreen from './screens/BlockedUsersScreen';
 import { CHECKLIST_ITEMS } from './data/checklist';
 import {
   applyPushPreference,
@@ -111,6 +112,7 @@ const VALID_PROFILE_VIEWS = new Set([
   'notifications',
   'help',
   'settings',
+  'blockedUsers',
 ]);
 
 function restoreTab(value) {
@@ -222,12 +224,14 @@ function AppContent() {
     reportContent(userId, 'user', memberId, 'blocked_by_user').catch(() => {});
   };
 
-  const handleUnblockMember = (memberId) => {
+  const handleUnblockMember = async (memberId) => {
     if (!userId || !memberId) return;
-    setBlockedByMe((prev) => prev.filter((id) => id !== memberId));
-    unblockUser(userId, memberId).catch(() => {
+    try {
+      await unblockUser(userId, memberId);
+      setBlockedByMe((prev) => prev.filter((id) => id !== memberId));
+    } catch {
       Alert.alert(t('settings.error'), t('app.unblockUserError'));
-    });
+    }
   };
 
   const handleReportMember = (memberId) => {
@@ -1389,12 +1393,15 @@ function AppContent() {
         );
       case 'help':
         return <HelpScreen onBack={() => setProfileView(null)} />;
+      case 'blockedUsers':
+        return <BlockedUsersScreen blockedIds={blockedByMe} onUnblock={handleUnblockMember} onBack={() => setProfileView('settings')} />;
       case 'settings':
         return (
           <SettingsScreen
             onBack={() => setProfileView(null)}
             settings={settings}
             onUpdateSettings={setSettings}
+            onOpenBlockedUsers={() => setProfileView('blockedUsers')}
           />
         );
       default:
