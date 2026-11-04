@@ -139,5 +139,6 @@ test('core text and button pairs meet 4.5:1 contrast in both palettes',()=>{
   for(const background of ['surface','background'])for(const foreground of ['text','textSecondary','textMuted'])assert.ok(contrast(colors[foreground],colors[background])>=4.5,`${foreground}/${background} ${contrast(colors[foreground],colors[background])}`);
   assert.ok(contrast(colors.tabActive,colors.accentSoft)>=4.5);
   assert.ok(contrast(colors.onAccent,colors.accent)>=4.5);
+  assert.ok(contrast('#FFFFFF',colors.badge)>=4.5);
  }
 });
