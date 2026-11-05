@@ -2,7 +2,7 @@ const functions = require("firebase-functions/v1");
 const {getFirestore} = require("firebase-admin/firestore");
 const logger = require("firebase-functions/logger");
 
-const MODERATION_EMAIL = "ruslan@vmestegroup.app";
+const MODERATION_EMAIL = "support@vmestegroup.app";
 
 /**
  * Escapes HTML special characters.

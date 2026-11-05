@@ -8,7 +8,7 @@ initializeApp();
 // Серверная модерация (вторая линия после фильтра в приложении).
 Object.assign(exports, require("./moderation"));
 
-const MODERATION_EMAIL = "ruslan@vmestegroup.app";
+const MODERATION_EMAIL = "support@vmestegroup.app";
 
 /**
  * Escapes HTML special characters in untrusted report fields.
@@ -547,12 +547,12 @@ exports.sendEventReminders = functions.pubsub
 // Заявки с сайта vmestegroup.app (public/index.html, форма #contact-form).
 // Браузер шлёт только поля формы; получатель письма и его текст задаются
 // здесь, на сервере. Заявка → websiteInquiries, письмо → mail → расширение
-// firestore-send-email → Resend → ruslan@vmestegroup.app.
+// firestore-send-email → Resend → support@vmestegroup.app.
 // ---------------------------------------------------------------------------
 const crypto = require("crypto");
 // FieldValue уже объявлен выше (блок push-уведомлений).
 
-const INQUIRY_EMAIL = "ruslan@vmestegroup.app";
+const INQUIRY_EMAIL = "support@vmestegroup.app";
 const INQUIRY_ALLOWED_ORIGINS = [
   "https://vmestegroup.app",
   "https://www.vmestegroup.app",
