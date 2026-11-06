@@ -15,6 +15,7 @@ import { auth } from '../lib/firebase';
 import { requestPushPermission, setActiveConversation } from '../lib/pushService';
 import {
   ensureConversation,
+  markConversationRead,
   sendMessage,
   subscribeToMessages,
 } from '../lib/messageService';
@@ -86,6 +87,13 @@ export default function ChatScreen({
     setActiveConversation(convId);
     return () => setActiveConversation(null);
   }, [convId]);
+
+  // Отметить беседу прочитанной: при открытии и при каждом новом сообщении,
+  // пока чат открыт на экране.
+  useEffect(() => {
+    if (!convId || !myUid) return;
+    markConversationRead(convId, myUid);
+  }, [convId, myUid, messages.length]);
 
   useEffect(() => {
     if (!messages.length) return;

@@ -1150,7 +1150,15 @@ function AppContent() {
   ]);
 
   const connectionsCount = connectedIds.length;
-  const messagesCount = conversations.filter((conv) => conv.lastMessage?.trim()).length;
+  // Непрочитанные беседы: последнее сообщение от собеседника и пришло позже
+  // моего последнего прочтения (или я ещё не открывал беседу).
+  const myConvUid = auth.currentUser?.uid ?? userId;
+  const messagesCount = conversations.filter((conv) => {
+    if (!conv.lastMessage?.trim() || !conv.lastMessageAt) return false;
+    if (!conv.lastMessageFrom || conv.lastMessageFrom === myConvUid) return false;
+    const readAt = conv.lastRead?.[myConvUid];
+    return !readAt || conv.lastMessageAt > readAt;
+  }).length;
   const ownPosts = getOwnPosts(posts, auth.currentUser?.uid ?? userId ?? 'guest');
   const visiblePosts = posts
     .filter((post) => !hiddenUserIds.has(post.authorId))
