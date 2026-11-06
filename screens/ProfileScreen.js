@@ -19,10 +19,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MENU_ITEMS = [
   { id: 'edit', labelKey: 'profile.menu.edit', icon: 'edit' },
-  { id: 'feed', labelKey: 'profile.menu.feed', icon: 'home' },
-  { id: 'connections', labelKey: 'profile.menu.connections', icon: 'users' },
+  // «Лента сообщества» убрана: дублирует нижнюю вкладку «Лента».
+  // «Мои друзья» и «Мои события» убраны: дублируют плитки Друзья/События вверху.
   { id: 'messages', labelKey: 'profile.menu.messages', icon: 'message' },
-  { id: 'events', labelKey: 'profile.menu.events', icon: 'calendar' },
   { id: 'checklist', labelKey: 'profile.menu.checklist', icon: 'check' },
   { id: 'saved', labelKey: 'profile.menu.saved', icon: 'bookmark' },
   { id: 'notifications', labelKey: 'profile.menu.notifications', icon: 'bell' },
