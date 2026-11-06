@@ -22,6 +22,28 @@ service cloud.firestore {
       match /private/{docId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Друзья (связи). Владелец читает и ведёт только свой список; id
+      // документа = uid человека, которого добавили; на существующего юзера.
+      match /connections/{targetUid} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.uid == targetUid
+          && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+          && exists(/databases/$(database)/documents/users/$(targetUid));
+        allow delete: if request.auth != null && request.auth.uid == userId;
+        allow update: if false;
+      }
+
+      // Лента «Уведомления». Создаёт только Cloud Function (Admin SDK обходит
+      // правила); владелец может лишь отметить прочитанным или удалить.
+      match /notifications/{notificationId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+          && request.resource.data.read == true;
+        allow create: if false;
+      }
     }
 
     match /posts/{postId} {
@@ -45,9 +67,12 @@ service cloud.firestore {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replies'])
           && after is list
           && after.size() == before.size() + 1
-          && after[0:before.size()] == before
           && after[before.size()].authorId == request.auth.uid
-          && after[before.size()].text is string;
+          && after[before.size()].text is string
+          // Пустой список replies — особый случай: срез [0:0] в правилах ломал
+          // проверку, из-за чего нельзя было комментировать посты без коммента-
+          // риев. Для непустого проверяем, что прошлые комментарии не тронуты.
+          && (before.size() == 0 || after[0:before.size()] == before);
       }
     }
 
@@ -80,6 +105,23 @@ service cloud.firestore {
         && request.resource.data.authorId == resource.data.authorId;
       allow delete: if request.auth != null
         && resource.data.authorId == request.auth.uid;
+
+      // Запись на событие: только свою, только на существующее событие.
+      // Чужие записи не видны; счётчик attendees ведёт Cloud Function.
+      match /attendees/{attendeeId} {
+        allow read, delete: if request.auth != null && request.auth.uid == attendeeId;
+        allow create: if request.auth != null
+          && request.auth.uid == attendeeId
+          && request.resource.data.uid == attendeeId
+          && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+          && exists(/databases/$(database)/documents/events/$(eventId));
+        allow update: if false;
+      }
+    }
+
+    // Поиск своих записей по всем событиям (удаление аккаунта).
+    match /{path=**}/attendees/{attendeeId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
     match /meta/{docId} {
@@ -134,6 +176,11 @@ service cloud.firestore {
     }
 
     match /mail/{docId} {
+      allow read, write: if false;
+    }
+
+    // Журнал серверной модерации — только Firebase Console (Admin SDK).
+    match /moderationLog/{docId} {
       allow read, write: if false;
     }
   }

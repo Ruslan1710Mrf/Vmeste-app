@@ -18,8 +18,14 @@ import { updateDisplayName } from './lib/authService';
 import { blockUser, unblockUser, fetchBlockedByMe, fetchBlockedMe } from './lib/blockService';
 import { reportContent } from './lib/reportService';
 import { DEFAULT_SETTINGS } from './lib/chatUtils';
-import { createEvent, fetchEvents } from './lib/eventService';
+import { createEvent, fetchEvents, registerForEvent } from './lib/eventService';
 import { subscribeToConversations } from './lib/messageService';
+import {
+  addConnection,
+  migrateLocalConnections,
+  removeConnection,
+  subscribeToConnections,
+} from './lib/connectionService';
 import { DEV_MODE_SKIP_AUTH } from './lib/devMode';
 import { auth } from './lib/firebase';
 import { useTheme } from './lib/ThemeContext';
@@ -53,6 +59,7 @@ import {
   createUserProfile,
   fetchUserProfile,
   profileDocToMember,
+  searchUsers,
   updateUserProfile,
 } from './lib/userProfileService';
 import ChatScreen from './screens/ChatScreen';
@@ -66,6 +73,7 @@ import FeedScreen from './screens/FeedScreen';
 import GlobalSearchScreen from './screens/GlobalSearchScreen';
 import HelpScreen from './screens/HelpScreen';
 import HomeScreen from './screens/HomeScreen';
+import OverviewScreen from './screens/OverviewScreen';
 import AiChatScreen from './screens/AiChatScreen';
 import ImmigrationScreen from './screens/ImmigrationScreen';
 import ImmigrationGuideScreen from './screens/ImmigrationGuideScreen';
@@ -82,11 +90,23 @@ import ProfileScreen from './screens/ProfileScreen';
 import ResourcesScreen from './screens/ResourcesScreen';
 import SavedJobsScreen from './screens/SavedJobsScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import BlockedUsersScreen from './screens/BlockedUsersScreen';
 import { CHECKLIST_ITEMS } from './data/checklist';
-import { NOTIFICATIONS } from './data/notifications';
+import {
+  applyPushPreference,
+  configureNotificationHandler,
+  requestPushPermission,
+  subscribeToPushTaps,
+  syncPushToken,
+} from './lib/pushService';
+import {
+  markAllNotificationsRead as markAllNotificationsReadInDb,
+  markNotificationRead as markNotificationReadInDb,
+  subscribeToNotifications,
+} from './lib/notificationService';
 import { uploadPostImage, uploadProfilePhoto, uploadProfileCover } from './lib/postImageService';
 
-const VALID_TABS = ['home', 'jobs', 'resources', 'immigration', 'ai', 'networking', 'profile'];
+const VALID_TABS = ['home', 'jobs', 'overview', 'resources', 'immigration', 'ai', 'networking', 'profile'];
 
 const VALID_PROFILE_VIEWS = new Set([
   'saved',
@@ -100,6 +120,7 @@ const VALID_PROFILE_VIEWS = new Set([
   'notifications',
   'help',
   'settings',
+  'blockedUsers',
 ]);
 
 function restoreTab(value) {
@@ -137,7 +158,7 @@ function AppContent() {
   const [blockedByMe, setBlockedByMe] = useState([]);
   const [blockedMe, setBlockedMe] = useState([]);
   const [registeredEventIds, setRegisteredEventIds] = useState([]);
-  const [readNotificationIds, setReadNotificationIds] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [checkedChecklistIds, setCheckedChecklistIds] = useState([]);
   const [likedPostIds, setLikedPostIds] = useState([]);
   const [hydrated, setHydrated] = useState(false);
@@ -211,12 +232,14 @@ function AppContent() {
     reportContent(userId, 'user', memberId, 'blocked_by_user').catch(() => {});
   };
 
-  const handleUnblockMember = (memberId) => {
+  const handleUnblockMember = async (memberId) => {
     if (!userId || !memberId) return;
-    setBlockedByMe((prev) => prev.filter((id) => id !== memberId));
-    unblockUser(userId, memberId).catch(() => {
+    try {
+      await unblockUser(userId, memberId);
+      setBlockedByMe((prev) => prev.filter((id) => id !== memberId));
+    } catch {
       Alert.alert(t('settings.error'), t('app.unblockUserError'));
-    });
+    }
   };
 
   const handleReportMember = (memberId) => {
@@ -225,6 +248,26 @@ function AppContent() {
       .then(() => Alert.alert(t('app.thanks'), t('app.reportSentMessage')))
       .catch(() => Alert.alert(t('settings.error'), t('app.reportError')));
   };
+
+  useEffect(() => {
+    configureNotificationHandler();
+  }, []);
+
+  // Пуши: обновить токен этого устройства (без диалога) и слушать ленту.
+  useEffect(() => {
+    if (!userId) {
+      setNotifications([]);
+      return undefined;
+    }
+    syncPushToken(userId);
+    return subscribeToNotifications(userId, setNotifications);
+  }, [userId]);
+
+  // Друзья (связи) — источник истины на сервере. Подписываемся при входе.
+  useEffect(() => {
+    if (!userId) return undefined;
+    return subscribeToConnections(userId, setConnectedIds);
+  }, [userId]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -276,8 +319,10 @@ function AppContent() {
       setProfile(mergedProfile);
       setSavedJobIds(saved.savedJobIds ?? []);
       setConnectedIds(saved.connectedIds ?? []);
+      if (userId && saved.connectedIds?.length) {
+        migrateLocalConnections(userId, saved.connectedIds);
+      }
       setRegisteredEventIds(saved.registeredEventIds ?? []);
-      setReadNotificationIds(saved.readNotificationIds ?? []);
       setCheckedChecklistIds(saved.checkedChecklistIds ?? []);
       setLikedPostIds(saved.likedPostIds ?? []);
       setPosts(firestorePosts ?? POSTS);
@@ -387,7 +432,6 @@ function AppContent() {
       savedJobIds,
       connectedIds,
       registeredEventIds,
-      readNotificationIds,
       checkedChecklistIds,
       likedPostIds,
       settings,
@@ -403,7 +447,6 @@ function AppContent() {
     savedJobIds,
     connectedIds,
     registeredEventIds,
-    readNotificationIds,
     checkedChecklistIds,
     likedPostIds,
     settings,
@@ -515,12 +558,29 @@ function AppContent() {
 
   const connectMember = (id) => {
     setConnectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    const uid = auth.currentUser?.uid ?? userId;
+    if (uid && id) {
+      addConnection(uid, id).catch((err) => console.warn('[connect] failed', err));
+    }
+  };
+
+  const disconnectMember = (id) => {
+    setConnectedIds((prev) => prev.filter((x) => x !== id));
+    const uid = auth.currentUser?.uid ?? userId;
+    if (uid && id) {
+      removeConnection(uid, id).catch((err) => console.warn('[disconnect] failed', err));
+    }
   };
 
   const registerEvent = (id) => {
     setRegisteredEventIds((prev) =>
       prev.includes(id) ? prev : [...prev, id],
     );
+    const uid = auth.currentUser?.uid ?? userId;
+    if (!uid) return;
+    registerForEvent(id, uid)
+      .then(() => requestPushPermission(uid))
+      .catch((err) => console.warn('[events] register failed', err));
   };
 
   const toggleChecklistItem = (id) => {
@@ -530,14 +590,16 @@ function AppContent() {
   };
 
   const markNotificationRead = (id) => {
-    setReadNotificationIds((prev) =>
-      prev.includes(id) ? prev : [...prev, id],
+    if (!userId) return;
+    markNotificationReadInDb(userId, id).catch((err) =>
+      console.warn('[notifications] mark read failed', err),
     );
   };
 
   const markAllNotificationsRead = () => {
-    setReadNotificationIds(
-      NOTIFICATIONS.filter((n) => n.unread).map((n) => n.id),
+    if (!userId) return;
+    markAllNotificationsReadInDb(userId).catch((err) =>
+      console.warn('[notifications] mark all read failed', err),
     );
   };
 
@@ -766,6 +828,8 @@ function AppContent() {
             : post,
         ),
       );
+      // Разрешение на пуши просим в момент действия: человек ждёт ответа.
+      requestPushPermission(authorUid);
       return true;
     } catch {
       Alert.alert(t('settings.error'), t('app.replyError'));
@@ -846,7 +910,6 @@ function AppContent() {
       savedJobIds,
       connectedIds,
       registeredEventIds,
-      readNotificationIds,
       checkedChecklistIds,
       likedPostIds,
       settings,
@@ -963,6 +1026,52 @@ function AppContent() {
     setSelectedChatMemberId(memberId);
   };
 
+  const openPostFromNotification = async (postId) => {
+    if (!getPostById(postId, postsRef.current)) {
+      try {
+        const latest = await fetchPosts();
+        setPosts(latest);
+        postsRef.current = latest;
+      } catch {
+        // без сети откроем то, что есть
+      }
+    }
+    if (getPostById(postId, postsRef.current)) openPost(postId);
+  };
+
+  const openNotificationItem = (item) => {
+    markNotificationRead(item.id);
+    setShowNotifications(false);
+    setProfileView(null);
+    if (item.type === 'comment' && item.postId) openPostFromNotification(item.postId);
+  };
+
+  // Нажатие на пуш. Через ref — обработчик видит актуальное состояние.
+  const handlePushTapRef = useRef(null);
+  handlePushTapRef.current = (data) => {
+    clearOverlays();
+    if (data.type === 'message' && data.fromUid) {
+      setSelectedChatMemberId(data.fromUid);
+    } else if (data.type === 'comment' && data.postId) {
+      openPostFromNotification(data.postId);
+    } else if (data.type === 'event' && data.eventId) {
+      setSelectedEventId(data.eventId);
+    }
+  };
+
+  useEffect(() => {
+    if (!hydrated || !userId) return;
+    applyPushPreference(userId, {
+      enabled: settings.pushEnabled !== false,
+      events: settings.eventReminders !== false,
+    });
+  }, [hydrated, userId, settings.pushEnabled, settings.eventReminders]);
+
+  useEffect(() => {
+    if (!hydrated) return undefined;
+    return subscribeToPushTaps((data) => handlePushTapRef.current?.(data));
+  }, [hydrated]);
+
   const selectedJob = selectedJobId ? getJobById(selectedJobId) : null;
   const selectedEvent = selectedEventId ? getEventById(selectedEventId, events) : null;
 
@@ -1042,6 +1151,10 @@ function AppContent() {
         }
         return true;
       }
+      if (['resources', 'immigration', 'networking'].includes(tab)) {
+        setTab('overview');
+        return true;
+      }
       return false;
     });
 
@@ -1065,16 +1178,22 @@ function AppContent() {
   ]);
 
   const connectionsCount = connectedIds.length;
-  const messagesCount = conversations.filter((conv) => conv.lastMessage?.trim()).length;
+  // Непрочитанные беседы: последнее сообщение от собеседника и пришло позже
+  // моего последнего прочтения (или я ещё не открывал беседу).
+  const myConvUid = auth.currentUser?.uid ?? userId;
+  const messagesCount = conversations.filter((conv) => {
+    if (!conv.lastMessage?.trim() || !conv.lastMessageAt) return false;
+    if (!conv.lastMessageFrom || conv.lastMessageFrom === myConvUid) return false;
+    const readAt = conv.lastRead?.[myConvUid];
+    return !readAt || conv.lastMessageAt > readAt;
+  }).length;
   const ownPosts = getOwnPosts(posts, auth.currentUser?.uid ?? userId ?? 'guest');
   const visiblePosts = posts
     .filter((post) => !hiddenUserIds.has(post.authorId))
     .map(withoutHiddenReplies);
   const postsCount = ownPosts.length;
   const eventsCount = registeredEventIds.length;
-  const unreadCount = NOTIFICATIONS.filter(
-    (n) => n.unread && !readNotificationIds.includes(n.id),
-  ).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   if (showSearch) {
     return (
@@ -1243,8 +1362,12 @@ function AppContent() {
         return (
           <ConnectionsScreen
             connectedIds={connectedIds}
+            currentUserId={auth.currentUser?.uid ?? userId}
             onBack={() => setProfileView(null)}
             onOpenMember={openMember}
+            onConnect={connectMember}
+            onDisconnect={disconnectMember}
+            onSearch={searchUsers}
             onMessage={(id) => {
               setProfileView(null);
               openChat(id);
@@ -1308,20 +1431,22 @@ function AppContent() {
           <NotificationsScreen
             onBack={closeNotifications}
             backLabel={t('backLabel.home')}
-            readIds={readNotificationIds}
-            onAction={() => {}}
-            onMarkRead={markNotificationRead}
+            items={notifications}
+            onOpenItem={openNotificationItem}
             onMarkAllRead={markAllNotificationsRead}
           />
         );
       case 'help':
         return <HelpScreen onBack={() => setProfileView(null)} />;
+      case 'blockedUsers':
+        return <BlockedUsersScreen blockedIds={blockedByMe} onUnblock={handleUnblockMember} onBack={() => setProfileView('settings')} />;
       case 'settings':
         return (
           <SettingsScreen
             onBack={() => setProfileView(null)}
             settings={settings}
             onUpdateSettings={setSettings}
+            onOpenBlockedUsers={() => setProfileView('blockedUsers')}
           />
         );
       default:
@@ -1392,6 +1517,7 @@ function AppContent() {
       return (
         <HomeScreen
           profile={profile}
+          blockedUserIds={Array.from(hiddenUserIds)}
           posts={visiblePosts}
           userId={userId}
           onOpenFeed={() => setShowFeed(true)}
@@ -1420,8 +1546,11 @@ function AppContent() {
         />
       );
     }
+    if (tab === 'overview') {
+      return <OverviewScreen onNavigate={handleTabChange} />;
+    }
     if (tab === 'resources') {
-      return <ResourcesScreen />;
+      return <ResourcesScreen onBack={() => handleTabChange('overview')} />;
     }
     if (tab === 'ai') {
       return <AiChatScreen userId={userId} />;
@@ -1429,6 +1558,7 @@ function AppContent() {
     if (tab === 'networking') {
       return (
         <NetworkingScreen
+          onBack={() => handleTabChange('overview')}
           events={events}
           onSelectEvent={openEvent}
           onSelectMember={openMember}
@@ -1443,7 +1573,7 @@ function AppContent() {
       return renderProfileContent();
     }
     if (tab === 'immigration') {
-      return <ImmigrationScreen onSelectGuide={openGuide} onRefresh={() => {}} />;
+      return <ImmigrationScreen onBack={() => handleTabChange('overview')} onSelectGuide={openGuide} onRefresh={() => {}} />;
     }
     return null;
   };
@@ -1475,7 +1605,7 @@ function AppContent() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['left', 'right']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StatusBar style={colors.statusBar} />
       <View style={styles.content}>{renderContent()}</View>
       <TabBar active={tab} onChange={handleTabChange} />
@@ -1505,13 +1635,12 @@ function AppContent() {
         animationType="slide"
         onRequestClose={closeNotifications}
       >
-        <SafeAreaView style={[styles.notificationsOverlay, { backgroundColor: colors.background }]}>
+        <SafeAreaView edges={['left', 'right', 'bottom']} style={[styles.notificationsOverlay, { backgroundColor: colors.background }]}>
           <NotificationsScreen
             onBack={closeNotifications}
             backLabel={t('backLabel.home')}
-            readIds={readNotificationIds}
-            onAction={() => {}}
-            onMarkRead={markNotificationRead}
+            items={notifications}
+            onOpenItem={openNotificationItem}
             onMarkAllRead={markAllNotificationsRead}
           />
         </SafeAreaView>

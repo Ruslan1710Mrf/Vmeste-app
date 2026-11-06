@@ -63,12 +63,26 @@ export async function sendMessage(
     createdAt: serverTimestamp(),
   });
 
-  // Обновить preview в conversation
+  // Обновить preview в conversation. lastMessageFrom нужен, чтобы считать
+  // непрочитанным только то, что пришло от собеседника.
   const convRef = doc(db, 'conversations', convId);
   await updateDoc(convRef, {
     lastMessage: text.trim(),
     lastMessageAt: serverTimestamp(),
+    lastMessageFrom: fromUid,
   });
+}
+
+// Отметить беседу прочитанной текущим пользователем (вызывать при открытии
+// чата и при приходе новых сообщений, пока чат открыт).
+export async function markConversationRead(convId: string, uid: string): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'conversations', convId), {
+      [`lastRead.${uid}`]: serverTimestamp(),
+    });
+  } catch (error) {
+    console.warn('[markConversationRead] failed', error);
+  }
 }
 
 // Слушать сообщения в реальном времени
@@ -117,6 +131,13 @@ export function subscribeToConversations(
         participantNames: d.data().participantNames ?? {},
         lastMessage: d.data().lastMessage ?? '',
         lastMessageAt: d.data().lastMessageAt?.toDate?.()?.toISOString() ?? '',
+        lastMessageFrom: d.data().lastMessageFrom,
+        lastRead: Object.fromEntries(
+          Object.entries(d.data().lastRead ?? {}).map(([k, v]) => [
+            k,
+            (v as { toDate?: () => Date })?.toDate?.()?.toISOString() ?? '',
+          ]),
+        ),
       }))
       .sort((a, b) => (b.lastMessageAt > a.lastMessageAt ? 1 : -1));
     callback(convs);
@@ -160,4 +181,7 @@ export interface Conversation {
   participantNames: Record<string, string>;
   lastMessage: string;
   lastMessageAt: string;
+  lastMessageFrom?: string;
+  // uid → ISO времени последнего прочтения этим участником
+  lastRead?: Record<string, string>;
 }

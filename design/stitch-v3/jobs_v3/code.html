@@ -1,0 +1,313 @@
+<!DOCTYPE html><html class="dark" lang="ru"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Работа - Immigration Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-primary": "#002e6a",
+                "on-secondary-fixed-variant": "#005236",
+                "surface-bright": "#363941",
+                "primary-fixed": "#d8e2ff",
+                "on-surface-variant": "#c2c6d6",
+                "on-tertiary-fixed-variant": "#723600",
+                "tertiary-fixed-dim": "#ffb786",
+                "on-tertiary-container": "#461f00",
+                "primary-container": "#4d8eff",
+                "on-primary-fixed-variant": "#004395",
+                "surface-variant": "#32353c",
+                "tertiary": "#ffb786",
+                "on-tertiary-fixed": "#311400",
+                "inverse-on-surface": "#2e3038",
+                "surface-container-high": "#272a31",
+                "outline-variant": "#424754",
+                "on-error-container": "#ffdad6",
+                "error": "#ffb4ab",
+                "primary": "#adc6ff",
+                "error-container": "#93000a",
+                "on-secondary": "#003824",
+                "secondary-container": "#00a572",
+                "on-secondary-container": "#00311f",
+                "tertiary-container": "#df7412",
+                "on-primary-fixed": "#001a42",
+                "on-background": "#e1e2ec",
+                "surface": "#10131a",
+                "secondary-fixed": "#6ffbbe",
+                "on-tertiary": "#502400",
+                "inverse-surface": "#e1e2ec",
+                "outline": "#8c909f",
+                "surface-container": "#1d2027",
+                "surface-container-low": "#191b23",
+                "on-primary-container": "#00285d",
+                "surface-container-highest": "#32353c",
+                "inverse-primary": "#005ac2",
+                "tertiary-fixed": "#ffdcc6",
+                "on-secondary-fixed": "#002113",
+                "surface-dim": "#10131a",
+                "secondary-fixed-dim": "#4edea3",
+                "surface-container-lowest": "#0b0e15",
+                "surface-tint": "#adc6ff",
+                "on-surface": "#e1e2ec",
+                "primary-fixed-dim": "#adc6ff",
+                "background": "#10131a",
+                "secondary": "#4edea3",
+                "on-error": "#690005"
+        },
+        "borderRadius": {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "xs": "4px",
+                "sm": "8px",
+                "margin-desktop": "32px",
+                "md": "16px",
+                "xl": "40px",
+                "lg": "24px",
+                "gutter": "16px",
+                "margin-mobile": "16px",
+                "max-width": "1200px",
+                "base": "4px",
+                "stack-md": "16px",
+                "stack-lg": "24px",
+                "page-margin": "20px",
+                "card-padding": "20px",
+                "stack-sm": "8px"
+        },
+        "fontFamily": {
+                "headline-lg": ["Inter"],
+                "headline-lg-mobile": ["Inter"],
+                "numeric-money": ["Inter"],
+                "body-lg": ["Inter"],
+                "headline-md": ["Inter"],
+                "label-caps": ["Inter"],
+                "body-sm": ["Inter"],
+                "label-md": ["Inter"],
+                "headline-sm": ["Inter"],
+                "body-md": ["Inter"],
+                "label-lg": ["Inter"]
+        },
+        "fontSize": {
+                "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                "numeric-money": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                "label-lg": ["14px", { "lineHeight": "18px", "fontWeight": "600" }]
+        }
+},
+    },
+  }
+</script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-[#0F172A] text-[#F1F5F9] min-h-screen flex flex-col font-body-md pb-[80px]">
+<!-- Top App Bar -->
+<header class="bg-[#0F172A]/80 backdrop-blur-xl docked full-width top-0 sticky z-50 border-b border-outline-variant/10 flex justify-between items-center px-page-margin py-stack-sm w-full flat no shadows">
+<button class="p-2 hover:bg-surface-container-high transition-colors rounded-full text-[#3B82F6] active:opacity-70 active:scale-95 transition-all" id="menu-toggle-btn">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="text-headline-md font-headline-md font-bold text-[#3B82F6]">Vmeste</h1>
+<button class="p-2 hover:bg-surface-container-high transition-colors rounded-full text-[#3B82F6] active:opacity-70 active:scale-95 transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col px-page-margin py-stack-lg gap-stack-lg w-full max-w-3xl mx-auto">
+<!-- Header Section -->
+<section class="flex flex-col gap-stack-sm">
+<h2 class="text-headline-lg font-headline-lg text-[#3B82F6]">Работа</h2>
+<p class="text-body-lg font-body-lg text-on-surface-variant">24 новые вакансии для нашего сообщества</p>
+</section>
+<!-- Search Bar -->
+<section>
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full bg-[#1E293B] text-[#F1F5F9] rounded-[16px] py-4 pl-12 pr-4 border border-transparent focus:border-[#3B82F6] focus:ring-0 transition-colors text-body-md font-body-md placeholder-on-surface-variant/50" placeholder="Поиск по названию, компании, городу..." type="text">
+</div>
+</section>
+<!-- Filter Chips (Horizontal Scroll) -->
+<section class="overflow-x-auto no-scrollbar -mx-page-margin px-page-margin">
+<div class="flex gap-stack-md w-max">
+<button class="px-6 py-2 rounded-full bg-[#3B82F6] text-white text-label-lg font-label-lg transition-colors">
+                    Все
+                </button>
+<button class="px-6 py-2 rounded-full bg-[#1E293B] text-on-surface-variant hover:bg-surface-container-high text-label-lg font-label-lg transition-colors border border-outline-variant/20">
+                    Удаленная
+                </button>
+<button class="px-6 py-2 rounded-full bg-[#1E293B] text-on-surface-variant hover:bg-surface-container-high text-label-lg font-label-lg transition-colors border border-outline-variant/20">
+                    Полная занятость
+                </button>
+<button class="px-6 py-2 rounded-full bg-[#1E293B] text-on-surface-variant hover:bg-surface-container-high text-label-lg font-label-lg transition-colors border border-outline-variant/20">
+                    Без опыта
+                </button>
+<button class="px-6 py-2 rounded-full bg-[#1E293B] text-on-surface-variant hover:bg-surface-container-high text-label-lg font-label-lg transition-colors border border-outline-variant/20">
+                    IT &amp; Tech
+                </button>
+</div>
+</section>
+<!-- Job Platforms Quick Access (Bento Style) -->
+<section class="grid grid-cols-4 gap-stack-md">
+<div class="flex flex-col items-center gap-2 cursor-pointer group">
+<div class="w-16 h-16 rounded-[16px] bg-[#1a365d] flex items-center justify-center transition-transform group-hover:-translate-y-1">
+<span class="text-white font-bold text-2xl">F<span class="text-orange-500">*</span></span>
+</div>
+<span class="text-label-md font-label-md text-on-surface-variant text-center">Flagma</span>
+</div>
+<div class="flex flex-col items-center gap-2 cursor-pointer group">
+<div class="w-16 h-16 rounded-[16px] bg-white flex items-center justify-center transition-transform group-hover:-translate-y-1">
+<span class="text-[#2164f3] font-bold text-2xl italic">i</span>
+</div>
+<span class="text-label-md font-label-md text-on-surface-variant text-center">Indeed</span>
+</div>
+<div class="flex flex-col items-center gap-2 cursor-pointer group">
+<div class="w-16 h-16 rounded-[16px] bg-[#4ade80] flex items-center justify-center transition-transform group-hover:-translate-y-1">
+<span class="text-white font-bold text-2xl">B</span>
+</div>
+<span class="text-label-md font-label-md text-on-surface-variant text-center">Bazar</span>
+</div>
+<div class="flex flex-col items-center gap-2 cursor-pointer group">
+<div class="w-16 h-16 rounded-[16px] bg-[#0077b5] flex items-center justify-center transition-transform group-hover:-translate-y-1">
+<span class="text-white font-bold text-2xl">in</span>
+</div>
+<span class="text-label-md font-label-md text-on-surface-variant text-center">LinkedIn</span>
+</div>
+</section>
+<!-- Job Listings -->
+<section class="flex flex-col gap-stack-md mt-4">
+<!-- Job Card 1 -->
+<article class="bg-[#1E293B] border border-white/5 shadow-md rounded-[24px] p-card-padding flex flex-col gap-stack-md hover:bg-surface-container-low transition-colors group">
+<div class="flex justify-between items-start">
+<div class="flex gap-4">
+<div class="w-12 h-12 rounded-xl bg-[#0F172A] flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/10">
+<span class="material-symbols-outlined text-on-surface-variant">local_shipping</span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-headline-sm font-headline-sm text-[#F1F5F9] group-hover:text-[#3B82F6] transition-colors">Водитель CDL (Класс A)</h3>
+<p class="text-body-md font-body-md text-on-surface-variant">J.B. Hunt Transport Services</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-[#3B82F6] transition-colors">
+<span class="material-symbols-outlined">bookmark_border</span>
+</button>
+</div>
+<div class="flex justify-between items-center mt-2 flex-wrap gap-4">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-md font-body-md">
+<span class="material-symbols-outlined text-[#ef4444] text-[18px]" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<span class="">Чикаго, IL</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-[#10B981] font-semibold text-body-md px-3 py-1 bg-[#10B981]/10 rounded-full">$62,000 - $78,000</span>
+<button class="bg-[#3B82F6] text-white px-6 py-2 rounded-full text-label-lg font-label-lg hover:bg-blue-600 transition-colors">
+                            Откликнуться
+                        </button>
+</div>
+</div>
+</article>
+<!-- Job Card 2 -->
+<article class="bg-[#1E293B] border border-white/5 shadow-md rounded-[24px] p-card-padding flex flex-col gap-stack-md hover:bg-surface-container-low transition-colors group">
+<div class="flex justify-between items-start">
+<div class="flex gap-4">
+<div class="w-12 h-12 rounded-xl bg-[#0F172A] flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/10">
+<span class="material-symbols-outlined text-on-surface-variant">cable</span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-headline-sm font-headline-sm text-[#F1F5F9] group-hover:text-[#3B82F6] transition-colors">Техник по кабельным сетям</h3>
+<p class="text-body-md font-body-md text-on-surface-variant">Spectrum (Charter Communications)</p>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-[#3B82F6] transition-colors">
+<span class="material-symbols-outlined">bookmark_border</span>
+</button>
+</div>
+<div class="flex justify-between items-center mt-2 flex-wrap gap-4">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-md font-body-md">
+<span class="material-symbols-outlined text-[#ef4444] text-[18px]" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<span class="">Нью-Йорк, NY</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-[#10B981] font-semibold text-body-md px-3 py-1 bg-[#10B981]/10 rounded-full">$48,000 - $62,000</span>
+<button class="bg-transparent border border-[#3B82F6] text-[#3B82F6] px-6 py-2 rounded-full text-label-lg font-label-lg hover:bg-[#3B82F6]/10 transition-colors">
+                            Откликнуться
+                        </button>
+</div>
+</div>
+</article>
+<!-- Job Card 3 -->
+<article class="bg-[#1E293B] border border-white/5 shadow-md rounded-[24px] p-card-padding flex flex-col gap-stack-md hover:bg-surface-container-low transition-colors group">
+<div class="flex justify-between items-start">
+<div class="flex gap-4">
+<div class="w-12 h-12 rounded-xl bg-[#0F172A] flex items-center justify-center overflow-hidden shrink-0 border border-outline-variant/10">
+<span class="material-symbols-outlined text-on-surface-variant">medical_services</span>
+</div>
+<div class="flex flex-col gap-1">
+<h3 class="text-headline-sm font-headline-sm text-[#F1F5F9] group-hover:text-[#3B82F6] transition-colors">Медсестра (CNA)</h3>
+<p class="text-body-md font-body-md text-on-surface-variant">Jackson Health System</p>
+</div>
+</div>
+<button class="text-[#3B82F6] transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+</button>
+</div>
+<div class="flex justify-between items-center mt-2 flex-wrap gap-4">
+<div class="flex items-center gap-2 text-on-surface-variant text-body-md font-body-md">
+<span class="material-symbols-outlined text-[#ef4444] text-[18px]" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<span class="">Майами, FL</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-[#10B981] font-semibold text-body-md px-3 py-1 bg-[#10B981]/10 rounded-full">$34,000 - $42,000</span>
+<button class="bg-transparent border border-[#3B82F6] text-[#3B82F6] px-6 py-2 rounded-full text-label-lg font-label-lg hover:bg-[#3B82F6]/10 transition-colors">
+                            Откликнуться
+                        </button>
+</div>
+</div>
+</article>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="bg-[#0F172A]/90 backdrop-blur-xl docked full-width bottom-0 fixed z-50 rounded-t-lg border-t border-outline-variant/10 shadow-lg fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 pb-safe md:hidden">
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-xl">
+<span class="material-symbols-outlined">home</span>
+<span class="text-label-md font-label-md mt-1">Лента</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#3B82F6] font-bold hover:bg-surface-container-low transition-colors p-2 rounded-xl scale-110 duration-200 ease-out">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">work</span>
+<span class="text-label-md font-label-md mt-1">Работа</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-xl">
+<span class="material-symbols-outlined">library_books</span>
+<span class="text-label-md font-label-md mt-1">База</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-xl">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="text-label-md font-label-md mt-1">AI</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors p-2 rounded-xl">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-md font-label-md mt-1">Профиль</span>
+</button>
+</nav>
+
+
+<div id="drawer-container" class="fixed inset-0 z-50 pointer-events-none transition-all duration-300"><div id="drawer-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-md opacity-0 transition-opacity duration-300 cursor-pointer"></div><aside id="drawer-panel" class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-[#0F172A] border-r border-white/10 shadow-2xl flex flex-col justify-between p-6 transform -translate-x-full transition-transform duration-300 ease-in-out z-10"><div class="flex flex-col gap-6"><div class="flex items-center justify-between pb-4 border-b border-white/10"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/30 flex items-center justify-center text-[#3B82F6]"><span class="material-symbols-outlined text-2xl">hub</span></div><div><h2 class="text-headline-sm font-bold text-[#F1F5F9]">Vmeste</h2><p class="text-xs text-on-surface-variant">Immigration Hub</p></div></div><button id="drawer-close-btn" class="p-2 rounded-full text-on-surface-variant hover:text-white hover:bg-white/10 transition-colors"><span class="material-symbols-outlined">close</span></button></div><nav class="flex flex-col gap-1"><a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:text-[#3B82F6] hover:bg-white/5 transition-colors"><span class="material-symbols-outlined">home</span><span class="font-medium">Лента</span></a><a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl bg-[#3B82F6]/10 text-[#3B82F6] font-semibold"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">work</span><span class="">Работа</span></a><a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:text-[#3B82F6] hover:bg-white/5 transition-colors"><span class="material-symbols-outlined">library_books</span><span class="font-medium">База знаний</span></a><a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:text-[#3B82F6] hover:bg-white/5 transition-colors"><span class="material-symbols-outlined">smart_toy</span><span class="font-medium">AI Ассистент</span></a><a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:text-[#3B82F6] hover:bg-white/5 transition-colors"><span class="material-symbols-outlined">forum</span><span class="font-medium">Сообщество</span></a><a href="#" class="flex items-center gap-4 px-4 py-3 rounded-xl text-on-surface-variant hover:text-[#3B82F6] hover:bg-white/5 transition-colors"><span class="material-symbols-outlined">bookmark</span><span class="font-medium">Сохранённое</span></a></nav></div><div class="pt-4 border-t border-white/10 flex flex-col gap-3"><a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant hover:text-white hover:bg-white/5 transition-colors"><span class="material-symbols-outlined">settings</span><span class="font-medium">Настройки</span></a><div class="flex items-center gap-3 px-4 py-2"><div class="w-10 h-10 rounded-full bg-[#1E293B] border border-white/10 flex items-center justify-center text-white font-semibold">ИВ</div><div class="flex flex-col"><span class="text-sm font-medium text-white">Иван Васильев</span><span class="text-xs text-on-surface-variant">ivan@example.com</span></div></div></div></aside><script>(function() { const toggleBtn = document.getElementById('menu-toggle-btn'); const container = document.getElementById('drawer-container'); const backdrop = document.getElementById('drawer-backdrop'); const panel = document.getElementById('drawer-panel'); const closeBtn = document.getElementById('drawer-close-btn'); function openDrawer() { container.classList.remove('pointer-events-none'); backdrop.classList.remove('opacity-0'); backdrop.classList.add('opacity-100'); panel.classList.remove('-translate-x-full'); panel.classList.add('translate-x-0'); document.body.style.overflow = 'hidden'; } function closeDrawer() { backdrop.classList.remove('opacity-100'); backdrop.classList.add('opacity-0'); panel.classList.remove('translate-x-0'); panel.classList.add('-translate-x-full'); container.classList.add('pointer-events-none'); document.body.style.overflow = ''; } if (toggleBtn) toggleBtn.addEventListener('click', openDrawer); if (backdrop) backdrop.addEventListener('click', closeDrawer); if (closeBtn) closeBtn.addEventListener('click', closeDrawer); })();</script></div></body></html>

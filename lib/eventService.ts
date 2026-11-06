@@ -1,14 +1,19 @@
 import {
   collection,
+  collectionGroup,
+  deleteDoc,
   doc,
   getDocs,
   orderBy,
   query,
+  serverTimestamp,
   setDoc,
+  Timestamp,
   where,
   writeBatch,
 } from 'firebase/firestore';
 import { db } from './firestore';
+import { parseEventDate } from './eventDate';
 
 export type EventRecord = {
   id: string;
@@ -24,7 +29,9 @@ export type EventRecord = {
   createdAt: string;
 };
 
-type EventDoc = Omit<EventRecord, 'id'>;
+// startsAt — точное время начала для напоминаний; есть, только если дату
+// удалось разобрать (lib/eventDate.js).
+type EventDoc = Omit<EventRecord, 'id'> & { startsAt?: Timestamp };
 
 function mapEvent(id: string, data: EventDoc): EventRecord {
   return {
@@ -85,6 +92,31 @@ export async function createEvent(
     agenda: [],
     createdAt,
   };
+  const startsAt = parseEventDate(input.date);
+  if (startsAt) payload.startsAt = Timestamp.fromDate(startsAt);
   await setDoc(ref, payload);
   return mapEvent(ref.id, payload);
+}
+
+// Запись на событие дублируем в Firestore: по ней сервер шлёт напоминания
+// и считает участников (events/{id}.attendees ведёт Cloud Function).
+export async function registerForEvent(eventId: string, uid: string): Promise<void> {
+  await setDoc(doc(db, 'events', eventId, 'attendees', uid), {
+    uid,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function unregisterFromEvent(eventId: string, uid: string): Promise<void> {
+  await deleteDoc(doc(db, 'events', eventId, 'attendees', uid));
+}
+
+/** Удаление аккаунта: снять все свои записи на события. */
+export async function deleteUserAttendance(uid: string): Promise<void> {
+  const snap = await getDocs(query(collectionGroup(db, 'attendees'), where('uid', '==', uid)));
+  for (let i = 0; i < snap.docs.length; i += 500) {
+    const batch = writeBatch(db);
+    snap.docs.slice(i, i + 500).forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
 }

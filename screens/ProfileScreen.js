@@ -1,3 +1,5 @@
+import Icon from '../components/Icon';
+import Avatar from '../components/Avatar';
 import { useMemo } from 'react';
 import {
   Image,
@@ -13,20 +15,18 @@ import { useTheme } from '../lib/ThemeContext';
 import { useI18n } from '../lib/i18n';
 import { THEME_OPTIONS } from '../lib/theme';
 import { IMMIGRATION_STATUS_UNKNOWN } from '../data/profileFields';
-import { getProfileInitial } from '../lib/profileUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MENU_ITEMS = [
-  { id: 'edit', labelKey: 'profile.menu.edit', emoji: '✏️' },
-  { id: 'feed', labelKey: 'profile.menu.feed', emoji: '📝' },
-  { id: 'connections', labelKey: 'profile.menu.connections', emoji: '🤝' },
-  { id: 'messages', labelKey: 'profile.menu.messages', emoji: '💬' },
-  { id: 'events', labelKey: 'profile.menu.events', emoji: '📅' },
-  { id: 'checklist', labelKey: 'profile.menu.checklist', emoji: '✅' },
-  { id: 'saved', labelKey: 'profile.menu.saved', emoji: '🔖' },
-  { id: 'notifications', labelKey: 'profile.menu.notifications', emoji: '🔔' },
-  { id: 'help', labelKey: 'profile.menu.help', emoji: '❓' },
-  { id: 'settings', labelKey: 'profile.menu.settings', emoji: '⚙️' },
+  { id: 'edit', labelKey: 'profile.menu.edit', icon: 'edit' },
+  // «Лента сообщества» убрана: дублирует нижнюю вкладку «Лента».
+  // «Мои друзья» и «Мои события» убраны: дублируют плитки Друзья/События вверху.
+  { id: 'messages', labelKey: 'profile.menu.messages', icon: 'message' },
+  { id: 'checklist', labelKey: 'profile.menu.checklist', icon: 'check' },
+  { id: 'saved', labelKey: 'profile.menu.saved', icon: 'bookmark' },
+  { id: 'notifications', labelKey: 'profile.menu.notifications', icon: 'bell' },
+  { id: 'help', labelKey: 'profile.menu.help', icon: 'help' },
+  { id: 'settings', labelKey: 'profile.menu.settings', icon: 'settings' },
 ];
 
 function getMenuLabel(item, counts, t) {
@@ -70,7 +70,7 @@ function ProfileCover({ coverPhoto, styles }) {
       >
         <Defs>
           <LinearGradient id="profileCoverGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor="#EA580C" />
+            <Stop offset="0%" stopColor="#2563EB" />
             <Stop offset="100%" stopColor="#1E293B" />
           </LinearGradient>
         </Defs>
@@ -97,7 +97,7 @@ function ThemePicker({ styles, preference, onSelect, t }) {
               ]}
               onPress={() => onSelect(option.id)}
             >
-              <Text style={styles.themeEmoji}>{option.emoji}</Text>
+              <View style={{ alignItems: 'center', marginBottom: 10 }}><Icon name={{ system: 'phone', light: 'sun', dark: 'moon' }[option.id]} /></View>
               <Text style={[styles.themeLabel, selected && styles.themeLabelSelected]}>
                 {t(`theme.${option.id}`)}
               </Text>
@@ -137,9 +137,9 @@ function MenuRow({ styles, item, counts, onPress, t }) {
       style={({ pressed }) => [styles.menuRow, pressed && styles.rowPressed]}
       onPress={() => onPress(item.id)}
     >
-      <Text style={styles.menuEmoji}>{item.emoji}</Text>
+      <View style={{ marginRight: 12 }}><Icon name={item.icon} /></View>
       <Text style={styles.menuLabel}>{getMenuLabel(item, counts, t)}</Text>
-      <Text style={styles.menuArrow}>›</Text>
+      <Icon name="chevron" size={18} />
     </Pressable>
   );
 }
@@ -165,7 +165,6 @@ export default function ProfileScreen({
   const { colors, preference, setThemePreference } = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => createProfileStyles(colors), [colors]);
-  const initial = getProfileInitial(profile);
   const menuCounts = {
     savedCount,
     unreadCount,
@@ -198,7 +197,7 @@ export default function ProfileScreen({
       ) : null}
       <ScrollView
         style={styles.list}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingTop: onBack ? 0 : insets.top, width: '100%', maxWidth: 760, alignSelf: 'center' }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.profileCard}>
@@ -207,13 +206,7 @@ export default function ProfileScreen({
               <ProfileCover coverPhoto={profile.coverPhoto} styles={styles} />
             </View>
             <View style={styles.avatarRow}>
-              {profile.photoUri ? (
-                <Image source={{ uri: profile.photoUri }} style={styles.avatarImage} />
-              ) : (
-                <View style={styles.avatarLarge}>
-                  <Text style={styles.avatarText}>{initial}</Text>
-                </View>
-              )}
+              <Avatar name={profile.name} uri={profile.photoUri} size={AVATAR_SIZE} style={{ borderWidth: 4, borderColor: colors.surface }} />
             </View>
           </View>
           <View style={styles.profileBody}>
@@ -350,8 +343,8 @@ function createProfileStyles(colors) {
       paddingRight: 12,
       marginBottom: 4,
     },
-    backIcon: { fontSize: 20, color: colors.accent, marginRight: 4 },
-    backLabel: { fontSize: 16, fontWeight: '500', color: colors.accent },
+    backIcon: { fontSize: 20, color: colors.tabActive, marginRight: 4 },
+    backLabel: { fontSize: 16, fontWeight: '500', color: colors.tabActive },
     list: { flex: 1 },
     listContent: { paddingTop: 0, paddingBottom: 16 },
     belowCard: { paddingHorizontal: 24, paddingTop: 16 },
@@ -409,7 +402,7 @@ function createProfileStyles(colors) {
       borderWidth: 4,
       borderColor: colors.surface,
     },
-    avatarText: { fontSize: 36, fontWeight: '700', color: colors.accent },
+    avatarText: { fontSize: 36, fontWeight: '700', color: colors.tabActive },
     name: {
       fontSize: 22,
       fontWeight: '700',
@@ -493,7 +486,7 @@ function createProfileStyles(colors) {
       paddingVertical: 8,
       borderRadius: 20,
     },
-    linkText: { fontSize: 13, fontWeight: '600', color: colors.accent },
+    linkText: { fontSize: 13, fontWeight: '600', color: colors.tabActive },
     interests: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
     tag: {
       backgroundColor: colors.accentSoft,
@@ -501,7 +494,7 @@ function createProfileStyles(colors) {
       paddingVertical: 6,
       borderRadius: 20,
     },
-    tagText: { fontSize: 13, fontWeight: '500', color: colors.accent },
+    tagText: { fontSize: 13, fontWeight: '500', color: colors.tabActive },
     themeCard: {
       backgroundColor: colors.surface,
       borderRadius: 16,
@@ -545,7 +538,7 @@ function createProfileStyles(colors) {
       textAlign: 'center',
     },
     themeLabelSelected: {
-      color: colors.accent,
+      color: colors.tabActive,
       fontWeight: '600',
     },
     statsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },

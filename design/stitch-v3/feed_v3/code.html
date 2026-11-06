@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="ru"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Лента</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-primary": "#ffffff",
+                "on-secondary-fixed-variant": "#005236",
+                "surface-bright": "#363941",
+                "primary-fixed": "#d8e2ff",
+                "on-surface-variant": "#94a3b8",
+                "on-tertiary-fixed-variant": "#723600",
+                "tertiary-fixed-dim": "#ffb786",
+                "on-tertiary-container": "#461f00",
+                "primary-container": "#4d8eff",
+                "on-primary-fixed-variant": "#004395",
+                "surface-variant": "#334155",
+                "tertiary": "#ffb786",
+                "on-tertiary-fixed": "#311400",
+                "inverse-on-surface": "#2e3038",
+                "surface-container-high": "#334155",
+                "outline-variant": "#475569",
+                "on-error-container": "#ffdad6",
+                "error": "#f87171",
+                "primary": "#3b82f6",
+                "error-container": "#93000a",
+                "on-secondary": "#003824",
+                "secondary-container": "#00a572",
+                "on-secondary-container": "#00311f",
+                "tertiary-container": "#df7412",
+                "on-primary-fixed": "#001a42",
+                "on-background": "#f1f5f9",
+                "surface": "#0f172a",
+                "secondary-fixed": "#6ffbbe",
+                "on-tertiary": "#502400",
+                "inverse-surface": "#e1e2ec",
+                "outline": "#64748b",
+                "surface-container": "#1e293b",
+                "surface-container-low": "#1e293b",
+                "on-primary-container": "#00285d",
+                "surface-container-highest": "#334155",
+                "inverse-primary": "#005ac2",
+                "tertiary-fixed": "#ffdcc6",
+                "on-secondary-fixed": "#002113",
+                "surface-dim": "#0f172a",
+                "secondary-fixed-dim": "#4edea3",
+                "surface-container-lowest": "#0b0e15",
+                "surface-tint": "#3b82f6",
+                "on-surface": "#f1f5f9",
+                "primary-fixed-dim": "#3b82f6",
+                "background": "#0f172a",
+                "secondary": "#60a5fa",
+                "on-error": "#690005"
+        },
+        "borderRadius": {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "xs": "4px",
+                "sm": "8px",
+                "margin-desktop": "32px",
+                "md": "16px",
+                "xl": "40px",
+                "lg": "24px",
+                "gutter": "16px",
+                "margin-mobile": "16px",
+                "max-width": "1200px",
+                "base": "4px",
+                "stack-md": "16px",
+                "stack-lg": "24px",
+                "page-margin": "20px",
+                "card-padding": "20px",
+                "stack-sm": "8px",
+                "safe": "env(safe-area-inset-bottom)"
+        },
+        "fontFamily": {
+                "headline-lg": ["Inter"],
+                "headline-lg-mobile": ["Inter"],
+                "numeric-money": ["Inter"],
+                "body-lg": ["Inter"],
+                "headline-md": ["Inter"],
+                "label-caps": ["Inter"],
+                "body-sm": ["Inter"],
+                "label-md": ["Inter"],
+                "headline-sm": ["Inter"],
+                "body-md": ["Inter"],
+                "label-lg": ["Inter"]
+        },
+        "fontSize": {
+                "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                "label-lg": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+                "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Hide scrollbar for stories */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-[#0F172A] min-h-screen flex flex-col font-body-md pb-[80px]">
+<!-- TopAppBar -->
+<header class="bg-[#0F172A]/80 dark:bg-[#0F172A]/80 backdrop-blur-xl docked full-width top-0 sticky z-50 border-b border-outline-variant/30 flex justify-between items-center px-page-margin py-stack-sm w-full">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#3B82F6] cursor-pointer hover:bg-surface-container-high transition-colors p-2 rounded-full">menu</span>
+<h1 class="text-headline-md font-headline-md font-bold text-[#3B82F6] dark:text-[#3B82F6]">Vmeste</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-high transition-colors p-2 rounded-full">search</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:bg-surface-container-high transition-colors p-2 rounded-full relative">
+                notifications
+                <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-error rounded-full"></span>
+</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col gap-stack-lg pt-stack-md">
+<!-- Input Area -->
+<section class="px-page-margin">
+<div class="bg-[#1E293B] rounded-xl p-card-padding flex items-center gap-4 border border-outline-variant/30">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-label-lg font-label-lg text-[#3B82F6]">К</div>
+<div class="flex-grow bg-[#0F172A]/50 rounded-full px-4 py-2 text-on-surface-variant flex items-center cursor-pointer border border-outline-variant/20">
+                    О чем вы думаете?
+                </div>
+<span class="material-symbols-outlined text-[#3B82F6] cursor-pointer">image</span>
+</div>
+</section>
+<!-- Stories Bar -->
+<section class="pl-page-margin py-2">
+<div class="flex gap-4 overflow-x-auto no-scrollbar pb-2 pr-page-margin">
+<!-- Add Story -->
+<div class="flex flex-col items-center gap-2 shrink-0 w-[72px]">
+<div class="w-16 h-16 rounded-full border-2 border-[#3B82F6] border-dashed flex items-center justify-center bg-[#1E293B] relative cursor-pointer">
+<span class="material-symbols-outlined text-[#3B82F6]">add</span>
+</div>
+<span class="text-label-md font-label-md text-on-surface-variant truncate w-full text-center">Ваша история</span>
+</div>
+<!-- Story 1 -->
+<div class="flex flex-col items-center gap-2 shrink-0 w-[72px] cursor-pointer">
+<div class="w-16 h-16 rounded-full border-2 border-[#3B82F6] p-[2px]">
+<div class="w-full h-full rounded-full bg-surface-container-high flex items-center justify-center text-headline-sm font-headline-sm text-[#F1F5F9]">А</div>
+</div>
+<span class="text-label-md font-label-md text-[#F1F5F9] truncate w-full text-center">Асет</span>
+</div>
+<!-- Story 2 -->
+<div class="flex flex-col items-center gap-2 shrink-0 w-[72px] cursor-pointer">
+<div class="w-16 h-16 rounded-full border-2 border-error p-[2px]">
+<div class="w-full h-full rounded-full bg-surface-container-high flex items-center justify-center text-headline-sm font-headline-sm text-[#F1F5F9]">Ш</div>
+</div>
+<span class="text-label-md font-label-md text-[#F1F5F9] truncate w-full text-center">Шамиль</span>
+</div>
+<!-- Story 3 -->
+<div class="flex flex-col items-center gap-2 shrink-0 w-[72px] cursor-pointer">
+<div class="w-16 h-16 rounded-full border-2 border-tertiary-container p-[2px]">
+<div class="w-full h-full rounded-full bg-surface-container-high flex items-center justify-center text-headline-sm font-headline-sm text-[#F1F5F9]">Д</div>
+</div>
+<span class="text-label-md font-label-md text-[#F1F5F9] truncate w-full text-center">Дастан</span>
+</div>
+</div>
+</section>
+<!-- Feed Posts -->
+<div class="flex flex-col gap-stack-md px-page-margin pb-stack-lg">
+<!-- Post 1 -->
+<article class="bg-[#1E293B] rounded-[24px] p-card-padding border border-outline-variant/20 flex flex-col gap-stack-md">
+<header class="flex justify-between items-start">
+<div class="flex gap-3 items-center">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-headline-sm font-headline-sm text-[#F1F5F9]">Д</div>
+<div class="flex flex-col">
+<h3 class="text-label-lg font-label-lg text-[#F1F5F9]">Дастан (вы)</h3>
+<div class="flex items-center gap-1 text-label-md font-label-md text-on-surface-variant">
+<span class="">21 ч назад</span>
+<span class="">•</span>
+<span class="material-symbols-outlined text-[14px]">public</span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 -mr-2 -mt-2">more_horiz</span>
+</header>
+<div class="text-body-lg font-body-lg text-[#F1F5F9]">
+                    Привет всем я в Семее
+                </div>
+<div class="h-[1px] bg-white/5 w-full my-1"></div>
+<footer class="flex justify-between items-center text-on-surface-variant px-2">
+<button class="flex items-center gap-2 hover:text-[#3B82F6] transition-colors py-2">
+<span class="material-symbols-outlined text-[20px]">favorite_border</span>
+<span class="text-label-lg font-label-lg">Like</span>
+</button>
+<button class="flex items-center gap-2 hover:text-[#3B82F6] transition-colors py-2">
+<span class="material-symbols-outlined text-[20px]">chat_bubble_outline</span>
+<span class="text-label-lg font-label-lg">0</span>
+</button>
+<button class="flex items-center gap-2 hover:text-[#3B82F6] transition-colors py-2">
+<span class="material-symbols-outlined text-[20px]">share</span>
+<span class="text-label-lg font-label-lg">Share</span>
+</button>
+</footer>
+</article>
+<!-- Post 2 -->
+<article class="bg-[#1E293B] rounded-[24px] p-card-padding border border-outline-variant/20 flex flex-col gap-stack-md">
+<header class="flex justify-between items-start">
+<div class="flex gap-3 items-center">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-headline-sm font-headline-sm text-[#F1F5F9]">М</div>
+<div class="flex flex-col">
+<h3 class="text-label-lg font-label-lg text-[#F1F5F9]">Мария (вы)</h3>
+<div class="flex items-center gap-1 text-label-md font-label-md text-on-surface-variant">
+<span class="">12 июн.</span>
+<span class="">•</span>
+<span class="material-symbols-outlined text-[14px] text-secondary">public</span>
+</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer p-2 -mr-2 -mt-2">more_horiz</span>
+</header>
+<div class="text-body-lg font-body-lg text-[#F1F5F9]">
+                    привет всем я в Техасе
+                </div>
+<div class="flex items-center gap-1 text-on-surface-variant text-label-md mt-1">
+<span class="material-symbols-outlined text-[14px]">chat_bubble</span>
+<span class="">1</span>
+</div>
+<div class="h-[1px] bg-white/5 w-full my-1"></div>
+<footer class="flex justify-between items-center text-on-surface-variant px-2">
+<button class="flex items-center gap-2 text-error hover:text-error/80 transition-colors py-2">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="text-label-lg font-label-lg">Like</span>
+</button>
+<button class="flex items-center gap-2 hover:text-[#3B82F6] transition-colors py-2">
+<span class="material-symbols-outlined text-[20px]">chat_bubble_outline</span>
+<span class="text-label-lg font-label-lg">1</span>
+</button>
+<button class="flex items-center gap-2 hover:text-[#3B82F6] transition-colors py-2">
+<span class="material-symbols-outlined text-[20px]">share</span>
+<span class="text-label-lg font-label-lg">Share</span>
+</button>
+</footer>
+</article>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-[#0F172A]/90 dark:bg-[#0F172A]/90 backdrop-blur-xl docked full-width bottom-0 fixed z-50 rounded-t-lg border-t border-outline-variant/30 shadow-lg fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 pb-safe">
+<a class="flex flex-col items-center justify-center text-[#3B82F6] font-bold hover:bg-surface-container-low transition-colors rounded-lg p-2 min-w-[44px] min-h-[44px]" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-label-md font-label-md mt-1">Лента</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg p-2 min-w-[44px] min-h-[44px]" href="#">
+<span class="material-symbols-outlined">work</span>
+<span class="text-label-md font-label-md mt-1">Работа</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg p-2 min-w-[44px] min-h-[44px]" href="#">
+<span class="material-symbols-outlined">library_books</span>
+<span class="text-label-md font-label-md mt-1">База</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg p-2 min-w-[44px] min-h-[44px]" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+<span class="text-label-md font-label-md mt-1">AI</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors rounded-lg p-2 min-w-[44px] min-h-[44px]" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-label-md font-label-md mt-1">Профиль</span>
+</a>
+</nav>
+</body></html>

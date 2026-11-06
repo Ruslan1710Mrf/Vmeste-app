@@ -30,6 +30,14 @@ function ConversationRow({ conv, myUid, onPress, onDelete }) {
   const name = conv.participantNames[otherUid] || t('messages.defaultUserName');
   const preview = conv.lastMessage?.trim() || t('messages.startConversation');
   const time = formatChatTime(conv.lastMessageAt);
+  // Непрочитано: последнее сообщение от собеседника и пришло позже моего
+  // последнего прочтения (или я ещё не открывал диалог).
+  const readAt = conv.lastRead?.[myUid];
+  const unread = Boolean(
+    conv.lastMessageFrom &&
+      conv.lastMessageFrom !== myUid &&
+      (!readAt || (conv.lastMessageAt && conv.lastMessageAt > readAt)),
+  );
 
   return (
     <Pressable
@@ -38,13 +46,14 @@ function ConversationRow({ conv, myUid, onPress, onDelete }) {
     >
       <View style={styles.avatar}>
         <Text style={styles.avatarText}>{name.charAt(0)}</Text>
+        {unread && <View style={styles.unreadDot} />}
       </View>
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.time}>{time}</Text>
+          <Text style={[styles.name, unread && styles.nameUnread]}>{name}</Text>
+          <Text style={[styles.time, unread && styles.timeUnread]}>{time}</Text>
         </View>
-        <Text style={styles.preview} numberOfLines={1}>{preview}</Text>
+        <Text style={[styles.preview, unread && styles.previewUnread]} numberOfLines={1}>{preview}</Text>
       </View>
       <Pressable
         style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
@@ -317,8 +326,22 @@ function createStyles(colors) {
     content: { flex: 1 },
     topRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
     name: { fontSize: 16, fontWeight: '600', color: colors.text },
+    nameUnread: { fontWeight: '800' },
     time: { fontSize: 12, color: colors.textMuted },
+    timeUnread: { color: colors.accent, fontWeight: '700' },
     preview: { fontSize: 14, color: colors.textSecondary },
+    previewUnread: { color: colors.text, fontWeight: '700' },
+    unreadDot: {
+      position: 'absolute',
+      top: -2,
+      right: -2,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: colors.accent,
+      borderWidth: 2,
+      borderColor: colors.surface,
+    },
     deleteButton: { padding: 8, marginLeft: 4 },
     deleteButtonPressed: { opacity: 0.6 },
     deleteIcon: { fontSize: 16 },
