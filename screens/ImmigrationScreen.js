@@ -1,3 +1,4 @@
+import OverviewBack from '../components/OverviewBack';
 import { useMemo, useState } from 'react';
 import {
   Image,
@@ -118,22 +119,23 @@ function Section({ section, onSelectGuide }) {
   const styles = useStyles();
   const { language } = useI18n();
   const isLinks = section.id === 'links';
+  const { colors } = useTheme();
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <View style={[styles.sectionIcon, { backgroundColor: `${section.color}18` }]}>
+        <View style={[styles.sectionIcon, { backgroundColor: colors.accentSoft }]}>
           <Text style={styles.sectionEmoji}>{section.emoji}</Text>
         </View>
         <Text style={styles.sectionTitle}>{localize(section.title, language)}</Text>
       </View>
-      <View style={[styles.sectionCard, { borderLeftColor: section.color }]}>
+      <View style={[styles.sectionCard, { borderLeftColor: colors.accent }]}>
         {section.items.map((item, index) => (
           <View key={item.id}>
             <ResourceItem
               item={item}
               isLink={isLinks}
-              accentColor={section.color}
+              accentColor={colors.tabActive}
               onSelectGuide={(guideItem) => onSelectGuide(section, guideItem)}
             />
             {index < section.items.length - 1 && <View style={styles.divider} />}
@@ -144,7 +146,7 @@ function Section({ section, onSelectGuide }) {
   );
 }
 
-export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} }) {
+export default function ImmigrationScreen({ onBack, onSelectGuide, onRefresh = () => {} }) {
   const { colors } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -176,7 +178,7 @@ export default function ImmigrationScreen({ onSelectGuide, onRefresh = () => {} 
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
+      <View style={[styles.header, { paddingTop: 8 + insets.top }]}><OverviewBack onPress={onBack} />
         <Text style={styles.screenTitle}>{t('immigration.title')}</Text>
         <Text style={styles.screenSubtitle}>
           {t('immigration.subtitle')}
@@ -225,9 +227,9 @@ function createStyles(colors) {
     container: { flex: 1, backgroundColor: colors.background },
     header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 20 },
     screenTitle: {
-      fontSize: 32,
+      fontSize: 28,
       fontWeight: '700',
-      color: '#22C55E',
+      color: colors.text,
       letterSpacing: -0.5,
       marginBottom: 6,
     },
@@ -290,7 +292,7 @@ function createStyles(colors) {
     appName: {
       fontSize: 11,
       fontWeight: '500',
-      color: '#FFFFFF',
+      color: colors.textSecondary,
       textAlign: 'center',
       lineHeight: 14,
     },
@@ -307,7 +309,7 @@ function createStyles(colors) {
       justifyContent: 'center',
     },
     sectionEmoji: { fontSize: 18 },
-    sectionTitle: { fontSize: 20, fontWeight: '600', color: '#22C55E' },
+    sectionTitle: { fontSize: 20, fontWeight: '600', color: colors.text },
     sectionCard: {
       backgroundColor: colors.surface,
       borderRadius: 16,

@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo } from 'react';
 import {
   Pressable,
@@ -22,7 +23,7 @@ function NotificationRow({ item, onPress }) {
       onPress={() => onPress(item)}
     >
       <View style={[styles.icon, unread && styles.iconUnread]}>
-        <Text style={styles.emoji}>💬</Text>
+        <Icon name="message" />
       </View>
       <View style={styles.content}>
         <View style={styles.rowTitleLine}>
@@ -110,8 +111,8 @@ function createStyles(colors) {
       paddingRight: 12,
     },
     backPressed: { opacity: 0.6 },
-    backIcon: { fontSize: 20, color: colors.accent, marginRight: 4 },
-    backLabel: { fontSize: 16, fontWeight: '500', color: colors.accent },
+    backIcon: { fontSize: 20, color: colors.tabActive, marginRight: 4 },
+    backLabel: { fontSize: 16, fontWeight: '500', color: colors.tabActive },
     titleRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -120,7 +121,7 @@ function createStyles(colors) {
     },
     titleBlock: { flex: 1 },
     markAllButton: { paddingVertical: 6, paddingHorizontal: 4 },
-    markAllText: { fontSize: 14, fontWeight: '600', color: colors.accent },
+    markAllText: { fontSize: 14, fontWeight: '600', color: colors.tabActive },
     screenTitle: {
       fontSize: 28,
       fontWeight: '700',

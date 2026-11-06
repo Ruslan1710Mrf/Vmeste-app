@@ -37,11 +37,13 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test:blue": "node --test tests/ui/blue.test.cjs"
   },
   "private": true,
   "devDependencies": {
     "@types/react": "^19.2.17",
+    "react-test-renderer": "19.2.3",
     "typescript": "^6.0.3"
   }
 }

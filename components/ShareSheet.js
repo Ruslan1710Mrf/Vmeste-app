@@ -1,3 +1,4 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../lib/ThemeContext';
@@ -8,6 +9,7 @@ import { useI18n } from '../lib/i18n';
 export default function ShareSheet({ visible, onClose, post, url }) {
   const { colors } = useTheme();
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const viewShotRef = useRef(null);
   const [imageUri, setImageUri] = useState(null);
@@ -41,7 +43,7 @@ export default function ShareSheet({ visible, onClose, post, url }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+        <Pressable style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.title}>{t('shareSheet.title')}</Text>
 
           <ShareButtons
@@ -76,6 +78,7 @@ function createStyles(colors) {
       justifyContent: 'flex-end',
     },
     sheet: {
+      width: '100%', maxWidth: 560, alignSelf: 'center',
       backgroundColor: colors.surface,
       borderTopLeftRadius: 16,
       borderTopRightRadius: 16,

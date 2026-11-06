@@ -1,3 +1,4 @@
+import OverviewBack from '../components/OverviewBack';
 import { useMemo, useState } from 'react';
 import {
   Image,
@@ -64,7 +65,7 @@ function ResourceCard({ item }) {
   );
 }
 
-export default function ResourcesScreen() {
+export default function ResourcesScreen({ onBack }) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t, language } = useI18n();
@@ -77,7 +78,7 @@ export default function ResourcesScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
+      <View style={[styles.header, { paddingTop: 8 + insets.top }]}><OverviewBack onPress={onBack} />
         <Text style={styles.screenTitle}>{t('resources.title')}</Text>
         <Text style={styles.screenSubtitle}>
           {t('resources.subtitle')}
@@ -133,9 +134,9 @@ function createStyles(colors) {
       paddingBottom: 12,
     },
     screenTitle: {
-      fontSize: 32,
+      fontSize: 28,
       fontWeight: '700',
-      color: '#059669',
+      color: colors.text,
       letterSpacing: -0.5,
       marginBottom: 6,
     },
@@ -162,7 +163,7 @@ function createStyles(colors) {
       paddingHorizontal: 4,
     },
     tabChipActive: {
-      backgroundColor: '#ECFDF5',
+      backgroundColor: colors.accentSoft,
     },
     tabChipText: {
       fontSize: 13,
@@ -171,7 +172,7 @@ function createStyles(colors) {
       textAlign: 'center',
     },
     tabChipTextActive: {
-      color: '#059669',
+      color: colors.tabActive,
     },
     list: {
       paddingHorizontal: 24,
@@ -227,7 +228,7 @@ function createStyles(colors) {
       color: colors.textSecondary,
     },
     cardButton: {
-      backgroundColor: '#059669',
+      backgroundColor: colors.accent,
       borderRadius: 12,
       paddingVertical: 12,
       alignItems: 'center',

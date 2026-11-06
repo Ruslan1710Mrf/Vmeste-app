@@ -1,110 +1,31 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AiTabIcon from './icons/AiTabIcon';
+import Icon from './Icon';
 import { useTheme } from '../lib/ThemeContext';
 import { useI18n } from '../lib/i18n';
-
-const TAB_ACTIVE_COLOR = '#22C55E';
-
 const TABS = [
-  { id: 'home', labelKey: 'tabBar.home', emoji: '🏠' },
-  { id: 'jobs', labelKey: 'tabBar.jobs', emoji: '💼' },
-  { id: 'resources', labelKey: 'tabBar.resources', emoji: '📚' },
-  { id: 'immigration', labelKey: 'tabBar.immigration', emoji: '🌍' },
-  { id: 'ai', labelKey: 'tabBar.ai', icon: 'ai' },
-  { id: 'networking', labelKey: 'tabBar.networking', emoji: '🤝' },
-  { id: 'profile', labelKey: 'tabBar.profile', emoji: '👤' },
+  { id: 'home', icon: 'home' }, { id: 'jobs', icon: 'briefcase' },
+  { id: 'overview', icon: 'grid' }, { id: 'ai', icon: 'sparkles' }, { id: 'profile', icon: 'user' },
 ];
-
 export default function TabBar({ active, onChange }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const { t } = useI18n();
-
-  return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.tabBarBorder,
-          paddingBottom: 12 + (insets.bottom ?? 0),
-        },
-      ]}
-    >
-      {TABS.map((tab) => {
-        const isActive = active === tab.id;
-        return (
-          <Pressable
-            key={tab.id}
-            style={({ pressed }) => [
-              styles.tab,
-              pressed && styles.tabPressed,
-            ]}
-            onPress={() => onChange(tab.id)}
-          >
-            {tab.icon === 'ai' ? (
-              <View style={styles.iconWrap}>
-                <AiTabIcon active={isActive} inactiveColor={colors.tabInactive} />
-              </View>
-            ) : (
-              <Text style={styles.emoji}>{tab.emoji}</Text>
-            )}
-            <Text
-              style={[
-                styles.label,
-                { color: colors.tabInactive },
-                isActive && { color: TAB_ACTIVE_COLOR, fontWeight: '600' },
-              ]}
-            >
-              {t(tab.labelKey)}
-            </Text>
-            {isActive ? (
-              <View style={[styles.activeDot, { backgroundColor: TAB_ACTIVE_COLOR }]} />
-            ) : null}
-          </Pressable>
-        );
-      })}
-    </View>
-  );
+  const selected = ['resources', 'immigration', 'networking'].includes(active) ? 'overview' : active;
+  return <View style={[styles.container, { backgroundColor: colors.tabBar, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 8) }]}>
+    {TABS.map(tab => {
+      const isActive = selected === tab.id;
+      const color = isActive ? colors.tabActive : colors.tabInactive;
+      return <Pressable key={tab.id} accessibilityRole="tab" accessibilityState={{ selected: isActive }} accessibilityLabel={t(`tabBar.${tab.id}`)} onPress={() => onChange(tab.id)} style={({ pressed }) => [styles.tab, pressed && { opacity: .65 }]}>
+        <View style={[styles.icon, isActive && { backgroundColor: colors.accentSoft }]}><Icon name={tab.icon} color={color} /></View>
+        <Text numberOfLines={1} style={[styles.label, { color }]}>{t(`tabBar.${tab.id}`)}</Text>
+      </Pressable>;
+    })}
+  </View>;
 }
-
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 8,
-    paddingBottom: 12,
-    paddingHorizontal: 4,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 6,
-    position: 'relative',
-  },
-  tabPressed: {
-    opacity: 0.7,
-  },
-  iconWrap: {
-    height: 22,
-    marginBottom: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emoji: {
-    fontSize: 20,
-    marginBottom: 2,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: '500',
-  },
-  activeDot: {
-    position: 'absolute',
-    top: 0,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-  },
+  container: { flexDirection: 'row', borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 6, paddingHorizontal: 8 },
+  tab: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  icon: { paddingHorizontal: 14, paddingVertical: 4, borderRadius: 12 },
+  label: { fontSize: 11, fontWeight: '600' },
 });

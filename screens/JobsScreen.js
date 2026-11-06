@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo, useState } from 'react';
 import {
   Image,
@@ -104,12 +105,12 @@ function JobCard({ job, onPress, isSaved, onToggleSave }) {
           onPress={() => onToggleSave(job.id)}
           hitSlop={8}
         >
-          <Text style={styles.saveIcon}>{isSaved ? '🔖' : '🏷️'}</Text>
+          <Icon name="bookmark" filled={isSaved} />
         </Pressable>
       </View>
       <View style={styles.meta}>
         <View style={styles.cityRow}>
-          <Text style={styles.cityIcon}>📍</Text>
+          <Icon name="pin" size={16} />
           <Text style={styles.city}>{localize(job.city, language)}</Text>
         </View>
         <View style={styles.salaryBadge}>
@@ -214,9 +215,9 @@ function createStyles(colors) {
       paddingBottom: 16,
     },
     screenTitle: {
-      fontSize: 32,
+      fontSize: 28,
       fontWeight: '700',
-      color: '#EAB308',
+      color: colors.text,
       letterSpacing: -0.5,
       marginBottom: 6,
     },
@@ -278,7 +279,7 @@ function createStyles(colors) {
     appName: {
       fontSize: 11,
       fontWeight: '500',
-      color: '#FFFFFF',
+      color: colors.textSecondary,
       textAlign: 'center',
       lineHeight: 14,
     },
@@ -359,7 +360,7 @@ function createStyles(colors) {
       fontWeight: '500',
     },
     salaryBadge: {
-      backgroundColor: '#ECFDF5',
+      backgroundColor: colors.accentSoft,
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 20,
@@ -367,7 +368,7 @@ function createStyles(colors) {
     salary: {
       fontSize: 13,
       fontWeight: '600',
-      color: '#059669',
+      color: colors.tabActive,
     },
   });
 }
