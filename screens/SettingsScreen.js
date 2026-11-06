@@ -29,6 +29,7 @@ import { deleteUserPosts } from '../lib/postService';
 import { deleteUserConversations } from '../lib/messageService';
 import { deleteUserAiChats } from '../lib/aiChatService';
 import { deleteUserBlocks } from '../lib/blockService';
+import { deleteUserConnections } from '../lib/connectionService';
 import { deleteUserNotifications } from '../lib/notificationService';
 import { requestPushPermission, setEventReminders, setPushEnabled, unregisterPushToken } from '../lib/pushService';
 import { deleteUserAttendance, deleteUserEvents } from '../lib/eventService';
@@ -197,6 +198,7 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings, onO
       { label: 'conversations', fn: () => deleteUserConversations(uid) },
       { label: 'aiChats', fn: () => deleteUserAiChats(uid) },
       { label: 'blocks', fn: () => deleteUserBlocks(uid) },
+      { label: 'connections', fn: () => deleteUserConnections(uid) },
       { label: 'notifications', fn: () => deleteUserNotifications(uid) },
       { label: 'events', fn: () => deleteUserEvents(uid) },
       { label: 'attendance', fn: () => deleteUserAttendance(uid) },

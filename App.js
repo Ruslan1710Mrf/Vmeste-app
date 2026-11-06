@@ -20,6 +20,12 @@ import { reportContent } from './lib/reportService';
 import { DEFAULT_SETTINGS } from './lib/chatUtils';
 import { createEvent, fetchEvents, registerForEvent } from './lib/eventService';
 import { subscribeToConversations } from './lib/messageService';
+import {
+  addConnection,
+  migrateLocalConnections,
+  removeConnection,
+  subscribeToConnections,
+} from './lib/connectionService';
 import { DEV_MODE_SKIP_AUTH } from './lib/devMode';
 import { auth } from './lib/firebase';
 import { useTheme } from './lib/ThemeContext';
@@ -53,6 +59,7 @@ import {
   createUserProfile,
   fetchUserProfile,
   profileDocToMember,
+  searchUsers,
   updateUserProfile,
 } from './lib/userProfileService';
 import ChatScreen from './screens/ChatScreen';
@@ -256,6 +263,12 @@ function AppContent() {
     return subscribeToNotifications(userId, setNotifications);
   }, [userId]);
 
+  // Друзья (связи) — источник истины на сервере. Подписываемся при входе.
+  useEffect(() => {
+    if (!userId) return undefined;
+    return subscribeToConnections(userId, setConnectedIds);
+  }, [userId]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUserId(user?.uid ?? null);
@@ -306,6 +319,9 @@ function AppContent() {
       setProfile(mergedProfile);
       setSavedJobIds(saved.savedJobIds ?? []);
       setConnectedIds(saved.connectedIds ?? []);
+      if (userId && saved.connectedIds?.length) {
+        migrateLocalConnections(userId, saved.connectedIds);
+      }
       setRegisteredEventIds(saved.registeredEventIds ?? []);
       setCheckedChecklistIds(saved.checkedChecklistIds ?? []);
       setLikedPostIds(saved.likedPostIds ?? []);
@@ -542,6 +558,18 @@ function AppContent() {
 
   const connectMember = (id) => {
     setConnectedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    const uid = auth.currentUser?.uid ?? userId;
+    if (uid && id) {
+      addConnection(uid, id).catch((err) => console.warn('[connect] failed', err));
+    }
+  };
+
+  const disconnectMember = (id) => {
+    setConnectedIds((prev) => prev.filter((x) => x !== id));
+    const uid = auth.currentUser?.uid ?? userId;
+    if (uid && id) {
+      removeConnection(uid, id).catch((err) => console.warn('[disconnect] failed', err));
+    }
   };
 
   const registerEvent = (id) => {
@@ -1334,8 +1362,12 @@ function AppContent() {
         return (
           <ConnectionsScreen
             connectedIds={connectedIds}
+            currentUserId={auth.currentUser?.uid ?? userId}
             onBack={() => setProfileView(null)}
             onOpenMember={openMember}
+            onConnect={connectMember}
+            onDisconnect={disconnectMember}
+            onSearch={searchUsers}
             onMessage={(id) => {
               setProfileView(null);
               openChat(id);

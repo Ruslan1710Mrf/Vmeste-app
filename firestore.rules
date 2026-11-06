@@ -23,6 +23,18 @@ service cloud.firestore {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
 
+      // Друзья (связи). Владелец читает и ведёт только свой список; id
+      // документа = uid человека, которого добавили; на существующего юзера.
+      match /connections/{targetUid} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.uid == targetUid
+          && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+          && exists(/databases/$(database)/documents/users/$(targetUid));
+        allow delete: if request.auth != null && request.auth.uid == userId;
+        allow update: if false;
+      }
+
       // Лента «Уведомления». Создаёт только Cloud Function (Admin SDK обходит
       // правила); владелец может лишь отметить прочитанным или удалить.
       match /notifications/{notificationId} {
