@@ -385,6 +385,16 @@ exports.pushOnNewMessage = functions.firestore
       if (!toUid) return;
       if (await isBlockedEitherWay(fromUid, toUid)) return;
 
+      // Проставляем отправителя последнего сообщения на сервере — чтобы бейдж
+      // непрочитанных у получателя работал даже когда пишут со старого билда
+      // (где клиент поле lastMessageFrom не записывает).
+      try {
+        await convSnap.ref.update({lastMessageFrom: fromUid});
+      } catch (err) {
+        logger.warn("stamp lastMessageFrom failed", {convId: convId,
+          error: err.message});
+      }
+
       const names = conv.participantNames || {};
       const fromName = pushPreview(names[fromUid], "Vmeste");
       try {
