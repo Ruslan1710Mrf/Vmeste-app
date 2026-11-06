@@ -166,6 +166,9 @@ Push НЕ реализован: нет `expo-notifications`, нет токено
 5. Проверка только на реальных iPhone/Android. Обновить `privacy.html` (храним push-токен).
 Оценка: основа + сообщения + комментарии ≈ 1–2 дня.
 
+### Android 1.1 — ПУШИ РАБОТАЮТ на устройстве (06.11.2026) ✅
+Билд 26 установлен из Internal testing на реальный Android. ПУШ о новом сообщении ДОШЁЛ (баннер «Test User — …»): цепочка токен → pushOnNewMessage → Expo → FCM → телефон рабочая. ВАЖНО для тестов: пуши есть ТОЛЬКО на Android (билд 26); на iPhone стоит билд 21 без пушей — там строки «Уведомления» в настройках нет, это норма. Осталось проверить на Android: редизайн/тёмная тема, пуш о комментарии, жалоба/блок, AI, «Интеграция», список заблокированных. Затем промоут в Production (Play Console → из Internal testing).
+
 ### Android 1.1 — СОБРАН (06.11.2026)
 FCM V1 настроен в EAS (service account firebase-adminsdk-fbsvc → загружен, assigned к com.vmeste.group). Бэкенд задеплоен (все 13 функций + rules + indexes, Deploy complete). `eas build --platform android --profile production` — готово: versionCode 26, build 72ec72b2, .aab собран. Осталось: залить .aab в Play Console → Внутреннее тестирование → тест на реальном Android (пуши со 2-го аккаунта, редизайн, тёмная тема, жалоба/блок, AI) → промоут в Production. JSON service-account удалить из ~/Downloads после настройки.
 
