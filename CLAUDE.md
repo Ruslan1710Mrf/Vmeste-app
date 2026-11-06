@@ -166,6 +166,9 @@ Push НЕ реализован: нет `expo-notifications`, нет токено
 5. Проверка только на реальных iPhone/Android. Обновить `privacy.html` (храним push-токен).
 Оценка: основа + сообщения + комментарии ≈ 1–2 дня.
 
+### Android 1.1 — СОБРАН (06.11.2026)
+FCM V1 настроен в EAS (service account firebase-adminsdk-fbsvc → загружен, assigned к com.vmeste.group). Бэкенд задеплоен (все 13 функций + rules + indexes, Deploy complete). `eas build --platform android --profile production` — готово: versionCode 26, build 72ec72b2, .aab собран. Осталось: залить .aab в Play Console → Внутреннее тестирование → тест на реальном Android (пуши со 2-го аккаунта, редизайн, тёмная тема, жалоба/блок, AI) → промоут в Production. JSON service-account удалить из ~/Downloads после настройки.
+
 ### Android 1.1 — ПОЛНАЯ версия (06.11.2026, решение Руслана)
 Редизайн `codex/vmeste-blue` ВЛИТ в `release/1.1` (merge 42b3878). Теперь release/1.1 = пуши + модерация + суженный AI + код Codex + VMESTE Blue. Все проверки прошли (tsc, blue-тесты 8/8, lint функций, 13 функций, бандлы iOS+Android).
 Решено: Android 1.1 выпускаем ПЕРВЫМ (магазин независим от Apple) как полигон — реальные юзеры тестируют пуши и дизайн, пока iOS ждёт Apple. Порядок Android: 1) `firebase deploy --only functions,firestore:rules,firestore:indexes` (Scheduler API→y, удаление функций→N); 2) FCM V1 для Android в `eas credentials` (service account из Firebase → Cloud Messaging); 3) `eas build --platform android --profile production`; 4) залить в Play Console → Internal testing, тест на реальном Android (пуши, редизайн, тёмная тема, жалоба/блок); 5) промоут в production.
