@@ -166,6 +166,11 @@ Push НЕ реализован: нет `expo-notifications`, нет токено
 5. Проверка только на реальных iPhone/Android. Обновить `privacy.html` (храним push-токен).
 Оценка: основа + сообщения + комментарии ≈ 1–2 дня.
 
+### Android 1.1 — ПОЛНАЯ версия (06.11.2026, решение Руслана)
+Редизайн `codex/vmeste-blue` ВЛИТ в `release/1.1` (merge 42b3878). Теперь release/1.1 = пуши + модерация + суженный AI + код Codex + VMESTE Blue. Все проверки прошли (tsc, blue-тесты 8/8, lint функций, 13 функций, бандлы iOS+Android).
+Решено: Android 1.1 выпускаем ПЕРВЫМ (магазин независим от Apple) как полигон — реальные юзеры тестируют пуши и дизайн, пока iOS ждёт Apple. Порядок Android: 1) `firebase deploy --only functions,firestore:rules,firestore:indexes` (Scheduler API→y, удаление функций→N); 2) FCM V1 для Android в `eas credentials` (service account из Firebase → Cloud Messaging); 3) `eas build --platform android --profile production`; 4) залить в Play Console → Internal testing, тест на реальном Android (пуши, редизайн, тёмная тема, жалоба/блок); 5) промоут в production.
+ПОСЛЕДСТВИЕ для iOS: редизайн теперь в release/1.1, значит следующий iOS-билд после одобрения Apple будет СРАЗУ с редизайном (не два отдельных билда 22/23). Это ок — Android обкатает 1.1 раньше.
+
 ### Новый дизайн (1.1) — ПРОВЕРЕН в симуляторе (05.11.2026)
 Ветка `codex/vmeste-blue` собрана через `eas build --profile simulator` и проверена в iOS Simulator (iPhone 18 Pro, iOS 27). Подтверждено живьём: колокольчик в шапке, «Новые участники» вместо историй, аватары-инициалы, меню «⋯» с «Пожаловаться»/«Заблокировать», 5 вкладок + «Обзор», светлая и тёмная тема, окно согласия AI. Нет вкладок «Для вас/Подписки». Соответствует всем правилам ниже.
 Остаётся: слить `codex/vmeste-blue` → `release/1.1` ПОСЛЕ билда 22; собрать билд 23 (редизайн), проверить на реальном iPhone (пуши) и на iPad (модалки).
