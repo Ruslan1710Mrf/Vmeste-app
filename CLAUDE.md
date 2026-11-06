@@ -55,6 +55,9 @@
 - Старые письма с ERROR в `mail` лежат (TTL never) — не переотправлять.
 - Письма подтверждения при регистрации шлёт встроенный `sendEmailVerification` Firebase — от Resend не зависят.
 
+## БАГ комментариев ИСПРАВЛЕН (06.11.2026)
+Нельзя было комментировать ЧУЖОЙ пост без комментариев («Не удалось отправить комментарий»); свой — можно. Причина: в `firestore.rules` правило `isAppendingOwnReply` содержало `after[0:before.size()] == before`, и при пустом replies срез `[0:0]` ломал проверку → отказ на постах с 0 комментариев (т.е. почти всех). Исправлено: `&& (before.size() == 0 || after[0:before.size()] == before)`. Проверено на эмуляторе правил (firebase emulators:exec + @firebase/rules-unit-testing), 5/5: коммент к посту с 0 и с N комментов — OK; правка чужих комментов и подделка authorId — запрещены. Только правило, билд не нужен — задеплоить `firebase deploy --only firestore:rules`. Тест-харнесс: scratchpad/rulestest.
+
 ## Модерация
 - Жалобы — в коллекции `reports`, читать только через Firebase Console (rules запрещают клиенту). Админки нет.
 - Бан = Authentication → Disable account. Посты остаются, удалять вручную.

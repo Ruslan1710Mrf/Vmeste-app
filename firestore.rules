@@ -55,9 +55,12 @@ service cloud.firestore {
         return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['replies'])
           && after is list
           && after.size() == before.size() + 1
-          && after[0:before.size()] == before
           && after[before.size()].authorId == request.auth.uid
-          && after[before.size()].text is string;
+          && after[before.size()].text is string
+          // Пустой список replies — особый случай: срез [0:0] в правилах ломал
+          // проверку, из-за чего нельзя было комментировать посты без коммента-
+          // риев. Для непустого проверяем, что прошлые комментарии не тронуты.
+          && (before.size() == 0 || after[0:before.size()] == before);
       }
     }
 
