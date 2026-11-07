@@ -113,6 +113,8 @@ function FeedPost({
   onOpenMenu,
   onOpenAuthor,
   onShare,
+  isSaved,
+  onToggleSave,
 }) {
   const { t } = useI18n();
   const { colors } = useTheme();
@@ -173,6 +175,15 @@ function FeedPost({
         >
           <Icon name="share" size={18} /><Text style={styles.postActionText}>{t('home.share')}</Text>
         </Pressable>
+        {!!onToggleSave && (
+          <Pressable
+            style={({ pressed }) => [styles.postAction, pressed && styles.pressed]}
+            onPress={() => onToggleSave(post.id)}
+          >
+            <Icon name="bookmark" size={18} color={isSaved ? colors.accent : colors.textSecondary} filled={isSaved} />
+            <Text style={[styles.postActionText, isSaved && { color: colors.accent }]}>{t('home.save')}</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -193,6 +204,8 @@ export default function HomeScreen({
   onOpenMessages,
   onToggleLike,
   likedPostIds = [],
+  savedPostIds = [],
+  onToggleSavePost,
   blockedUserIds = [],
   unreadCount,
   messagesCount,
@@ -258,6 +271,8 @@ export default function HomeScreen({
             styles={styles}
             post={post}
             isLiked={likedPostIds.includes(post.id)}
+            isSaved={savedPostIds.includes(post.id)}
+            onToggleSave={onToggleSavePost}
             userId={userId}
             onPress={onOpenPost}
             onToggleLike={onToggleLike}

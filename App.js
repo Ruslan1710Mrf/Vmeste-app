@@ -154,6 +154,7 @@ function AppContent() {
   const [profileReturnTab, setProfileReturnTab] = useState(null);
   const [feedCategory, setFeedCategory] = useState('Все');
   const [savedJobIds, setSavedJobIds] = useState([]);
+  const [savedPostIds, setSavedPostIds] = useState([]);
   const [connectedIds, setConnectedIds] = useState([]);
   const [blockedByMe, setBlockedByMe] = useState([]);
   const [blockedMe, setBlockedMe] = useState([]);
@@ -318,6 +319,7 @@ function AppContent() {
 
       setProfile(mergedProfile);
       setSavedJobIds(saved.savedJobIds ?? []);
+      setSavedPostIds(saved.savedPostIds ?? []);
       setConnectedIds(saved.connectedIds ?? []);
       if (userId && saved.connectedIds?.length) {
         migrateLocalConnections(userId, saved.connectedIds);
@@ -430,6 +432,7 @@ function AppContent() {
     saveAppState(userId, {
       profile,
       savedJobIds,
+      savedPostIds,
       connectedIds,
       registeredEventIds,
       checkedChecklistIds,
@@ -445,6 +448,7 @@ function AppContent() {
     userId,
     profile,
     savedJobIds,
+    savedPostIds,
     connectedIds,
     registeredEventIds,
     checkedChecklistIds,
@@ -552,6 +556,12 @@ function AppContent() {
 
   const toggleSaveJob = (id) => {
     setSavedJobIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const toggleSavePost = (id) => {
+    setSavedPostIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
@@ -908,6 +918,7 @@ function AppContent() {
     saveAppState(uid, {
       profile,
       savedJobIds,
+      savedPostIds,
       connectedIds,
       registeredEventIds,
       checkedChecklistIds,
@@ -1333,9 +1344,12 @@ function AppContent() {
         return (
           <SavedJobsScreen
             savedJobIds={savedJobIds}
+            savedPosts={posts.filter((p) => savedPostIds.includes(p.id))}
             onBack={() => setProfileView(null)}
             onSelectJob={openJob}
             onToggleSave={toggleSaveJob}
+            onSelectPost={openPost}
+            onUnsavePost={toggleSavePost}
           />
         );
       case 'edit':
@@ -1531,6 +1545,8 @@ function AppContent() {
           onOpenMessages={openMessages}
           onToggleLike={toggleLikePost}
           likedPostIds={likedPostIds}
+          savedPostIds={savedPostIds}
+          onToggleSavePost={toggleSavePost}
           unreadCount={unreadCount}
           messagesCount={messagesCount}
         />
