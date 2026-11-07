@@ -16,7 +16,7 @@ import { formatChatTime } from '../lib/chatUtils';
 import { sendImmigrationChat } from '../lib/claudeApi';
 import { fetchAiChatMessages, saveAiChatMessage } from '../lib/aiChatService';
 import { loadAiConsent, saveAiConsent } from '../lib/storage';
-import AiHeaderIcon from '../components/icons/AiHeaderIcon';
+import Icon from '../components/Icon';
 import { useTheme } from '../lib/ThemeContext';
 import { useI18n } from '../lib/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -147,13 +147,12 @@ export default function AiChatScreen({ userId }) {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      // App оборачивает экраны в SafeAreaView: экран начинается на insets.top ниже
-      // верха, и без этого смещения поле ввода уходит под клавиатуру.
-      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+      // The tab screen owns its top inset; its container starts at the window origin.
+      keyboardVerticalOffset={0}
     >
       <View style={[styles.header, { paddingTop: 8 + insets.top }]}>
         <View style={styles.headerAvatar}>
-          <AiHeaderIcon size={44} />
+          <Icon name="sparkles" size={26} color={colors.tabActive} />
         </View>
         <View style={styles.headerInfo}>
           <Text style={styles.title}>{t('aiChat.title')}</Text>
@@ -206,7 +205,7 @@ export default function AiChatScreen({ userId }) {
               >
                 {msg.role === 'assistant' ? (
                   <View style={styles.assistantLabelRow}>
-                    <AiHeaderIcon size={14} />
+                    <Icon name="sparkles" size={14} color={colors.tabActive} />
                     <Text style={styles.assistantLabel}>AI</Text>
                   </View>
                 ) : null}
@@ -339,7 +338,7 @@ function createStyles(colors) {
       width: 44,
       height: 44,
       borderRadius: 22,
-      backgroundColor: '#041E2A',
+      backgroundColor: colors.accentSoft,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 12,
@@ -433,7 +432,7 @@ function createStyles(colors) {
     assistantLabel: {
       fontSize: 11,
       fontWeight: '600',
-      color: '#00E5FF',
+      color: colors.tabActive,
     },
     bubble: {
       paddingHorizontal: 14,

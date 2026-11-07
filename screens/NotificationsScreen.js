@@ -1,3 +1,4 @@
+import Icon from '../components/Icon';
 import { useMemo } from 'react';
 import {
   Pressable,
@@ -6,45 +7,44 @@ import {
   Text,
   View,
 } from 'react-native';
-import { NOTIFICATIONS } from '../data/notifications';
+import { formatPostTime } from '../lib/timeUtils';
 import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-function NotificationRow({ item, isRead, onPress }) {
+function NotificationRow({ item, onPress }) {
   const styles = useStyles();
-  const unread = item.unread && !isRead;
+  const { t } = useI18n();
+  const unread = !item.read;
+  const title = t('notifications.commentTitle', { name: item.fromName || t('notifications.someone') });
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
       onPress={() => onPress(item)}
     >
       <View style={[styles.icon, unread && styles.iconUnread]}>
-        <Text style={styles.emoji}>{item.emoji}</Text>
+        <Icon name="message" />
       </View>
       <View style={styles.content}>
         <View style={styles.rowTitleLine}>
-          <Text style={[styles.title, unread && styles.titleUnread]}>{item.title}</Text>
+          <Text style={[styles.title, unread && styles.titleUnread]}>{title}</Text>
           {unread && <View style={styles.dot} />}
         </View>
-        <Text style={styles.body}>{item.body}</Text>
-        <Text style={styles.time}>{item.time}</Text>
+        <Text style={styles.body} numberOfLines={3}>{item.text}</Text>
+        <Text style={styles.time}>{formatPostTime(item.createdAt)}</Text>
       </View>
     </Pressable>
   );
 }
 
-export default function NotificationsScreen({ onBack, onAction, readIds, onMarkRead, onMarkAllRead }) {
+export default function NotificationsScreen({ onBack, items = [], onOpenItem, onMarkAllRead }) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
-  const unreadCount = NOTIFICATIONS.filter(
-    (n) => n.unread && !readIds.includes(n.id),
-  ).length;
+  const unreadCount = items.filter((n) => !n.read).length;
 
   const handlePress = (item) => {
-    onMarkRead(item.id);
-    if (item.action) onAction(item.action);
+    onOpenItem(item);
   };
 
   return (
@@ -74,19 +74,15 @@ export default function NotificationsScreen({ onBack, onAction, readIds, onMarkR
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-        {NOTIFICATIONS.length === 0 && (
+        {items.length === 0 && (
           <Text style={styles.emptyText}>{t('notifications.empty')}</Text>
         )}
-        {NOTIFICATIONS.length > 0 && (
+        {items.length > 0 && (
           <View style={styles.card}>
-            {NOTIFICATIONS.map((item, index) => (
+            {items.map((item, index) => (
               <View key={item.id}>
-                <NotificationRow
-                  item={item}
-                  isRead={readIds.includes(item.id)}
-                  onPress={handlePress}
-                />
-                {index < NOTIFICATIONS.length - 1 && <View style={styles.divider} />}
+                <NotificationRow item={item} onPress={handlePress} />
+                {index < items.length - 1 && <View style={styles.divider} />}
               </View>
             ))}
           </View>
@@ -115,8 +111,8 @@ function createStyles(colors) {
       paddingRight: 12,
     },
     backPressed: { opacity: 0.6 },
-    backIcon: { fontSize: 20, color: colors.accent, marginRight: 4 },
-    backLabel: { fontSize: 16, fontWeight: '500', color: colors.accent },
+    backIcon: { fontSize: 20, color: colors.tabActive, marginRight: 4 },
+    backLabel: { fontSize: 16, fontWeight: '500', color: colors.tabActive },
     titleRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -125,7 +121,7 @@ function createStyles(colors) {
     },
     titleBlock: { flex: 1 },
     markAllButton: { paddingVertical: 6, paddingHorizontal: 4 },
-    markAllText: { fontSize: 14, fontWeight: '600', color: colors.accent },
+    markAllText: { fontSize: 14, fontWeight: '600', color: colors.tabActive },
     screenTitle: {
       fontSize: 28,
       fontWeight: '700',
