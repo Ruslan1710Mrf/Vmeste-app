@@ -19,7 +19,8 @@ import { blockUser, unblockUser, fetchBlockedByMe, fetchBlockedMe } from './lib/
 import { reportContent } from './lib/reportService';
 import { DEFAULT_SETTINGS } from './lib/chatUtils';
 import { createEvent, fetchEvents, registerForEvent } from './lib/eventService';
-import { subscribeToConversations } from './lib/messageService';
+import { ensureConversation, sendMessage, subscribeToConversations } from './lib/messageService';
+import { getPostShareUrl } from './lib/sharePost';
 import {
   addConnection,
   migrateLocalConnections,
@@ -564,6 +565,25 @@ function AppContent() {
     setSavedPostIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+  };
+
+  // Отправить пост другу в личку: кладём превью + ссылку в чат (ссылка
+  // открывает пост по deep link). Текст проходит фильтр/модерацию чата.
+  const sendPostToFriend = async (post, friend) => {
+    const myUid = auth.currentUser?.uid ?? userId;
+    if (!myUid || !friend?.id || !post) return false;
+    try {
+      const myName = getFirstName(profile, auth.currentUser);
+      const convId = await ensureConversation(myUid, friend.id, friend.name || '', myName);
+      const preview = (post.content || '').trim().slice(0, 140);
+      const url = getPostShareUrl(post.id);
+      const text = [`${post.author}:`, preview, url].filter(Boolean).join('\n');
+      await sendMessage(convId, myUid, text);
+      return true;
+    } catch (err) {
+      console.warn('[sendPostToFriend] failed', err);
+      return false;
+    }
   };
 
   const connectMember = (id) => {
@@ -1547,6 +1567,8 @@ function AppContent() {
           likedPostIds={likedPostIds}
           savedPostIds={savedPostIds}
           onToggleSavePost={toggleSavePost}
+          connectedIds={connectedIds}
+          onSendPostToFriend={sendPostToFriend}
           unreadCount={unreadCount}
           messagesCount={messagesCount}
         />

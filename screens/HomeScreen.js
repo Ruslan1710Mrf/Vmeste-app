@@ -206,6 +206,8 @@ export default function HomeScreen({
   likedPostIds = [],
   savedPostIds = [],
   onToggleSavePost,
+  connectedIds = [],
+  onSendPostToFriend,
   blockedUserIds = [],
   unreadCount,
   messagesCount,
@@ -287,6 +289,8 @@ export default function HomeScreen({
         onClose={closeSharePost}
         post={sharingPost}
         url={sharingPost ? getPostShareUrl(sharingPost.id) : ''}
+        connectedIds={connectedIds}
+        onSendToFriend={onSendPostToFriend}
       />
     </View>
   );
