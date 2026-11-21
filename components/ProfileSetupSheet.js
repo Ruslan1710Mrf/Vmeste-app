@@ -1,3 +1,5 @@
+import { useTheme } from '../lib/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import {
   Modal,
@@ -21,6 +23,9 @@ const INTEREST_OPTION_KEYS = [
 
 export default function ProfileSetupSheet({ profile, visible, onComplete }) {
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [city, setCity] = useState(profile.city ?? '');
   const [interests, setInterests] = useState(profile.interests ?? []);
 
@@ -43,7 +48,7 @@ export default function ProfileSetupSheet({ profile, visible, onComplete }) {
   return (
     <Modal visible={visible} animationType="slide" transparent>
       <View style={styles.overlay}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.title}>{t('profileSetup.welcome')}</Text>
             <Text style={styles.subtitle}>
@@ -54,7 +59,7 @@ export default function ProfileSetupSheet({ profile, visible, onComplete }) {
             <TextInput
               style={styles.input}
               placeholder={t('profileSetup.cityPlaceholder')}
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               value={city}
               onChangeText={setCity}
             />
@@ -95,14 +100,15 @@ export default function ProfileSetupSheet({ profile, visible, onComplete }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#FFFFFF',
+    width: '100%', maxWidth: 560, alignSelf: 'center',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
@@ -113,30 +119,30 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#0F172A',
+    color: colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#64748B',
+    color: colors.textSecondary,
     marginBottom: 24,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#475569',
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#1E293B',
+    color: colors.text,
     marginBottom: 20,
   },
   chips: {
@@ -149,21 +155,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
   chipActive: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: colors.accentSoft,
     borderColor: '#2563EB',
   },
   chipText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   chipTextActive: {
-    color: '#2563EB',
+    color: colors.tabActive,
   },
   button: {
     backgroundColor: '#2563EB',

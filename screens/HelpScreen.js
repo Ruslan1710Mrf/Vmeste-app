@@ -11,7 +11,7 @@ import { useI18n } from '../lib/i18n';
 import { useTheme } from '../lib/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const SUPPORT_EMAIL = 'ruslan@vmestegroup.app';
+const SUPPORT_EMAIL = 'support@vmestegroup.app';
 
 function useFaq() {
   const { t } = useI18n();

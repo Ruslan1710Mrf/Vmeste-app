@@ -1,3 +1,5 @@
+import Avatar from '../components/Avatar';
+import OverviewBack from '../components/OverviewBack';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -63,9 +65,7 @@ function MemberCard({ member, onPress, isConnected }) {
       style={({ pressed }) => [styles.memberCard, pressed && styles.cardPressed]}
       onPress={() => onPress(member.id)}
     >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{member.name.charAt(0)}</Text>
-      </View>
+      <Avatar name={member.name} uri={member.photoUri} style={{ marginRight: 12 }} />
       <View style={styles.memberInfo}>
         <Text style={styles.memberName}>{member.name}</Text>
         <Text style={styles.memberRole}>{member.role || t('networking.communityMember')}</Text>
@@ -79,6 +79,7 @@ function MemberCard({ member, onPress, isConnected }) {
 }
 
 export default function NetworkingScreen({
+  onBack,
   events,
   onSelectEvent,
   onSelectMember,
@@ -159,7 +160,7 @@ export default function NetworkingScreen({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: 16 + insets.top }]}>
+      <View style={[styles.header, { paddingTop: 8 + insets.top }]}><OverviewBack onPress={onBack} />
         <Text style={styles.screenTitle}>{t('networking.title')}</Text>
         <Text style={styles.screenSubtitle}>
           {t('networking.subtitle')}
@@ -211,7 +212,7 @@ export default function NetworkingScreen({
         )}
 
         {membersLoading ? (
-          <ActivityIndicator style={{ marginTop: 16, marginBottom: 24 }} color="#7C3AED" />
+          <ActivityIndicator style={{ marginTop: 16, marginBottom: 24 }} color={colors.accent} />
         ) : filteredMembers.length > 0 ? (
           <>
             <Text style={styles.sectionTitle}>{t('networking.peopleNearYou')}</Text>
@@ -249,9 +250,9 @@ function createStyles(colors) {
       paddingBottom: 20,
     },
     screenTitle: {
-      fontSize: 32,
+      fontSize: 28,
       fontWeight: '700',
-      color: '#EC4899',
+      color: colors.text,
       letterSpacing: -0.5,
       marginBottom: 6,
     },
@@ -291,7 +292,7 @@ function createStyles(colors) {
     sectionTitle: {
       fontSize: 18,
       fontWeight: '600',
-      color: colors.accent,
+      color: colors.text,
       marginBottom: 12,
       marginTop: 8,
     },
@@ -303,7 +304,7 @@ function createStyles(colors) {
     createEventLink: {
       fontSize: 14,
       fontWeight: '600',
-      color: '#7C3AED',
+      color: colors.tabActive,
       marginBottom: 12,
     },
     eventsList: {
@@ -322,7 +323,7 @@ function createStyles(colors) {
     },
     eventDateBadge: {
       alignSelf: 'flex-start',
-      backgroundColor: '#F3E8FF',
+      backgroundColor: colors.accentSoft,
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: 8,
@@ -331,7 +332,7 @@ function createStyles(colors) {
     eventDate: {
       fontSize: 13,
       fontWeight: '600',
-      color: '#7C3AED',
+      color: colors.tabActive,
     },
     eventTitle: {
       fontSize: 17,
@@ -389,7 +390,7 @@ function createStyles(colors) {
     joinButton: {
       fontSize: 14,
       fontWeight: '600',
-      color: '#7C3AED',
+      color: colors.tabActive,
     },
     divider: {
       height: 1,
@@ -415,7 +416,7 @@ function createStyles(colors) {
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: '#F3E8FF',
+      backgroundColor: colors.accentSoft,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: 14,
@@ -423,7 +424,7 @@ function createStyles(colors) {
     avatarText: {
       fontSize: 20,
       fontWeight: '600',
-      color: '#7C3AED',
+      color: colors.tabActive,
     },
     memberInfo: {
       flex: 1,
@@ -447,17 +448,17 @@ function createStyles(colors) {
       width: 36,
       height: 36,
       borderRadius: 18,
-      backgroundColor: '#F3E8FF',
+      backgroundColor: colors.accentSoft,
       textAlign: 'center',
       lineHeight: 34,
       fontSize: 22,
       fontWeight: '400',
-      color: '#7C3AED',
+      color: colors.tabActive,
       overflow: 'hidden',
     },
     connectedButton: {
-      backgroundColor: '#DCFCE7',
-      color: '#059669',
+      backgroundColor: colors.accentSoft,
+      color: colors.tabActive,
       lineHeight: 36,
       fontSize: 18,
     },

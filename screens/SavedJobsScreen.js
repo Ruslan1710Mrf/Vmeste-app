@@ -43,11 +43,48 @@ function SavedJobCard({ job, onPress, onRemove }) {
   );
 }
 
-export default function SavedJobsScreen({ savedJobIds, onBack, onSelectJob, onToggleSave }) {
+function SavedPostCard({ post, onPress, onRemove }) {
+  const styles = useStyles();
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      onPress={() => onPress(post.id)}
+    >
+      <View style={styles.cardTop}>
+        <View style={styles.cardInfo}>
+          <Text style={styles.title}>{post.author}</Text>
+          <Text style={styles.company} numberOfLines={2}>{post.content}</Text>
+        </View>
+        <Pressable
+          style={({ pressed }) => [styles.removeButton, pressed && styles.removePressed]}
+          onPress={(e) => {
+            e.stopPropagation?.();
+            onRemove(post.id);
+          }}
+          hitSlop={8}
+        >
+          <Text style={styles.removeIcon}>🔖</Text>
+        </Pressable>
+      </View>
+      {!!post.city && <View style={styles.meta}><Text style={styles.city}>📍 {post.city}</Text></View>}
+    </Pressable>
+  );
+}
+
+export default function SavedJobsScreen({
+  savedJobIds,
+  savedPosts = [],
+  onBack,
+  onSelectJob,
+  onToggleSave,
+  onSelectPost,
+  onUnsavePost,
+}) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const jobs = savedJobIds.map(getJobById).filter(Boolean);
+  const total = jobs.length + savedPosts.length;
 
   return (
     <View style={styles.container}>
@@ -61,7 +98,7 @@ export default function SavedJobsScreen({ savedJobIds, onBack, onSelectJob, onTo
         </Pressable>
         <Text style={styles.screenTitle}>{t('savedJobs.title')}</Text>
         <Text style={styles.screenSubtitle}>
-          {t('savedJobs.subtitle', { value: jobs.length })}
+          {t('savedJobs.subtitle', { value: total })}
         </Text>
       </View>
 
@@ -69,23 +106,41 @@ export default function SavedJobsScreen({ savedJobIds, onBack, onSelectJob, onTo
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       >
-        {jobs.length === 0 ? (
+        {total === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>🔖</Text>
             <Text style={styles.emptyTitle}>{t('savedJobs.emptyTitle')}</Text>
-            <Text style={styles.emptyText}>
-              {t('savedJobs.emptyText')}
-            </Text>
+            <Text style={styles.emptyText}>{t('savedJobs.emptyText')}</Text>
           </View>
         ) : (
-          jobs.map((job) => (
-            <SavedJobCard
-              key={job.id}
-              job={job}
-              onPress={onSelectJob}
-              onRemove={onToggleSave}
-            />
-          ))
+          <>
+            {savedPosts.length > 0 && (
+              <>
+                <Text style={styles.sectionLabel}>{t('savedJobs.postsSection')}</Text>
+                {savedPosts.map((post) => (
+                  <SavedPostCard
+                    key={post.id}
+                    post={post}
+                    onPress={onSelectPost}
+                    onRemove={onUnsavePost}
+                  />
+                ))}
+              </>
+            )}
+            {jobs.length > 0 && (
+              <>
+                <Text style={styles.sectionLabel}>{t('savedJobs.jobsSection')}</Text>
+                {jobs.map((job) => (
+                  <SavedJobCard
+                    key={job.id}
+                    job={job}
+                    onPress={onSelectJob}
+                    onRemove={onToggleSave}
+                  />
+                ))}
+              </>
+            )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -103,6 +158,7 @@ function createStyles(colors) {
       backgroundColor: colors.background,
       flex: 1,
     },
+    sectionLabel: { fontSize: 13, fontWeight: '700', color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 8, marginBottom: 10, marginHorizontal: 4 },
     header: {
       paddingHorizontal: 24,
       paddingTop: 16,

@@ -12,35 +12,36 @@ import { getMemberByAuthorName } from '../data/members';
 import { isOwnPost } from '../lib/postUtils';
 import { getPostShareUrl } from '../lib/sharePost';
 import ShareSheet from '../components/ShareSheet';
+import Avatar from '../components/Avatar';
+import Icon from '../components/Icon';
 import { useTheme } from '../lib/ThemeContext';
 import { useI18n } from '../lib/i18n';
-import { getFirstName } from '../lib/profileUtils';
 import { fetchRecentUsers } from '../lib/userProfileService';
 
-const STORY_COLORS = ['#F58529', '#DD2A7B', '#8134AF', '#405DE6', '#5851DB'];
+
 
 function TopHeader({ styles, insets, onOpenSearch, onOpenMessages, onOpenNotifications, unreadCount, messagesCount }) {
   const { t } = useI18n();
   return (
     <View style={[styles.topBar, { paddingTop: 8 + (insets?.top ?? 0) }]}>
-      <Text style={styles.screenTitle}>{t('home.title')}</Text>
+      <Text style={styles.screenTitle}>VMESTE</Text>
       <View style={styles.topActions}>
-        <Pressable style={styles.topAction} onPress={onOpenSearch}>
-          <Text style={styles.topActionIcon}>🔍</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('home.search')} style={styles.topAction} onPress={onOpenSearch}>
+          <Icon name="search" />
         </Pressable>
-        <Pressable style={styles.topAction} onPress={onOpenMessages}>
-          <Text style={styles.topActionIcon}>💬</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('home.messages')} style={styles.topAction} onPress={onOpenMessages}>
+          <Icon name="message" />
           {messagesCount > 0 ? (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{messagesCount}</Text>
+              <Text style={styles.badgeText}>{messagesCount > 99 ? '99+' : messagesCount}</Text>
             </View>
           ) : null}
         </Pressable>
-        <Pressable style={styles.topAction} onPress={onOpenNotifications}>
-          <Text style={styles.topActionIcon}>🔔</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('home.notifications')} style={styles.topAction} onPress={onOpenNotifications}>
+          <Icon name="bell" />
           {unreadCount > 0 ? (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCount}</Text>
+              <Text style={styles.badgeText}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
             </View>
           ) : null}
         </Pressable>
@@ -49,7 +50,7 @@ function TopHeader({ styles, insets, onOpenSearch, onOpenMessages, onOpenNotific
   );
 }
 
-function ComposerBar({ styles, initial, onOpenCreatePost, onOpenOwnProfile }) {
+function ComposerBar({ styles, profile, onOpenCreatePost, onOpenOwnProfile }) {
   const { t } = useI18n();
   return (
     <View style={styles.composer}>
@@ -57,9 +58,7 @@ function ComposerBar({ styles, initial, onOpenCreatePost, onOpenOwnProfile }) {
         style={({ pressed }) => [styles.composerAvatarPressable, pressed && styles.pressed]}
         onPress={onOpenOwnProfile}
       >
-        <View style={styles.composerAvatar}>
-          <Text style={styles.composerAvatarText}>{initial}</Text>
-        </View>
+        <Avatar name={profile.name} uri={profile.photoUri} size={40} />
       </Pressable>
       <Pressable
         style={({ pressed }) => [styles.composerInputPressable, pressed && styles.pressed]}
@@ -74,111 +73,34 @@ function ComposerBar({ styles, initial, onOpenCreatePost, onOpenOwnProfile }) {
         onPress={onOpenCreatePost}
         hitSlop={8}
       >
-        <Text style={styles.composerPhoto}>🖼</Text>
+        <Icon name="image" />
       </Pressable>
     </View>
   );
 }
 
-function StoryBubble({ styles, name, initial, photoUri, isOwn, ringColor, onPress, onPressAdd }) {
-  return (
-    <Pressable style={({ pressed }) => [styles.storyItem, pressed && styles.pressed]} onPress={onPress}>
-      <View style={[styles.storyRing, { borderColor: ringColor }]}>
-        <View style={[styles.storyAvatar, isOwn && styles.storyAvatarOwn]}>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.storyAvatarImage} />
-          ) : (
-            <Text style={styles.storyAvatarText}>{initial}</Text>
-          )}
-          {isOwn ? (
-            <Pressable style={styles.storyAdd} onPress={onPressAdd} hitSlop={6}>
-              <Text style={styles.storyAddText}>＋</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
-      <Text style={styles.storyName} numberOfLines={1}>{name}</Text>
-    </Pressable>
-  );
-}
-
-function StoriesRow({
-  styles,
-  profile,
-  profileInitial,
-  userId,
-  onOpenMember,
-  onOpenCreatePost,
-  onOpenOwnProfile,
-}) {
+function RecentMembers({ styles, userId, blockedUserIds = [], onOpenMember }) {
   const { t } = useI18n();
-  const [storyUsers, setStoryUsers] = useState([]);
-
+  const [users, setUsers] = useState([]);
   useEffect(() => {
     let cancelled = false;
-
-    fetchRecentUsers(10)
-      .then((users) => {
-        if (cancelled) return;
-        const filtered = userId
-          ? users.filter((user) => user.uid !== userId)
-          : users;
-        setStoryUsers(filtered.slice(0, 10));
-      })
-      .catch(() => {
-        if (!cancelled) setStoryUsers([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    fetchRecentUsers(20).then(result => {
+      if (!cancelled) setUsers(result);
+    }).catch(() => { if (!cancelled) setUsers([]); });
+    return () => { cancelled = true; };
   }, [userId]);
-
-  const stories = [
-    {
-      id: 'own',
-      name: t('home.ownStoryLabel'),
-      initial: profileInitial,
-      photoUri: profile.photoUri ?? null,
-      isOwn: true,
-    },
-    ...storyUsers.map((user, index) => ({
-      id: user.uid,
-      name: user.name.split(/\s+/)[0],
-      initial: user.name.charAt(0).toUpperCase(),
-      photoUri: user.photoUri,
-      isOwn: false,
-      ringColor: STORY_COLORS[index % STORY_COLORS.length],
-    })),
-  ];
-
-  return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.storiesRow}
-    >
-      {stories.map((story) => (
-        <StoryBubble
-          key={story.id}
-          styles={styles}
-          name={story.name}
-          initial={story.initial}
-          photoUri={story.photoUri}
-          isOwn={story.isOwn}
-          ringColor={story.ringColor ?? '#3897F0'}
-          onPress={() => {
-            if (story.isOwn) {
-              onOpenOwnProfile?.();
-              return;
-            }
-            onOpenMember(story.id);
-          }}
-          onPressAdd={story.isOwn ? onOpenCreatePost : undefined}
-        />
-      ))}
+  // Filter at render time so blocking removes a member immediately without refetching.
+  const members = users.filter(user => user.uid !== userId && !blockedUserIds.includes(user.uid)).slice(0, 10);
+  if (!members.length) return null;
+  return <View style={styles.membersSection}>
+    <Text style={styles.membersTitle}>{t('home.newMembers')}</Text>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.membersRow}>
+      {members.map(user => <Pressable key={user.uid} accessibilityRole="button" accessibilityLabel={user.name} onPress={() => onOpenMember(user.uid)} style={({ pressed }) => [styles.member, pressed && styles.pressed]}>
+        <Avatar name={user.name} uri={user.photoUri} size={52} />
+        <Text numberOfLines={1} style={styles.memberName}>{(user.name || '?').split(/\s+/)[0]}</Text>
+      </Pressable>)}
     </ScrollView>
-  );
+  </View>;
 }
 
 function FeedPost({
@@ -191,10 +113,13 @@ function FeedPost({
   onOpenMenu,
   onOpenAuthor,
   onShare,
+  isSaved,
+  onToggleSave,
 }) {
   const { t } = useI18n();
+  const { colors } = useTheme();
   const replyCount = post.replies?.length ?? 0;
-  const likes = post.likes + (isLiked ? 1 : 0);
+  const likes = (post.likes || 0) + (isLiked ? 1 : 0);
   const cleanName = (post.author || '').replace(/\s*\(вы\)\s*$/, '');
   const displayName = isOwnPost(post, userId) ? `${cleanName} (вы)` : cleanName;
 
@@ -205,16 +130,14 @@ function FeedPost({
           style={({ pressed }) => [styles.postAuthorPressable, pressed && styles.pressed]}
           onPress={() => onOpenAuthor(post)}
         >
-          <View style={styles.postAvatar}>
-            <Text style={styles.postAvatarText}>{cleanName.charAt(0)}</Text>
-          </View>
+          <Avatar name={cleanName} uri={post.authorPhotoUri} size={40} style={{ marginRight: 10 }} />
           <View style={styles.postHeaderInfo}>
             <Text style={styles.postAuthor}>{displayName}</Text>
-            <Text style={styles.postMeta}>{post.time} · 🌐</Text>
+            <Text style={styles.postMeta}>{post.time}</Text>
           </View>
         </Pressable>
-        <Pressable hitSlop={8} onPress={() => onOpenMenu(post)}>
-          <Text style={styles.postMenu}>•••</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('home.menu')} style={styles.topAction} onPress={() => onOpenMenu(post)}>
+          <Icon name="more" />
         </Pressable>
       </View>
 
@@ -227,9 +150,9 @@ function FeedPost({
 
       <View style={styles.postStats}>
         <Text style={styles.postStatsText}>
-          {likes > 0 ? `❤️ ${likes}` : ''}
+          {likes > 0 ? `${likes} ♥` : ''}
           {likes > 0 && replyCount > 0 ? '  ·  ' : ''}
-          {replyCount > 0 ? `💬 ${replyCount}` : ''}
+          {replyCount > 0 ? `${replyCount} ···` : ''}
         </Text>
       </View>
 
@@ -238,20 +161,29 @@ function FeedPost({
           style={({ pressed }) => [styles.postAction, pressed && styles.pressed]}
           onPress={() => onToggleLike(post.id)}
         >
-          <Text style={styles.postActionText}>{isLiked ? '❤️' : '🤍'} {t('home.like')}</Text>
+          <Icon name="heart" size={18} color={isLiked ? colors.tabActive : colors.textSecondary} filled={isLiked} /><Text style={styles.postActionText}>{t('home.like')}</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.postAction, pressed && styles.pressed]}
           onPress={() => onPress(post.id)}
         >
-          <Text style={styles.postActionText}>💬 {replyCount}</Text>
+          <Icon name="message" size={18} /><Text style={styles.postActionText}>{replyCount}</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.postAction, pressed && styles.pressed]}
           onPress={() => onShare(post)}
         >
-          <Text style={styles.postActionText}>↗ {t('home.share')}</Text>
+          <Icon name="share" size={18} /><Text style={styles.postActionText}>{t('home.share')}</Text>
         </Pressable>
+        {!!onToggleSave && (
+          <Pressable
+            style={({ pressed }) => [styles.postAction, pressed && styles.pressed]}
+            onPress={() => onToggleSave(post.id)}
+          >
+            <Icon name="bookmark" size={18} color={isSaved ? colors.accent : colors.textSecondary} filled={isSaved} />
+            <Text style={[styles.postActionText, isSaved && { color: colors.accent }]}>{t('home.save')}</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -272,13 +204,18 @@ export default function HomeScreen({
   onOpenMessages,
   onToggleLike,
   likedPostIds = [],
+  savedPostIds = [],
+  onToggleSavePost,
+  connectedIds = [],
+  onSendPostToFriend,
+  blockedUserIds = [],
   unreadCount,
   messagesCount,
 }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const styles = useMemo(() => createHomeStyles(colors), [colors]);
-  const profileInitial = getFirstName(profile).charAt(0).toUpperCase();
+
 
   const [sharingPost, setSharingPost] = useState(null);
 
@@ -322,19 +259,11 @@ export default function HomeScreen({
       >
         <ComposerBar
           styles={styles}
-          initial={profileInitial}
-          onOpenCreatePost={onOpenCreatePost}
-          onOpenOwnProfile={onOpenOwnProfile}
-        />
-        <StoriesRow
-          styles={styles}
           profile={profile}
-          profileInitial={profileInitial}
-          userId={userId}
-          onOpenMember={onOpenMember}
           onOpenCreatePost={onOpenCreatePost}
           onOpenOwnProfile={onOpenOwnProfile}
         />
+        <RecentMembers styles={styles} userId={userId} blockedUserIds={blockedUserIds} onOpenMember={onOpenMember} />
 
         <View style={styles.feedDivider} />
 
@@ -344,6 +273,8 @@ export default function HomeScreen({
             styles={styles}
             post={post}
             isLiked={likedPostIds.includes(post.id)}
+            isSaved={savedPostIds.includes(post.id)}
+            onToggleSave={onToggleSavePost}
             userId={userId}
             onPress={onOpenPost}
             onToggleLike={onToggleLike}
@@ -358,6 +289,8 @@ export default function HomeScreen({
         onClose={closeSharePost}
         post={sharingPost}
         url={sharingPost ? getPostShareUrl(sharingPost.id) : ''}
+        connectedIds={connectedIds}
+        onSendToFriend={onSendPostToFriend}
       />
     </View>
   );
@@ -383,7 +316,7 @@ function createHomeStyles(colors) {
     fontSize: 28,
     fontWeight: '700',
     letterSpacing: -0.5,
-    color: '#FFFFFF',
+    color: colors.text,
   },
   topActions: {
     flexDirection: 'row',
@@ -391,8 +324,8 @@ function createHomeStyles(colors) {
     gap: 4,
   },
   topAction: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -422,6 +355,9 @@ function createHomeStyles(colors) {
     flex: 1,
   },
   feedContent: {
+    width: '100%',
+    maxWidth: 760,
+    alignSelf: 'center',
     paddingBottom: 16,
   },
   composer: {
@@ -466,76 +402,22 @@ function createHomeStyles(colors) {
   composerPhoto: {
     fontSize: 22,
   },
-  storiesRow: {
-    paddingHorizontal: 12,
-    paddingBottom: 14,
-    gap: 14,
-  },
-  storyItem: {
-    alignItems: 'center',
-    width: 76,
-  },
-  storyRing: {
-    padding: 2,
-    borderRadius: 36,
-    borderWidth: 2,
-    marginBottom: 6,
-  },
-  storyAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.surfaceSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  storyAvatarImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-  },
-  storyAvatarOwn: {
-    backgroundColor: colors.surface,
-  },
-  storyAvatarText: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  storyAdd: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#0095F6',
-    borderWidth: 2,
-    borderColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  storyAddText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginTop: -1,
-  },
-  storyName: {
-    fontSize: 11,
-    color: colors.text,
-    textAlign: 'center',
-    maxWidth: 72,
-  },
+  membersSection: { paddingVertical: 16 },
+  membersTitle: { fontSize: 16, fontWeight: '600', color: colors.text, paddingHorizontal: 16, marginBottom: 14 },
+  membersRow: { paddingHorizontal: 12, gap: 10 },
+  member: { alignItems: 'center', width: 68, gap: 8 },
+  memberName: { fontSize: 12, color: colors.text, maxWidth: 68 },
   feedDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
     marginBottom: 4,
   },
   postCard: {
-    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
@@ -613,6 +495,10 @@ function createHomeStyles(colors) {
   },
   postAction: {
     flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 44,
     alignItems: 'center',
     paddingVertical: 10,
   },

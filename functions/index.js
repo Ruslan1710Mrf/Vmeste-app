@@ -5,7 +5,10 @@ const logger = require("firebase-functions/logger");
 
 initializeApp();
 
-const MODERATION_EMAIL = "ruslan@vmestegroup.app";
+// Серверная модерация (вторая линия после фильтра в приложении).
+Object.assign(exports, require("./moderation"));
+
+const MODERATION_EMAIL = "support@vmestegroup.app";
 
 /**
  * Escapes HTML special characters in untrusted report fields.
@@ -109,9 +112,7 @@ const {getAuth} = require("firebase-admin/auth");
 const ANTHROPIC_API_KEY = defineSecret("ANTHROPIC_API_KEY");
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const AI_MODEL = "claude-sonnet-4-6";
-const AI_SYSTEM_PROMPT =
-  "Ты универсальный помощник. Отвечай чётко и по делу на языке " +
-  "пользователя. Помогай с любыми вопросами без ограничений.";
+const {AI_SYSTEM_PROMPT} = require("./aiSystemPrompt");
 const AI_RATE_LIMIT_MAX = 20;
 const AI_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const AI_HISTORY_LIMIT = 20;
@@ -247,6 +248,547 @@ exports.aiChat = onRequest(
       } catch (err) {
         logger.error("aiChat failed", {error: err.message});
         res.status(500).json({error: "Внутренняя ошибка сервера."});
+      }
+    },
+);
+
+// ---------------------------------------------------------------------------
+// Push-уведомления (Expo Push API).
+// Токены устройств: users/{uid}/private/push → {tokens: [...], enabled}.
+// Лента в приложении: users/{uid}/notifications/{id} (пишет только сервер).
+// ---------------------------------------------------------------------------
+const {FieldValue} = require("firebase-admin/firestore");
+const {containsObjectionableContent} = require("./contentFilter");
+
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+const PUSH_BODY_MAX_CHARS = 120;
+// Серия сообщений в одном чате — один пуш в минуту, а не на каждое.
+const MESSAGE_PUSH_COOLDOWN_MS = 60 * 1000;
+
+/**
+ * Shortens text for a push body and hides objectionable content.
+ * @param {*} text Raw user text.
+ * @param {string} fallback Text to show when the original must be hidden.
+ * @return {string} Safe preview.
+ */
+function pushPreview(text, fallback) {
+  const value = typeof text === "string" ? text.trim() : "";
+  if (!value || containsObjectionableContent(value)) return fallback;
+  if (value.length <= PUSH_BODY_MAX_CHARS) return value;
+  return value.slice(0, PUSH_BODY_MAX_CHARS - 1) + "…";
+}
+
+/**
+ * Says whether either user blocked the other.
+ * @param {string} uidA First user id.
+ * @param {string} uidB Second user id.
+ * @return {Promise<boolean>} True when a block exists in any direction.
+ */
+async function isBlockedEitherWay(uidA, uidB) {
+  const db = getFirestore();
+  const [ab, ba] = await Promise.all([
+    db.doc("blocks/" + uidA + "_" + uidB).get(),
+    db.doc("blocks/" + uidB + "_" + uidA).get(),
+  ]);
+  return ab.exists || ba.exists;
+}
+
+/**
+ * Sends one push to every device of the user and drops dead tokens.
+ * @param {string} uid Recipient user id.
+ * @param {{title: string, body: string, data: Object}} message Push content.
+ * @param {string} [cooldownKey] Skip if this key was pushed recently.
+ * @param {string} [prefKey] Per-type switch in the push doc (e.g. events).
+ * @return {Promise<void>}
+ */
+async function sendPushToUser(uid, message, cooldownKey, prefKey) {
+  const ref = getFirestore().doc("users/" + uid + "/private/push");
+  const snap = await ref.get();
+  const push = snap.exists ? snap.data() : null;
+  const tokens = push && Array.isArray(push.tokens) ? push.tokens : [];
+  if (tokens.length === 0 || push.enabled === false) return;
+  if (prefKey && push[prefKey] === false) return;
+
+  if (cooldownKey) {
+    const last = push.cooldowns && push.cooldowns[cooldownKey];
+    const lastMs = last && typeof last.toMillis === "function" ?
+      last.toMillis() : 0;
+    if (Date.now() - lastMs < MESSAGE_PUSH_COOLDOWN_MS) return;
+    await ref.set({cooldowns: {[cooldownKey]: FieldValue.serverTimestamp()}},
+        {merge: true});
+  }
+
+  const payload = tokens.map((token) => ({
+    to: token,
+    title: message.title,
+    body: message.body,
+    data: message.data,
+    sound: "default",
+    channelId: "default",
+  }));
+
+  let tickets = [];
+  try {
+    const response = await fetch(EXPO_PUSH_URL, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const json = await response.json();
+    if (!response.ok) {
+      logger.error("Expo push request failed", {uid: uid, status:
+        response.status, errors: json.errors});
+      return;
+    }
+    tickets = Array.isArray(json.data) ? json.data : [];
+  } catch (err) {
+    logger.error("Expo push request threw", {uid: uid, error: err.message});
+    return;
+  }
+
+  const deadTokens = tickets
+      .map((ticket, index) => (ticket.status === "error" &&
+        ticket.details && ticket.details.error === "DeviceNotRegistered") ?
+        tokens[index] : null)
+      .filter(Boolean);
+  if (deadTokens.length > 0) {
+    await ref.update({tokens: FieldValue.arrayRemove(...deadTokens)});
+  }
+  const otherErrors = tickets.filter((ticket) => ticket.status === "error" &&
+    !(ticket.details && ticket.details.error === "DeviceNotRegistered"));
+  if (otherErrors.length > 0) {
+    logger.warn("Expo push tickets with errors", {uid: uid,
+      errors: otherErrors.map((ticket) => ticket.message)});
+  }
+}
+
+exports.pushOnNewMessage = functions.firestore
+    .document("conversations/{convId}/messages/{messageId}")
+    .onCreate(async (snap, context) => {
+      const convId = context.params.convId;
+      const message = snap.data() || {};
+      const fromUid = message.fromUid;
+      if (!fromUid) return;
+      // Сообщение с нарушением удалит moderateMessage — не уведомляем.
+      if (containsObjectionableContent(message.text)) return;
+
+      const convSnap = await getFirestore().doc("conversations/" + convId)
+          .get();
+      if (!convSnap.exists) return;
+      const conv = convSnap.data() || {};
+      const participants = Array.isArray(conv.participants) ?
+        conv.participants : [];
+      const toUid = participants.find((uid) => uid !== fromUid);
+      if (!toUid) return;
+      if (await isBlockedEitherWay(fromUid, toUid)) return;
+
+      // Проставляем отправителя последнего сообщения на сервере — чтобы бейдж
+      // непрочитанных у получателя работал даже когда пишут со старого билда
+      // (где клиент поле lastMessageFrom не записывает).
+      try {
+        await convSnap.ref.update({lastMessageFrom: fromUid});
+      } catch (err) {
+        logger.warn("stamp lastMessageFrom failed", {convId: convId,
+          error: err.message});
+      }
+
+      const names = conv.participantNames || {};
+      const fromName = pushPreview(names[fromUid], "Vmeste");
+      try {
+        await sendPushToUser(toUid, {
+          title: fromName,
+          body: pushPreview(message.text, "Новое сообщение"),
+          data: {type: "message", fromUid: fromUid, convId: convId},
+        }, "conv_" + convId);
+      } catch (err) {
+        logger.error("pushOnNewMessage failed", {convId: convId,
+          error: err.message});
+      }
+    });
+
+exports.pushOnNewReply = functions.firestore
+    .document("posts/{postId}")
+    .onUpdate(async (change, context) => {
+      const postId = context.params.postId;
+      const before = change.before.data() || {};
+      const after = change.after.data() || {};
+      const oldReplies = Array.isArray(before.replies) ? before.replies : [];
+      const newReplies = Array.isArray(after.replies) ? after.replies : [];
+      // Лайки и правки поста тоже обновляют документ — реагируем только
+      // на добавленные комментарии.
+      if (newReplies.length <= oldReplies.length) return;
+
+      const postAuthorId = after.authorId;
+      if (!postAuthorId) return;
+      const added = newReplies.slice(oldReplies.length)
+          .filter((reply) => reply && reply.authorId &&
+            reply.authorId !== postAuthorId &&
+            // Такой комментарий вырежет moderatePost — не уведомляем.
+            !containsObjectionableContent(reply.text) &&
+            !containsObjectionableContent(reply.author));
+
+      for (const reply of added) {
+        try {
+          if (await isBlockedEitherWay(reply.authorId, postAuthorId)) continue;
+          const fromName = pushPreview(reply.author, "Участник");
+          const body = pushPreview(reply.text, "Новый комментарий");
+          await getFirestore()
+              .collection("users/" + postAuthorId + "/notifications")
+              .add({
+                type: "comment",
+                postId: postId,
+                fromUid: reply.authorId,
+                fromName: fromName,
+                text: body,
+                read: false,
+                createdAt: FieldValue.serverTimestamp(),
+              });
+          await sendPushToUser(postAuthorId, {
+            title: fromName + " прокомментировал(а) ваш пост",
+            body: body,
+            data: {type: "comment", postId: postId},
+          });
+        } catch (err) {
+          logger.error("pushOnNewReply failed", {postId: postId,
+            error: err.message});
+        }
+      }
+    });
+
+// ---------------------------------------------------------------------------
+// События: участники и напоминания.
+// Запись: events/{eventId}/attendees/{uid} (создаёт сам пользователь).
+// Время начала: events/{eventId}.startsAt — есть, если приложение разобрало
+// дату. Напоминания: за сутки и за час, флаги reminders.h24 / reminders.h1.
+// ---------------------------------------------------------------------------
+const HOUR_MS = 60 * 60 * 1000;
+
+exports.countEventAttendees = functions.firestore
+    .document("events/{eventId}/attendees/{uid}")
+    .onWrite(async (change, context) => {
+      const delta = !change.before.exists && change.after.exists ? 1 :
+        change.before.exists && !change.after.exists ? -1 : 0;
+      if (delta === 0) return;
+      try {
+        await getFirestore().doc("events/" + context.params.eventId)
+            .update({attendees: FieldValue.increment(delta)});
+      } catch (err) {
+        // Событие уже удалено — считать нечего.
+        logger.info("countEventAttendees skipped", {
+          eventId: context.params.eventId, error: err.message});
+      }
+    });
+
+exports.cleanupEventAttendees = functions.firestore
+    .document("events/{eventId}")
+    .onDelete(async (snap) => {
+      try {
+        await getFirestore().recursiveDelete(snap.ref.collection("attendees"));
+      } catch (err) {
+        logger.error("cleanupEventAttendees failed", {path: snap.ref.path,
+          error: err.message});
+      }
+    });
+
+/**
+ * Human-readable "time left" for a reminder body.
+ * @param {number} msLeft Milliseconds until the start.
+ * @return {string} Text like "через 3 ч" or "через 40 мин".
+ */
+function timeLeftText(msLeft) {
+  if (msLeft >= 90 * 60 * 1000) {
+    return "через " + Math.round(msLeft / HOUR_MS) + " ч";
+  }
+  return "через " + Math.max(1, Math.round(msLeft / 60000)) + " мин";
+}
+
+exports.sendEventReminders = functions.pubsub
+    .schedule("every 15 minutes")
+    .onRun(async () => {
+      const db = getFirestore();
+      const now = Date.now();
+      const snap = await db.collection("events")
+          .where("startsAt", ">", new Date(now))
+          .where("startsAt", "<=", new Date(now + 24 * HOUR_MS))
+          .get();
+
+      for (const eventDoc of snap.docs) {
+        const event = eventDoc.data() || {};
+        const reminders = event.reminders || {};
+        const msLeft = event.startsAt.toMillis() - now;
+        const stage = msLeft <= HOUR_MS ?
+          (reminders.h1 ? null : "h1") :
+          (reminders.h24 ? null : "h24");
+        if (!stage) continue;
+
+        try {
+          // Флаги ставим до рассылки: лучше пропустить напоминание при
+          // сбое, чем прислать его дважды.
+          const flags = {"reminders.h1": stage === "h1" || !!reminders.h1,
+            "reminders.h24": true};
+          await eventDoc.ref.update(flags);
+
+          const attendees = await eventDoc.ref.collection("attendees").get();
+          const title = pushPreview(event.title, "Событие");
+          const venue = pushPreview(event.venue, "");
+          const body = "Начало " + timeLeftText(msLeft) +
+            (venue ? " · " + venue : "");
+          for (const attendee of attendees.docs) {
+            const uid = attendee.id;
+            if (event.authorId && uid !== event.authorId &&
+              await isBlockedEitherWay(uid, event.authorId)) continue;
+            await sendPushToUser(uid, {
+              title: "Напоминание: " + title,
+              body: body,
+              data: {type: "event", eventId: eventDoc.id},
+            }, null, "events");
+          }
+          logger.info("Event reminders sent", {eventId: eventDoc.id,
+            stage: stage, attendees: attendees.size});
+        } catch (err) {
+          logger.error("sendEventReminders failed", {eventId: eventDoc.id,
+            error: err.message});
+        }
+      }
+    });
+// Заявки с сайта vmestegroup.app (public/index.html, форма #contact-form).
+// Браузер шлёт только поля формы; получатель письма и его текст задаются
+// здесь, на сервере. Заявка → websiteInquiries, письмо → mail → расширение
+// firestore-send-email → Resend → support@vmestegroup.app.
+// ---------------------------------------------------------------------------
+const crypto = require("crypto");
+// FieldValue уже объявлен выше (блок push-уведомлений).
+
+const INQUIRY_EMAIL = "support@vmestegroup.app";
+const INQUIRY_ALLOWED_ORIGINS = [
+  "https://vmestegroup.app",
+  "https://www.vmestegroup.app",
+  "https://veste-app-bffb0.web.app",
+  "https://veste-app-bffb0.firebaseapp.com",
+  "http://127.0.0.1:5000",
+  "http://127.0.0.1:5002",
+  "http://localhost:5000",
+  "http://localhost:5002",
+];
+const INQUIRY_SERVICES = {
+  website: "Создание сайта",
+  design: "Дизайн и фото",
+  automation: "AI-автоматизация",
+  sheets: "Excel и Google Sheets",
+  other: "Другая задача",
+};
+const INQUIRY_WINDOW_MS = 60 * 60 * 1000;
+const INQUIRY_LIMITS = {ip: 5, email: 3};
+const INQUIRY_DAILY_LIMIT = 100;
+const INQUIRY_EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
+
+/**
+ * Returns a trimmed string, or "" when the value is not a string.
+ * @param {*} value Raw request field.
+ * @return {string} Trimmed text.
+ */
+function inquiryText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+/**
+ * Validates the form body and returns clean fields, or null if invalid.
+ * @param {*} body Parsed JSON body.
+ * @return {?Object} Clean inquiry fields.
+ */
+function parseInquiry(body) {
+  if (!body || typeof body !== "object") return null;
+  const name = inquiryText(body.name);
+  const email = inquiryText(body.email).toLowerCase();
+  const service = inquiryText(body.service);
+  const message = inquiryText(body.message);
+  if (!name || name.length > 100) return null;
+  if (email.length > 254 || !INQUIRY_EMAIL_RE.test(email)) return null;
+  if (!Object.prototype.hasOwnProperty.call(INQUIRY_SERVICES, service)) {
+    return null;
+  }
+  if (message.length < 10 || message.length > 4000) return null;
+  if (body.consent !== true) return null;
+  return {name, email, service, message};
+}
+
+/**
+ * Loads (or creates once) the random salt used to hash IPs and emails, so
+ * the stored counter ids cannot be reversed by brute-forcing IPv4 space.
+ * @param {!Object} db Firestore instance.
+ * @return {!Promise<string>} Salt.
+ */
+async function inquirySalt(db) {
+  const ref = db.collection("websiteRateLimits").doc("_salt");
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists && snap.get("value")) return snap.get("value");
+    const value = crypto.randomBytes(32).toString("hex");
+    tx.set(ref, {value});
+    return value;
+  });
+}
+
+/**
+ * Counts this request against the hourly IP/email limits and the daily cap.
+ * @param {!Object} db Firestore instance.
+ * @param {!Object<string, string>} hashes Hashed ip and email.
+ * @return {!Promise<boolean>} True when a limit is exceeded.
+ */
+async function isInquiryRateLimited(db, hashes) {
+  const now = Date.now();
+  const day = new Date(now).toISOString().slice(0, 10);
+  const counters = [
+    {ref: db.collection("websiteRateLimits").doc("ip_" + hashes.ip),
+      max: INQUIRY_LIMITS.ip, windowMs: INQUIRY_WINDOW_MS},
+    {ref: db.collection("websiteRateLimits").doc("email_" + hashes.email),
+      max: INQUIRY_LIMITS.email, windowMs: INQUIRY_WINDOW_MS},
+    {ref: db.collection("websiteRateLimits").doc("day_" + day),
+      max: INQUIRY_DAILY_LIMIT, windowMs: 24 * 60 * 60 * 1000},
+  ];
+  return db.runTransaction(async (tx) => {
+    const snaps = await Promise.all(counters.map((c) => tx.get(c.ref)));
+    const next = counters.map((c, i) => {
+      const data = snaps[i].exists ? snaps[i].data() : null;
+      const fresh = !data || now - data.windowStart >= c.windowMs;
+      return {c, count: fresh ? 1 : data.count + 1,
+        windowStart: fresh ? now : data.windowStart};
+    });
+    if (next.some((n) => n.count > n.c.max)) return true;
+    for (const n of next) {
+      tx.set(n.c.ref, {count: n.count, windowStart: n.windowStart});
+    }
+    return false;
+  });
+}
+
+exports.submitWebsiteInquiry = onRequest(
+    {
+      region: "us-central1",
+      maxInstances: 3,
+      timeoutSeconds: 30,
+      memory: "256MiB",
+    },
+    async (req, res) => {
+      const origin = req.get("origin");
+      if (!origin || !INQUIRY_ALLOWED_ORIGINS.includes(origin)) {
+        res.status(403).json({ok: false, error: "origin"});
+        return;
+      }
+      res.set("Access-Control-Allow-Origin", origin);
+      res.set("Vary", "Origin");
+      res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+      res.set("Access-Control-Allow-Headers", "Content-Type");
+      if (req.method === "OPTIONS") {
+        res.status(204).send("");
+        return;
+      }
+      if (req.method !== "POST") {
+        res.status(405).json({ok: false, error: "method"});
+        return;
+      }
+
+      const body = req.body || {};
+      // Ловушка для ботов: людям поле не видно. Отвечаем «принято», чтобы
+      // бот не понял, что его отсеяли.
+      if (inquiryText(body.company_url)) {
+        res.json({ok: true});
+        return;
+      }
+      const inquiry = parseInquiry(body);
+      if (!inquiry) {
+        res.status(400).json({ok: false, error: "invalid"});
+        return;
+      }
+
+      const db = getFirestore();
+      try {
+        const ip = (req.get("x-forwarded-for") || "").split(",")[0].trim() ||
+          req.ip || "unknown";
+        const salt = await inquirySalt(db);
+        const hash = (value) => crypto.createHash("sha256")
+            .update(salt + ":" + value).digest("hex");
+        if (await isInquiryRateLimited(db,
+            {ip: hash(ip), email: hash(inquiry.email)})) {
+          res.status(429).json({ok: false, error: "rate-limit"});
+          return;
+        }
+
+        const inquiryRef = db.collection("websiteInquiries").doc();
+        const serviceLabel = INQUIRY_SERVICES[inquiry.service];
+        const consoleUrl = "https://console.firebase.google.com/project/" +
+          "veste-app-bffb0/firestore/data/~2FwebsiteInquiries~2F" +
+          inquiryRef.id;
+        const rows = [
+          ["Имя", inquiry.name],
+          ["Email", inquiry.email],
+          ["Услуга", serviceLabel],
+        ].map((pair) => [
+          "<tr>",
+          "<td style=\"padding:6px 16px 6px 0;color:#64748B;\">",
+          escapeHtml(pair[0]),
+          "</td>",
+          "<td style=\"padding:6px 0;font-weight:600;\">",
+          escapeHtml(pair[1]),
+          "</td>",
+          "</tr>",
+        ].join("")).join("");
+        const html = [
+          "<div style=\"font-family:sans-serif;max-width:560px;\">",
+          "<h2 style=\"margin-bottom:8px;\">Новая заявка с сайта</h2>",
+          "<table style=\"border-collapse:collapse;font-size:14px;\">",
+          rows,
+          "</table>",
+          "<p style=\"white-space:pre-wrap;margin-top:16px;\">",
+          escapeHtml(inquiry.message),
+          "</p>",
+          "<p style=\"margin-top:20px;\">",
+          "<a href=\"" + consoleUrl + "\">Открыть в Firebase Console</a>",
+          "</p>",
+          "<p style=\"color:#64748B;font-size:13px;\">",
+          "Ответить клиенту — кнопкой «Ответить» в почте.",
+          "</p>",
+          "</div>",
+        ].join("");
+        const text = [
+          "Новая заявка с сайта",
+          "Имя: " + inquiry.name,
+          "Email: " + inquiry.email,
+          "Услуга: " + serviceLabel,
+          "",
+          inquiry.message,
+          "",
+          consoleUrl,
+        ].join("\n");
+        // Перевод строки в теме письма недопустим — режем на всякий случай.
+        const subject = ("Заявка с сайта: " + serviceLabel + " — " +
+          inquiry.name).replace(/[\r\n]+/g, " ").slice(0, 150);
+
+        const batch = db.batch();
+        batch.set(inquiryRef, {
+          name: inquiry.name,
+          email: inquiry.email,
+          service: inquiry.service,
+          message: inquiry.message,
+          consent: true,
+          origin: origin,
+          status: "new",
+          createdAt: FieldValue.serverTimestamp(),
+        });
+        batch.set(db.collection("mail").doc(), {
+          to: [INQUIRY_EMAIL],
+          replyTo: inquiry.email,
+          message: {subject, html, text},
+        });
+        await batch.commit();
+        logger.info("Website inquiry stored", {inquiryId: inquiryRef.id});
+        res.json({ok: true});
+      } catch (err) {
+        logger.error("submitWebsiteInquiry failed", {error: err.message});
+        res.status(500).json({ok: false, error: "server"});
       }
     },
 );

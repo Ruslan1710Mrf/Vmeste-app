@@ -29,7 +29,10 @@ import { deleteUserPosts } from '../lib/postService';
 import { deleteUserConversations } from '../lib/messageService';
 import { deleteUserAiChats } from '../lib/aiChatService';
 import { deleteUserBlocks } from '../lib/blockService';
-import { deleteUserEvents } from '../lib/eventService';
+import { deleteUserConnections } from '../lib/connectionService';
+import { deleteUserNotifications } from '../lib/notificationService';
+import { requestPushPermission, setEventReminders, setPushEnabled, unregisterPushToken } from '../lib/pushService';
+import { deleteUserAttendance, deleteUserEvents } from '../lib/eventService';
 import { deleteUserStorageFiles } from '../lib/postImageService';
 import { LANGUAGES } from '../lib/chatUtils';
 import { useI18n } from '../lib/i18n';
@@ -88,7 +91,7 @@ function SettingRow({ label, description, value, onValueChange }) {
   );
 }
 
-export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
+export default function SettingsScreen({ onBack, settings, onUpdateSettings, onOpenBlockedUsers }) {
   const { colors } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
@@ -106,12 +109,38 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
     onUpdateSettings({ ...settings, [key]: value });
   };
 
+  // Переключатель влияет на сервер: Cloud Functions не шлют пуши при enabled: false.
+  const handlePushToggle = async (value) => {
+    updateSetting('pushEnabled', value);
+    const uid = getCurrentUser()?.uid;
+    if (!uid) return;
+    try {
+      await setPushEnabled(uid, value);
+      if (value) await requestPushPermission(uid, { force: true });
+    } catch (err) {
+      console.warn('[settings] push toggle failed', err);
+    }
+  };
+
+  const handleEventRemindersToggle = async (value) => {
+    updateSetting('eventReminders', value);
+    const uid = getCurrentUser()?.uid;
+    if (!uid) return;
+    try {
+      await setEventReminders(uid, value);
+    } catch (err) {
+      console.warn('[settings] event reminders toggle failed', err);
+    }
+  };
+
   const handleSignOut = async () => {
     const confirmed = await confirmSignOut(t);
     if (!confirmed) return;
 
     setSigningOut(true);
     try {
+      const uid = getCurrentUser()?.uid;
+      if (uid) await unregisterPushToken(uid);
       await signOut();
       router.replace('/auth/login');
     } catch {
@@ -169,7 +198,10 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
       { label: 'conversations', fn: () => deleteUserConversations(uid) },
       { label: 'aiChats', fn: () => deleteUserAiChats(uid) },
       { label: 'blocks', fn: () => deleteUserBlocks(uid) },
+      { label: 'connections', fn: () => deleteUserConnections(uid) },
+      { label: 'notifications', fn: () => deleteUserNotifications(uid) },
       { label: 'events', fn: () => deleteUserEvents(uid) },
+      { label: 'attendance', fn: () => deleteUserAttendance(uid) },
       { label: 'profile', fn: () => deleteUserProfile(uid) },
       { label: 'storage', fn: () => deleteUserStorageFiles(uid) },
     ];
@@ -301,20 +333,14 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
             label={t('settings.pushTitle')}
             description={t('settings.pushDesc')}
             value={settings.pushEnabled}
-            onValueChange={(value) => updateSetting('pushEnabled', value)}
+            onValueChange={handlePushToggle}
           />
-          <View style={styles.divider} />
-          <SettingRow
-            label={t('settings.emailDigestTitle')}
-            description={t('settings.emailDigestDesc')}
-            value={settings.emailDigest}
-            onValueChange={(value) => updateSetting('emailDigest', value)}
-          />
+          {/* «Email-дайджест» скрыт: рассылки нет. Вернуть, когда появится. */}
           <View style={styles.divider} />
           <SettingRow
             label={t('settings.eventRemindersTitle')}
             value={settings.eventReminders}
-            onValueChange={(value) => updateSetting('eventReminders', value)}
+            onValueChange={handleEventRemindersToggle}
           />
         </View>
 
@@ -333,6 +359,11 @@ export default function SettingsScreen({ onBack, settings, onUpdateSettings }) {
           ))}
         </View>
 
+        <View style={styles.card}>
+          <Pressable style={styles.actionRow} onPress={onOpenBlockedUsers} accessibilityRole="button">
+            <Text style={styles.actionText}>{t('blockedUsers.title')} →</Text>
+          </Pressable>
+        </View>
         <Text style={styles.sectionLabel}>{t('settings.account')}</Text>
         <View style={styles.card}>
           {accountEmail ? (

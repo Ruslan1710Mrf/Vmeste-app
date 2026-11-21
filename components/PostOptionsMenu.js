@@ -1,3 +1,4 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemo } from 'react';
 import {
   Modal,
@@ -20,12 +21,13 @@ export default function PostOptionsMenu({
 }) {
   const { colors } = useTheme();
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+        <Pressable style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]} onPress={(e) => e.stopPropagation()}>
           {isOwn ? (
             <>
               <Pressable
@@ -87,6 +89,7 @@ function createStyles(colors) {
       justifyContent: 'flex-end',
     },
     sheet: {
+      width: '100%', maxWidth: 560, alignSelf: 'center',
       backgroundColor: colors.surface,
       borderTopLeftRadius: 16,
       borderTopRightRadius: 16,

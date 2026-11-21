@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.vmeste.group",
@@ -47,6 +47,13 @@
         "expo-image-picker",
         {
           "photosPermission": "Vmeste запросит доступ к фото, чтобы вы могли добавить их в пост или профиль."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#2563EB"
         }
       ]
     ],
